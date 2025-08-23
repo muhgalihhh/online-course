@@ -32,7 +32,7 @@ const menuItems = [
         icon: Tag,
     },
     {
-        title: 'Data Institusi',
+        title: 'Profil Institusi',
         href: route('admin.institutions.index'),
         icon: Building2,
     },

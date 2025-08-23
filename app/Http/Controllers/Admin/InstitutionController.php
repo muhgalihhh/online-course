@@ -11,33 +11,44 @@ use Inertia\Response;
 class InstitutionController extends Controller
 {
     /**
-     * Menampilkan daftar semua institusi dengan paginasi.
+     * Menampilkan profil institusi.
      */
     public function index(): Response
     {
+        $institution = Institution::withCount('courses')->first();
+        
         return Inertia::render('admin/institutions/index', [
-            'institutions' => Institution::withCount('courses')
-                ->latest()
-                ->paginate(10)
-                ->withQueryString(),
+            'institution' => $institution,
         ]);
     }
 
     /**
-     * Tampilkan form untuk membuat institusi baru.
+     * Tampilkan form untuk membuat profil institusi baru.
      */
     public function create(): Response
     {
+        // Cek apakah sudah ada institusi
+        if (Institution::exists()) {
+            return redirect()->route('admin.institutions.index')
+                ->with('error', 'Profil institusi sudah ada. Anda hanya dapat mengedit profil yang ada.');
+        }
+
         return Inertia::render('admin/institutions/create');
     }
 
     /**
-     * Simpan institusi baru ke database.
+     * Simpan profil institusi baru ke database.
      */
     public function store(Request $request)
     {
+        // Cek apakah sudah ada institusi
+        if (Institution::exists()) {
+            return redirect()->route('admin.institutions.index')
+                ->with('error', 'Profil institusi sudah ada. Anda hanya dapat mengedit profil yang ada.');
+        }
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:institutions',
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
@@ -48,11 +59,11 @@ class InstitutionController extends Controller
         Institution::create($validated);
 
         return redirect()->route('admin.institutions.index')
-            ->with('success', 'Institusi berhasil dibuat.');
+            ->with('success', 'Profil institusi berhasil dibuat.');
     }
 
     /**
-     * Tampilkan form untuk mengedit institusi.
+     * Tampilkan form untuk mengedit profil institusi.
      */
     public function edit(Institution $institution): Response
     {
@@ -62,12 +73,12 @@ class InstitutionController extends Controller
     }
 
     /**
-     * Update data institusi di database.
+     * Update data profil institusi di database.
      */
     public function update(Request $request, Institution $institution)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:institutions,name,' . $institution->id,
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
@@ -78,23 +89,23 @@ class InstitutionController extends Controller
         $institution->update($validated);
 
         return redirect()->route('admin.institutions.index')
-            ->with('success', 'Institusi berhasil diperbarui.');
+            ->with('success', 'Profil institusi berhasil diperbarui.');
     }
 
     /**
-     * Hapus institusi dari database.
+     * Hapus profil institusi dari database.
      */
     public function destroy(Institution $institution)
     {
         // Cek apakah institusi masih digunakan oleh kursus
         if ($institution->courses()->count() > 0) {
             return redirect()->route('admin.institutions.index')
-                ->with('error', 'Institusi tidak dapat dihapus karena masih digunakan oleh kursus.');
+                ->with('error', 'Profil institusi tidak dapat dihapus karena masih digunakan oleh kursus.');
         }
 
         $institution->delete();
 
         return redirect()->route('admin.institutions.index')
-            ->with('success', 'Institusi berhasil dihapus.');
+            ->with('success', 'Profil institusi berhasil dihapus.');
     }
 }

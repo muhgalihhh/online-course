@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 
 interface InstitutionCreateProps extends PageProps {}
 
@@ -29,25 +29,30 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Data Institusi', href: route('admin.institutions.index') },
-                { title: 'Tambah Data', href: route('admin.institutions.create') },
+                { title: 'Profil Institusi', href: route('admin.institutions.index') },
+                { title: 'Buat Profil', href: route('admin.institutions.create') },
             ]}
         >
-            <Head title="Tambah Data Institusi" />
+            <Head title="Buat Profil Institusi" />
 
             <div className="">
                 <div className="flex items-center mb-6">
-                    <Button variant="ghost" size="sm" className="mr-2">
-                        <ArrowLeft className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" className="mr-2" asChild>
+                        <a href={route('admin.institutions.index')}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </a>
                     </Button>
-                    <h1 className="text-2xl font-bold">Tambah Data Institusi</h1>
+                    <h1 className="text-2xl font-bold">Buat Profil Institusi</h1>
                 </div>
 
                 <Card className="max-w-2xl">
                     <CardHeader>
-                        <CardTitle>Informasi Data Institusi</CardTitle>
+                        <CardTitle className="flex items-center">
+                            <Building2 className="h-5 w-5 mr-2" />
+                            Informasi Profil Institusi
+                        </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                            Masukkan informasi lengkap institusi untuk data yang akurat
+                            Masukkan informasi lengkap tentang institusi Anda untuk memberikan kepercayaan kepada peserta kursus
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -58,7 +63,7 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="Masukkan nama institusi"
+                                    placeholder="Masukkan nama institusi Anda"
                                     required
                                 />
                                 {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
@@ -70,7 +75,7 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
                                     id="description"
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Masukkan deskripsi singkat tentang institusi"
+                                    placeholder="Ceritakan tentang institusi Anda, visi, misi, dan keunggulan yang dimiliki"
                                     rows={4}
                                 />
                                 {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
@@ -82,7 +87,7 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
                                     id="address"
                                     value={data.address}
                                     onChange={(e) => setData('address', e.target.value)}
-                                    placeholder="Masukkan alamat institusi"
+                                    placeholder="Masukkan alamat lengkap institusi"
                                     rows={3}
                                 />
                                 {errors.address && <p className="text-sm text-red-600">{errors.address}</p>}
@@ -126,11 +131,13 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
                             </div>
 
                             <div className="flex justify-end space-x-2">
-                                <Button type="button" variant="outline">
-                                    Batal
+                                <Button type="button" variant="outline" asChild>
+                                    <a href={route('admin.institutions.index')}>
+                                        Batal
+                                    </a>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Menyimpan...' : 'Simpan Data Institusi'}
+                                    {processing ? 'Menyimpan...' : 'Simpan Profil Institusi'}
                                 </Button>
                             </div>
                         </form>

@@ -145,7 +145,7 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                         <p className="text-muted-foreground">
-                            Selamat datang! Kelola data institusi dan pantau perkembangan platform kursus pribadi Anda.
+                            Selamat datang! Kelola profil institusi dan pantau perkembangan platform kursus online Anda.
                         </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -318,14 +318,14 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                     </Card>
                 </div>
 
-                {/* Institutional Data Management */}
+                {/* Institution Profile Management */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Kelola Data Institusi</CardTitle>
+                            <CardTitle>Profil Institusi</CardTitle>
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href={route('admin.institutions.index')}>
-                                    Kelola Data
+                                    Kelola Profil
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
@@ -336,46 +336,36 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                             <div className="flex items-center p-4 border rounded-lg bg-blue-50">
                                 <Building2 className="h-8 w-8 text-blue-600 mr-4" />
                                 <div className="flex-1">
-                                    <h4 className="font-medium text-blue-900">Data Institusi</h4>
+                                    <h4 className="font-medium text-blue-900">Profil Institusi</h4>
                                     <p className="text-sm text-blue-700">
-                                        Kelola informasi institusi yang terkait dengan kursus Anda
+                                        Kelola informasi profil institusi untuk platform kursus online Anda
                                     </p>
                                 </div>
                                 <Button variant="outline" size="sm" asChild>
                                     <Link href={route('admin.institutions.index')}>
-                                        Lihat Data
+                                        Lihat Profil
                                     </Link>
                                 </Button>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 border rounded-lg">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium">Total Institusi</h4>
-                                        <Badge variant="secondary">12</Badge>
+                                        <h4 className="font-medium">Status Profil</h4>
+                                        <Badge variant="default">Aktif</Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        Institusi yang terdaftar dalam sistem
+                                        Profil institusi sudah terdaftar dan aktif
                                     </p>
                                 </div>
                                 
                                 <div className="p-4 border rounded-lg">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium">Data Lengkap</h4>
-                                        <Badge variant="default">8</Badge>
+                                        <h4 className="font-medium">Kelengkapan Data</h4>
+                                        <Badge variant="secondary">Lengkap</Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        Institusi dengan informasi lengkap
-                                    </p>
-                                </div>
-                                
-                                <div className="p-4 border rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium">Perlu Update</h4>
-                                        <Badge variant="destructive">4</Badge>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Data yang perlu diperbarui
+                                        Semua informasi profil sudah diisi
                                     </p>
                                 </div>
                             </div>
