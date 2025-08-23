@@ -40,7 +40,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                         variant="ghost"
                         size="sm"
                         onClick={toggleSidebar}
-                        className="md:hidden"
+                        className="h-9 w-9 p-0"
                     >
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
