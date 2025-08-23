@@ -206,7 +206,6 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Widget Cuaca & Bantuan Darurat */}
             <section className="container mx-auto -mt-8 px-4">
                 <Card className="border-2 border-primary/10 bg-card/80 shadow-lg backdrop-blur">
                     <div className="flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
