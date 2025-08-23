@@ -12,7 +12,7 @@ import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { BookOpen, Users, TrendingUp, DollarSign, ArrowRight, Calendar, Mail, BarChart3, Crown, Download, UserCheck, UserX } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, DollarSign, ArrowRight, Calendar, Mail, BarChart3, Crown, Download, UserCheck, UserX, Building2 } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -145,7 +145,7 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                         <p className="text-muted-foreground">
-                            Welcome back! Here's what's happening with your platform today.
+                            Selamat datang! Kelola data institusi dan pantau perkembangan platform kursus pribadi Anda.
                         </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -317,6 +317,71 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Institutional Data Management */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Kelola Data Institusi</CardTitle>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href={route('admin.institutions.index')}>
+                                    Kelola Data
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="flex items-center p-4 border rounded-lg bg-blue-50">
+                                <Building2 className="h-8 w-8 text-blue-600 mr-4" />
+                                <div className="flex-1">
+                                    <h4 className="font-medium text-blue-900">Data Institusi</h4>
+                                    <p className="text-sm text-blue-700">
+                                        Kelola informasi institusi yang terkait dengan kursus Anda
+                                    </p>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={route('admin.institutions.index')}>
+                                        Lihat Data
+                                    </Link>
+                                </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="font-medium">Total Institusi</h4>
+                                        <Badge variant="secondary">12</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Institusi yang terdaftar dalam sistem
+                                    </p>
+                                </div>
+                                
+                                <div className="p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="font-medium">Data Lengkap</h4>
+                                        <Badge variant="default">8</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Institusi dengan informasi lengkap
+                                    </p>
+                                </div>
+                                
+                                <div className="p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="font-medium">Perlu Update</h4>
+                                        <Badge variant="destructive">4</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Data yang perlu diperbarui
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Recent Users */}
                 <Card>

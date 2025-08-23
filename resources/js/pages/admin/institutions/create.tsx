@@ -29,44 +29,48 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Institutions', href: route('admin.institutions.index') },
-                { title: 'Create', href: route('admin.institutions.create') },
+                { title: 'Data Institusi', href: route('admin.institutions.index') },
+                { title: 'Tambah Data', href: route('admin.institutions.create') },
             ]}
         >
-            <Head title="Create Institution" />
+            <Head title="Tambah Data Institusi" />
 
             <div className="">
                 <div className="flex items-center mb-6">
                     <Button variant="ghost" size="sm" className="mr-2">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl font-bold">Tambah Institusi Baru</h1>
+                    <h1 className="text-2xl font-bold">Tambah Data Institusi</h1>
                 </div>
 
                 <Card className="max-w-2xl">
                     <CardHeader>
-                        <CardTitle>Informasi Institusi</CardTitle>
+                        <CardTitle>Informasi Data Institusi</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Masukkan informasi lengkap institusi untuk data yang akurat
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Nama Institusi</Label>
+                                <Label htmlFor="name">Nama Institusi *</Label>
                                 <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
                                     placeholder="Masukkan nama institusi"
+                                    required
                                 />
                                 {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Deskripsi</Label>
+                                <Label htmlFor="description">Deskripsi Institusi</Label>
                                 <Textarea
                                     id="description"
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Masukkan deskripsi institusi"
+                                    placeholder="Masukkan deskripsi singkat tentang institusi"
                                     rows={4}
                                 />
                                 {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
@@ -126,7 +130,7 @@ export default function InstitutionCreate({}: InstitutionCreateProps) {
                                     Batal
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Menyimpan...' : 'Simpan Institusi'}
+                                    {processing ? 'Menyimpan...' : 'Simpan Data Institusi'}
                                 </Button>
                             </div>
                         </form>

@@ -41,23 +41,26 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Institutions', href: route('admin.institutions.index') },
-                { title: 'Edit', href: route('admin.institutions.edit', institution.id) },
+                { title: 'Data Institusi', href: route('admin.institutions.index') },
+                { title: 'Edit Data', href: route('admin.institutions.edit', institution.id) },
             ]}
         >
-            <Head title="Edit Institution" />
+            <Head title="Edit Data Institusi" />
 
             <div className="">
                 <div className="flex items-center mb-6">
                     <Button variant="ghost" size="sm" className="mr-2">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl font-bold">Edit Institusi</h1>
+                    <h1 className="text-2xl font-bold">Edit Data Institusi</h1>
                 </div>
 
                 <Card className="max-w-2xl">
                     <CardHeader>
-                        <CardTitle>Informasi Institusi</CardTitle>
+                        <CardTitle>Informasi Data Institusi</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Perbarui informasi institusi untuk menjaga data yang akurat
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">

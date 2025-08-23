@@ -29,25 +29,33 @@ export default function InstitutionIndex({ institutions }: InstitutionIndexProps
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Institutions', href: route('admin.institutions.index') },
+                { title: 'Data Institusi', href: route('admin.institutions.index') },
             ]}
         >
-            <Head title="Manage Institutions" />
+            <Head title="Kelola Data Institusi" />
 
             <div className="">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Daftar Institusi</h1>
+                    <div>
+                        <h1 className="text-2xl font-bold">Kelola Data Institusi</h1>
+                        <p className="text-muted-foreground">
+                            Kelola informasi institusi yang terkait dengan kursus pribadi Anda
+                        </p>
+                    </div>
                     <Link href={route('admin.institutions.create')}>
                         <Button>
                             <Plus className="h-4 w-4 mr-2" />
-                            Tambah Institusi
+                            Tambah Data Institusi
                         </Button>
                     </Link>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Institusi</CardTitle>
+                        <CardTitle>Data Institusi</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Daftar institusi yang terdaftar dalam sistem kursus Anda
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <Table>
