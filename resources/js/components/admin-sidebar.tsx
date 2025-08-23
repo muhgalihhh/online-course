@@ -1,18 +1,10 @@
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Menu } from 'lucide-react';
 import { Link, usePage } from '@inertiajs/react';
-import {
-    BookOpen,
-    Building2,
-    Categories,
-    CreditCard,
-    Dashboard,
-    Users,
-} from 'lucide-react';
+import { BookOpen, Building2, CreditCard, Menu, Users } from 'lucide-react';
 
 interface AdminSidebarProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -22,7 +14,6 @@ const menuItems = [
     {
         title: 'Dashboard',
         href: route('admin.dashboard'),
-        icon: Dashboard,
     },
     {
         title: 'Users',
@@ -37,7 +28,6 @@ const menuItems = [
     {
         title: 'Categories',
         href: route('admin.categories.index'),
-        icon: Categories,
     },
     {
         title: 'Institutions',
@@ -70,7 +60,7 @@ export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
             </Sheet>
 
             {/* Desktop Sidebar */}
-            <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+            <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
                 <AdminSidebarContent />
             </div>
         </>
@@ -81,13 +71,13 @@ function AdminSidebarContent() {
     const { url } = usePage();
 
     return (
-        <div className="flex flex-col flex-grow bg-background border-r">
-            <div className="flex items-center h-16 px-4 border-b">
+        <div className="flex flex-grow flex-col border-r bg-background">
+            <div className="flex h-16 items-center border-b px-4">
                 <Link href={route('admin.dashboard')} className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <span className="text-primary-foreground font-bold text-sm">A</span>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                        <span className="text-sm font-bold text-primary-foreground">A</span>
                     </div>
-                    <span className="font-bold text-lg">Admin Panel</span>
+                    <span className="text-lg font-bold">Admin Panel</span>
                 </Link>
             </div>
 
@@ -99,10 +89,7 @@ function AdminSidebarContent() {
                             <Link key={item.href} href={item.href}>
                                 <Button
                                     variant={isActive ? 'secondary' : 'ghost'}
-                                    className={cn(
-                                        'w-full justify-start',
-                                        isActive && 'bg-secondary text-secondary-foreground'
-                                    )}
+                                    className={cn('w-full justify-start', isActive && 'bg-secondary text-secondary-foreground')}
                                 >
                                     <item.icon className="mr-2 h-4 w-4" />
                                     {item.title}
@@ -113,7 +100,7 @@ function AdminSidebarContent() {
                 </nav>
             </ScrollArea>
 
-            <div className="p-4 border-t">
+            <div className="border-t p-4">
                 <div className="text-sm text-muted-foreground">
                     <p>Admin Dashboard</p>
                     <p className="text-xs">Manage your LMS system</p>
