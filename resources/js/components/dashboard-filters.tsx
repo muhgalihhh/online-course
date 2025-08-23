@@ -16,9 +16,9 @@ export function DashboardFilters({
     showExport = false 
 }: DashboardFiltersProps) {
     return (
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
+        <div className="flex flex-col gap-4 p-4 bg-muted/50 rounded-lg sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Filter:</span>
                 </div>
@@ -38,7 +38,7 @@ export function DashboardFilters({
             </div>
             
             {showExport && onExport && (
-                <Button variant="outline" size="sm" onClick={onExport}>
+                <Button variant="outline" size="sm" onClick={onExport} className="shrink-0">
                     <Calendar className="mr-2 h-4 w-4" />
                     Export Data
                 </Button>

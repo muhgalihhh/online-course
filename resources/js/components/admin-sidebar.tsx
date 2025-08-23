@@ -84,20 +84,20 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
 
     return (
         <div className="flex flex-grow flex-col">
-            <div className="flex h-16 items-center border-b px-6">
+            <div className="flex h-16 items-center border-b px-4">
                 <div className="flex items-center justify-between w-full">
-                    <Link href={route('admin.dashboard')} className="flex items-center space-x-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                    <Link href={route('admin.dashboard')} className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
                             <span className="text-sm font-bold text-primary-foreground">A</span>
                         </div>
-                        {!isCollapsed && <span className="text-lg font-semibold">Admin Panel</span>}
+                        {!isCollapsed && <span className="text-lg font-semibold truncate">Admin Panel</span>}
                     </Link>
                     {!isCollapsed && toggleSidebar && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={toggleSidebar}
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 shrink-0"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             <span className="sr-only">Collapse sidebar</span>
@@ -122,7 +122,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                                     title={isCollapsed ? item.title : undefined}
                                 >
                                     {item.icon && <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />}
-                                    {!isCollapsed && item.title}
+                                    {!isCollapsed && <span className="truncate">{item.title}</span>}
                                 </Button>
                             </Link>
                         );

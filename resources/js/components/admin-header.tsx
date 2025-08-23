@@ -33,9 +33,9 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
 
     return (
         <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between px-4">
+            <div className="flex h-16 items-center justify-between px-4">
                 {/* Left side - Toggle Sidebar and Search */}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -45,18 +45,18 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
-                    <div className="relative w-96">
+                    <div className="relative hidden sm:block sm:w-64 lg:w-80">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input placeholder="Search users, courses, transactions..." className="pl-10" />
                     </div>
                 </div>
 
                 {/* Right side - Notifications and Profile */}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-2">
                     {/* Notifications */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative">
+                            <Button variant="ghost" size="icon" className="relative h-9 w-9">
                                 <Bell className="h-5 w-5" />
                                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
                                     3
@@ -68,7 +68,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                             <DropdownMenuSeparator />
                             <div className="max-h-64 overflow-y-auto">
                                 <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-blue-500" />
                                         <span className="text-sm font-medium">New user registered</span>
                                     </div>
@@ -76,7 +76,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                                     <span className="mt-1 text-xs text-muted-foreground">2 minutes ago</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-green-500" />
                                         <span className="text-sm font-medium">Course completed</span>
                                     </div>
@@ -84,7 +84,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                                     <span className="mt-1 text-xs text-muted-foreground">1 hour ago</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-yellow-500" />
                                         <span className="text-sm font-medium">System update</span>
                                     </div>
@@ -104,16 +104,16 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                                <Avatar className="h-10 w-10">
+                            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                <Avatar className="h-9 w-9">
                                     <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                                    <AvatarFallback>{getInitials(auth.user.name)}</AvatarFallback>
+                                    <AvatarFallback className="text-xs">{getInitials(auth.user.name)}</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="end" forceMount>
                             <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
+                                <div className="flex flex-col gap-1">
                                     <p className="text-sm leading-none font-medium">{auth.user.name}</p>
                                     <p className="text-xs leading-none text-muted-foreground">{auth.user.email}</p>
                                     <Badge variant="secondary" className="mt-1 w-fit">

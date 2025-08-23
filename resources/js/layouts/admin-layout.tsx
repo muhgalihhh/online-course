@@ -36,7 +36,7 @@ export default function AdminLayout({ children, breadcrumbs = [] }: AdminLayoutP
                         isCollapsed ? "md:ml-16" : "md:ml-64"
                     )}>
                         <AppContent variant="sidebar" className="overflow-x-hidden">
-                            <div className="flex-1 space-y-6 p-6 lg:p-8">
+                            <div className="flex-1 space-y-4 p-4 lg:p-6">
                                 <FlashMessages />
                                 {children}
                             </div>

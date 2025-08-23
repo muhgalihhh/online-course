@@ -157,16 +157,16 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex-1 space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                        <p className="text-muted-foreground">
+                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
+                        <p className="text-sm text-muted-foreground sm:text-base">
                             Selamat datang! Kelola profil institusi dan pantau perkembangan platform kursus online Anda.
                         </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm">
                             <Calendar className="mr-2 h-4 w-4" />
                             Today
@@ -187,7 +187,7 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                 />
 
                 {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
                         title="Total Pengguna"
                         value={stats.totalUsers}
@@ -241,7 +241,7 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                 />
 
                 {/* Charts Section */}
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 lg:grid-cols-2">
                     {/* User Registration Trend */}
                     <ChartCard
                         title="Trend Pendaftaran"
@@ -287,60 +287,58 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                     />
                 </ChartCard>
 
-                {/* Detailed Statistics */}
-                <div className="grid gap-6 md:grid-cols-2">
+                {/* Detailed Statistics and Recent Activity */}
+                <div className="grid gap-6 lg:grid-cols-2">
                     <StatsSummary
                         title="Statistik Detail User"
                         stats={detailedStats}
                     />
                     
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Aktivitas Terbaru</CardTitle>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg">Aktivitas Terbaru</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <ActivityItem
-                                    title="User baru mendaftar"
-                                    time="2 menit yang lalu"
-                                    icon={Users}
-                                    iconBgColor="bg-green-100"
-                                    iconColor="text-green-600"
-                                />
-                                
-                                <ActivityItem
-                                    title="Kursus baru ditambahkan"
-                                    time="1 jam yang lalu"
-                                    icon={BookOpen}
-                                    iconBgColor="bg-blue-100"
-                                    iconColor="text-blue-600"
-                                />
-                                
-                                <ActivityItem
-                                    title="Transaksi berhasil"
-                                    time="3 jam yang lalu"
-                                    icon={DollarSign}
-                                    iconBgColor="bg-yellow-100"
-                                    iconColor="text-yellow-600"
-                                />
-                                
-                                <ActivityItem
-                                    title="Laporan bulanan selesai"
-                                    time="1 hari yang lalu"
-                                    icon={TrendingUp}
-                                    iconBgColor="bg-purple-100"
-                                    iconColor="text-purple-600"
-                                />
-                            </div>
+                        <CardContent className="space-y-4">
+                            <ActivityItem
+                                title="User baru mendaftar"
+                                time="2 menit yang lalu"
+                                icon={Users}
+                                iconBgColor="bg-green-100"
+                                iconColor="text-green-600"
+                            />
+                            
+                            <ActivityItem
+                                title="Kursus baru ditambahkan"
+                                time="1 jam yang lalu"
+                                icon={BookOpen}
+                                iconBgColor="bg-blue-100"
+                                iconColor="text-blue-600"
+                            />
+                            
+                            <ActivityItem
+                                title="Transaksi berhasil"
+                                time="3 jam yang lalu"
+                                icon={DollarSign}
+                                iconBgColor="bg-yellow-100"
+                                iconColor="text-yellow-600"
+                            />
+                            
+                            <ActivityItem
+                                title="Laporan bulanan selesai"
+                                time="1 hari yang lalu"
+                                icon={TrendingUp}
+                                iconBgColor="bg-purple-100"
+                                iconColor="text-purple-600"
+                            />
                         </CardContent>
                     </Card>
                 </div>
 
                 {/* Institution Profile Management */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle>Profil Institusi</CardTitle>
+                    <CardHeader className="pb-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-lg">Profil Institusi</CardTitle>
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href={route('admin.institutions.index')}>
                                     Kelola Profil
@@ -349,43 +347,41 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex items-center p-4 border rounded-lg bg-blue-50">
-                                <Building2 className="h-8 w-8 text-blue-600 mr-4" />
-                                <div className="flex-1">
-                                    <h4 className="font-medium text-blue-900">Profil Institusi</h4>
-                                    <p className="text-sm text-blue-700">
-                                        Kelola informasi profil institusi untuk platform kursus online Anda
-                                    </p>
+                    <CardContent className="space-y-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center p-4 border rounded-lg bg-blue-50">
+                            <Building2 className="h-8 w-8 text-blue-600 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-blue-900">Profil Institusi</h4>
+                                <p className="text-sm text-blue-700">
+                                    Kelola informasi profil institusi untuk platform kursus online Anda
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" asChild className="shrink-0">
+                                <Link href={route('admin.institutions.index')}>
+                                    Lihat Profil
+                                </Link>
+                            </Button>
+                        </div>
+                        
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="p-4 border rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-medium text-sm">Status Profil</h4>
+                                    <Badge variant="default" className="text-xs">Aktif</Badge>
                                 </div>
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={route('admin.institutions.index')}>
-                                        Lihat Profil
-                                    </Link>
-                                </Button>
+                                <p className="text-xs text-muted-foreground">
+                                    Profil institusi sudah terdaftar dan aktif
+                                </p>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="p-4 border rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium">Status Profil</h4>
-                                        <Badge variant="default">Aktif</Badge>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Profil institusi sudah terdaftar dan aktif
-                                    </p>
+                            <div className="p-4 border rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-medium text-sm">Kelengkapan Data</h4>
+                                    <Badge variant="secondary" className="text-xs">Lengkap</Badge>
                                 </div>
-                                
-                                <div className="p-4 border rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium">Kelengkapan Data</h4>
-                                        <Badge variant="secondary">Lengkap</Badge>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Semua informasi profil sudah diisi
-                                    </p>
-                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Semua informasi profil sudah diisi
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -393,9 +389,9 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
 
                 {/* Recent Users */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle>Pengguna Terbaru</CardTitle>
+                    <CardHeader className="pb-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-lg">Pengguna Terbaru</CardTitle>
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href={route('admin.users.index')}>
                                     Lihat Semua
@@ -405,24 +401,24 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {recentUsers.map((user) => (
-                                <div className="flex items-center" key={user.id}>
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                                <div className="flex items-center gap-4" key={user.id}>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shrink-0">
                                         <Users className="h-5 w-5 text-muted-foreground" />
                                     </div>
-                                    <div className="ml-4 space-y-1">
-                                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                                        <div className="flex items-center space-x-2">
-                                            <Mail className="h-3 w-3 text-muted-foreground" />
-                                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium leading-none truncate">{user.name}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                         </div>
                                     </div>
-                                    <div className="ml-auto flex items-center space-x-2">
-                                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                                             {user.role}
                                         </Badge>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground whitespace-nowrap">
                                             {new Date(user.created_at).toLocaleDateString('id-ID', {
                                                 day: 'numeric',
                                                 month: 'short',
@@ -438,8 +434,8 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
 
                 {/* Demo Toast Notifications */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Demo Toast Notifications</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Demo Toast Notifications</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-4">

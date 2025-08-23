@@ -19,8 +19,8 @@ interface ChartCardProps {
 export function ChartCard({ title, description, children, trend }: ChartCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-lg">{title}</CardTitle>
             {description && (
@@ -28,7 +28,7 @@ export function ChartCard({ title, description, children, trend }: ChartCardProp
             )}
           </div>
           {trend && (
-            <div className="flex items-center space-x-1 text-sm">
+            <div className="flex items-center gap-1 text-sm shrink-0">
               {trend.isPositive ? (
                 <TrendingUp className="h-4 w-4 text-green-600" />
               ) : (

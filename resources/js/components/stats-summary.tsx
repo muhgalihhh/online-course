@@ -20,16 +20,16 @@ interface StatsSummaryProps {
 export function StatsSummary({ title, stats, className = '' }: StatsSummaryProps) {
     return (
         <Card className={className}>
-            <CardHeader>
+            <CardHeader className="pb-3">
                 <CardTitle className="text-lg">{title}</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
                     {stats.map((stat, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
+                        <div key={index} className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div 
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
                                     style={{ backgroundColor: `${stat.color}20` }}
                                 >
                                     <stat.icon 
@@ -37,8 +37,8 @@ export function StatsSummary({ title, stats, className = '' }: StatsSummaryProps
                                         style={{ color: stat.color }}
                                     />
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium">{stat.label}</p>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{stat.label}</p>
                                     <p className="text-xs text-muted-foreground">
                                         {typeof stat.value === 'number' 
                                             ? stat.value.toLocaleString() 
@@ -47,7 +47,7 @@ export function StatsSummary({ title, stats, className = '' }: StatsSummaryProps
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 {stat.isPositive ? (
                                     <TrendingUp className="h-4 w-4 text-green-600" />
                                 ) : (
