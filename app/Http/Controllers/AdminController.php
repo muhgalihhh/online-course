@@ -14,7 +14,7 @@ class AdminController extends Controller
         $adminCount = User::where('role', 'admin')->count();
         $totalUsers = User::count();
 
-        return Inertia::render('Admin/Dashboard', [
+        return Inertia::render('admin/dashboard', [
             'stats' => [
                 'users' => $userCount,
                 'admins' => $adminCount,
@@ -29,7 +29,7 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return Inertia::render('Admin/Users', [
+        return Inertia::render('admin/users', [
             'users' => $users
         ]);
     }

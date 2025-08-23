@@ -11,7 +11,7 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
-        return Inertia::render('User/Dashboard', [
+        return Inertia::render('user/dashboard', [
             'user' => $user->only(['name', 'email', 'role', 'created_at'])
         ]);
     }
