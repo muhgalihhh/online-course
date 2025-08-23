@@ -12,9 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { useInitials } from '@/hooks/use-initials';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { type BreadcrumbItem, type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield, User } from 'lucide-react';
+import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield, User, Menu } from 'lucide-react';
 
 interface AdminHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -24,6 +25,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
     const page = usePage<{ auth: { user: UserType } }>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const { toggleSidebar } = useSidebar();
 
     const handleLogout = () => {
         router.post(route('logout'));
@@ -32,8 +34,17 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between px-4">
-                {/* Left side - Search */}
+                {/* Left side - Toggle Sidebar and Search */}
                 <div className="flex items-center space-x-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleSidebar}
+                        className="md:hidden"
+                    >
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle sidebar</span>
+                    </Button>
                     <div className="relative w-96">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input placeholder="Search users, courses, transactions..." className="pl-10" />

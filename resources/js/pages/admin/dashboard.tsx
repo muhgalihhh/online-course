@@ -12,8 +12,9 @@ import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { BookOpen, Users, TrendingUp, DollarSign, ArrowRight, Calendar, Mail, BarChart3, Crown, Download, UserCheck, UserX, Building2 } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, DollarSign, ArrowRight, Calendar, Mail, BarChart3, Crown, Download, UserCheck, UserX, Building2, RefreshCw, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { useFormToast } from '@/hooks/use-form-toast';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -34,6 +35,23 @@ interface DashboardProps extends PageProps {
 
 export default function Dashboard({ stats, recentUsers }: DashboardProps) {
     const [chartPeriod, setChartPeriod] = useState('30d');
+    const { showSuccess, showError, showWarning, showInfo } = useFormToast();
+
+    const handleRefreshData = () => {
+        showInfo('Memperbarui data dashboard...');
+        // Simulasi refresh data
+        setTimeout(() => {
+            showSuccess('Data dashboard berhasil diperbarui!');
+        }, 1000);
+    };
+
+    const handleSendNotification = () => {
+        showWarning('Mengirim notifikasi ke semua pengguna...');
+        // Simulasi kirim notifikasi
+        setTimeout(() => {
+            showSuccess('Notifikasi berhasil dikirim ke 1,247 pengguna!');
+        }, 1500);
+    };
 
     // Data untuk chart pendaftaran
     const registrationData = [
@@ -414,6 +432,62 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Demo Toast Notifications */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Demo Toast Notifications</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Klik tombol di bawah untuk melihat berbagai jenis toast notifications
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleRefreshData}
+                                className="flex items-center gap-2"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                                Refresh Data
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleSendNotification}
+                                className="flex items-center gap-2"
+                            >
+                                <Bell className="h-4 w-4" />
+                                Kirim Notifikasi
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => showError('Terjadi kesalahan pada sistem!')}
+                                className="flex items-center gap-2"
+                            >
+                                Demo Error
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => showWarning('Perhatian: Sistem akan maintenance dalam 1 jam!')}
+                                className="flex items-center gap-2"
+                            >
+                                Demo Warning
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => showSuccess('Data berhasil disimpan!')}
+                                className="flex items-center gap-2"
+                            >
+                                Demo Success
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
