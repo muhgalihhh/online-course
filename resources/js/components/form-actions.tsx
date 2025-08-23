@@ -39,26 +39,24 @@ export function FormActions({
                     {cancelText}
                 </Button>
             )}
-            {onSubmit && (
-                <Button 
-                    type="submit" 
-                    onClick={onSubmit}
-                    disabled={loading || disabled}
-                    className="min-w-[120px]"
-                >
-                    {loading ? (
-                        <>
-                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            {loadingText}
-                        </>
-                    ) : (
-                        <>
-                            {submitIcon && <submitIcon className="mr-2 h-4 w-4" />}
-                            {submitText}
-                        </>
-                    )}
-                </Button>
-            )}
+            <Button 
+                type="submit" 
+                onClick={onSubmit}
+                disabled={loading || disabled}
+                className="min-w-[120px]"
+            >
+                {loading ? (
+                    <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        {loadingText}
+                    </>
+                ) : (
+                    <>
+                        {submitIcon && <submitIcon className="mr-2 h-4 w-4" />}
+                        {submitText}
+                    </>
+                )}
+            </Button>
         </div>
     );
 }

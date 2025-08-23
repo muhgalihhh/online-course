@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -41,6 +42,9 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // Generate slug from name
+        $validated['slug'] = Str::slug($validated['name']);
+
         Category::create($validated);
 
         return redirect()->route('admin.categories.index')
@@ -66,6 +70,11 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
             'description' => 'nullable|string',
         ]);
+
+        // Generate new slug if name changed
+        if ($validated['name'] !== $category->name) {
+            $validated['slug'] = Str::slug($validated['name']);
+        }
 
         $category->update($validated);
 
