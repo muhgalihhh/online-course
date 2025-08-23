@@ -49,6 +49,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     };
 };
 
+// Tambahkan tipe untuk data paginasi
 export interface PaginatedData<T> {
     data: T[];
     links: {
