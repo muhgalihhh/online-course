@@ -21,18 +21,28 @@ export default function AdminLayout({ children, breadcrumbs = [] }: AdminLayoutP
 
     return (
         <AppShell variant="sidebar">
-            <AdminSidebar breadcrumbs={breadcrumbs} />
-            <div className={cn(
-                "flex flex-col flex-1 transition-all duration-300",
-                isCollapsed ? "md:ml-16" : "md:ml-64"
-            )}>
+            <div className="flex h-screen flex-col">
+                {/* Header - Fixed at top */}
                 <AdminHeader breadcrumbs={breadcrumbs} />
-                <AppContent variant="sidebar" className="overflow-x-hidden">
-                    <div className="flex-1 space-y-6 p-6 lg:p-8">
-                        <FlashMessages />
-                        {children}
+                
+                {/* Main content area with sidebar and content */}
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Sidebar - Below header, fixed height */}
+                    <AdminSidebar breadcrumbs={breadcrumbs} />
+                    
+                    {/* Content area - Adjusts based on sidebar state */}
+                    <div className={cn(
+                        "flex flex-1 flex-col transition-all duration-300",
+                        isCollapsed ? "md:ml-16" : "md:ml-64"
+                    )}>
+                        <AppContent variant="sidebar" className="overflow-x-hidden">
+                            <div className="flex-1 space-y-6 p-6 lg:p-8">
+                                <FlashMessages />
+                                {children}
+                            </div>
+                        </AppContent>
                     </div>
-                </AppContent>
+                </div>
             </div>
             <Toaster />
         </AppShell>

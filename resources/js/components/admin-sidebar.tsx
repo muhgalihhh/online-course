@@ -65,7 +65,7 @@ export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
 
             {/* Desktop Sidebar */}
             <div className={cn(
-                "hidden md:fixed md:inset-y-0 md:flex md:flex-col transition-all duration-300",
+                "hidden md:flex md:flex-col transition-all duration-300 border-r bg-background",
                 isCollapsed ? "md:w-16" : "md:w-64"
             )}>
                 <AdminSidebarContent isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
@@ -83,7 +83,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
     const { url } = usePage();
 
     return (
-        <div className="flex flex-grow flex-col border-r bg-background">
+        <div className="flex flex-grow flex-col">
             <div className="flex h-16 items-center border-b px-6">
                 <div className="flex items-center justify-between w-full">
                     <Link href={route('admin.dashboard')} className="flex items-center space-x-2">
