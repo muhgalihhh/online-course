@@ -2,30 +2,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import UserLayout from '@/layouts/user-layout';
-import {
-    ArrowRight,
-    Award,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    GraduationCap,
-    Mail,
-    PlayCircle,
-    Quote,
-    Shield,
-    Sparkles,
-    Star,
-    Users,
-    Video,
-} from 'lucide-react';
-import React, { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import UserLayout from '@/layouts/user-layout'; // Asumsikan Anda memiliki layout ini
+import { ArrowRight, Award, BookOpen, CloudSun, LifeBuoy, MessageSquare, PlayCircle, ShoppingCart, Star, Users, Zap } from 'lucide-react';
+import React from 'react';
 
-// Type definitions
+// --- Tipe Data (sesuai migrasi) ---
 interface Course {
     id: number;
     title: string;
@@ -34,714 +16,337 @@ interface Course {
     rating: number;
     students: number;
     price: number;
-    originalPrice?: number;
-    badge: string;
-    duration: string;
-    level: string;
+    isPro: boolean;
     description: string;
 }
 
-interface Testimonial {
+interface Review {
     id: number;
     name: string;
     role: string;
-    company: string;
     avatar: string;
-    content: string;
+    comment: string;
     rating: number;
-    beforeAfter: {
-        before: string;
-        after: string;
-    };
-}
-
-interface Feature {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-}
-
-interface FAQ {
-    question: string;
-    answer: string;
 }
 
 const Home: React.FC = () => {
-    const [email, setEmail] = useState<string>('');
-    const [currentTestimonial, setCurrentTestimonial] = useState<number>(0);
+    // --- Data Statis (Contoh) ---
+    const NAMA_LEMBAGA = 'Akademi Koding Pro'; // Ganti dengan nama lembaga Anda
 
-    // Featured courses by John Doe
-    const courses: Course[] = [
+    const proCourses: Course[] = [
         {
             id: 1,
-            title: 'Complete Full-Stack Web Development',
-            category: 'development',
-            thumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
+            title: 'Full-Stack Laravel & React Mastery',
+            category: 'Web Development',
+            thumbnail: 'https://via.placeholder.com/300x180',
             rating: 4.9,
-            students: 3247,
-            price: 199.99,
-            originalPrice: 299.99,
-            badge: 'Bestseller',
-            duration: '52 hours',
-            level: 'Beginner to Advanced',
-            description: 'Master modern web development from basics to deployment with real projects',
+            students: 1342,
+            price: 750000,
+            isPro: true,
+            description: 'Bangun aplikasi web modern dari awal hingga deployment.',
         },
         {
             id: 2,
-            title: 'Advanced React & TypeScript Mastery',
-            category: 'development',
-            thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop',
+            title: 'UI/UX Design for Modern Apps',
+            category: 'Design',
+            thumbnail: 'https://via.placeholder.com/300x180',
             rating: 4.8,
-            students: 2156,
-            price: 149.99,
-            originalPrice: 199.99,
-            badge: 'Advanced',
-            duration: '38 hours',
-            level: 'Intermediate',
-            description: 'Deep dive into React ecosystem with TypeScript, testing, and best practices',
+            students: 876,
+            price: 550000,
+            isPro: true,
+            description: 'Pelajari prinsip desain antarmuka yang intuitif dan menarik.',
         },
         {
-            id: 3,
-            title: 'UI/UX Design Psychology',
-            category: 'design',
-            thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=250&fit=crop',
+            id: 5,
+            title: 'Advanced DevOps with Kubernetes',
+            category: 'DevOps',
+            thumbnail: 'https://via.placeholder.com/300x180',
             rating: 4.9,
-            students: 1834,
-            price: 129.99,
-            originalPrice: 179.99,
-            badge: 'Popular',
-            duration: '28 hours',
-            level: 'All Levels',
-            description: 'Learn the psychology behind great design and create user-centered experiences',
+            students: 950,
+            price: 850000,
+            isPro: true,
+            description: 'Orkestrasi dan skalabilitas aplikasi tingkat lanjut.',
+        },
+    ];
+
+    const freeCourses: Course[] = [
+        {
+            id: 3,
+            title: 'Dasar-Dasar HTML & CSS',
+            category: 'Web Development',
+            thumbnail: 'https://via.placeholder.com/300x180',
+            rating: 4.7,
+            students: 12503,
+            price: 0,
+            isPro: false,
+            description: 'Pengenalan fundamental untuk memulai karir web development.',
         },
         {
             id: 4,
-            title: 'Personal Branding for Developers',
-            category: 'business',
-            thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop',
-            rating: 4.7,
-            students: 1542,
-            price: 99.99,
-            originalPrice: 149.99,
-            badge: 'New',
-            duration: '20 hours',
-            level: 'All Levels',
-            description: 'Build your professional brand and accelerate your tech career',
+            title: 'Pengenalan Copywriting',
+            category: 'Marketing',
+            thumbnail: 'https://via.placeholder.com/300x180',
+            rating: 4.6,
+            students: 9870,
+            price: 0,
+            isPro: false,
+            description: 'Pelajari cara menulis teks iklan yang menjual dan efektif.',
+        },
+        {
+            id: 6,
+            title: 'Fundamental Git & GitHub',
+            category: 'Tools',
+            thumbnail: 'https://via.placeholder.com/300x180',
+            rating: 4.8,
+            students: 15000,
+            price: 0,
+            isPro: false,
+            description: 'Manajemen versi kode yang wajib dikuasai setiap developer.',
         },
     ];
 
-    // Student success stories
-    const testimonials: Testimonial[] = [
+    const testimonials: Review[] = [
         {
             id: 1,
-            name: 'Sarah Johnson',
-            role: 'Senior Frontend Developer',
-            company: 'Google',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop',
-            content:
-                "John's teaching style is exceptional. His real-world approach helped me transition from a complete beginner to landing my dream job at Google. The projects we built were exactly what I needed in my portfolio.",
+            name: 'Budi Santoso',
+            role: 'Full-Stack Developer',
+            avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+            comment: `Materi di ${NAMA_LEMBAGA} sangat terstruktur dan mudah diikuti. Saya berhasil mendapatkan pekerjaan impian saya setelah lulus dari sini!`,
             rating: 5,
-            beforeAfter: {
-                before: 'Retail Manager',
-                after: 'Senior Frontend Developer at Google',
-            },
         },
         {
             id: 2,
-            name: 'Marcus Chen',
-            role: 'Full Stack Developer',
-            company: 'Startup Founder',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-            content:
-                "The depth of knowledge John shares is incredible. Not just the technical skills, but the business insights that helped me launch my own SaaS product. It's generating $10K/month now!",
+            name: 'Citra Lestari',
+            role: 'UI/UX Designer',
+            avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+            comment: 'Kurikulumnya sangat relevan dengan industri saat ini. Mentornya juga sangat membantu dan responsif. Sangat direkomendasikan!',
             rating: 5,
-            beforeAfter: {
-                before: 'Corporate Employee',
-                after: 'SaaS Founder ($10K MRR)',
-            },
         },
         {
             id: 3,
-            name: 'Elena Rodriguez',
-            role: 'UX Designer',
-            company: 'Netflix',
-            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-            content:
-                "John's design psychology course completely changed how I approach user experience. The frameworks I learned helped me redesign a major feature at Netflix that increased engagement by 34%.",
+            name: 'Doni Firmansyah',
+            role: 'Mahasiswa IT',
+            avatar: 'https://randomuser.me/api/portraits/men/33.jpg',
+            comment: 'Kelas gratisnya saja sudah sangat bermanfaat, apalagi kelas Pro-nya. Investasi terbaik untuk belajar skill digital.',
             rating: 5,
-            beforeAfter: {
-                before: 'Junior Designer',
-                after: 'Senior UX Designer at Netflix',
-            },
         },
     ];
 
-    // Why choose LearnCraft
-    const features: Feature[] = [
+    const faqs = [
         {
-            icon: <GraduationCap className="h-6 w-6" />,
-            title: 'Industry Expert',
-            description: '10+ years building products at Fortune 500 companies and successful startups',
+            q: 'Apa yang saya dapatkan jika membeli kelas Pro?',
+            a: 'Dengan sekali bayar, Anda mendapatkan akses seumur hidup ke SEMUA kelas Pro yang ada saat ini dan yang akan datang, materi PDF, studi kasus, grup komunitas eksklusif, dan sertifikat kelulusan.',
         },
         {
-            icon: <Video className="h-6 w-6" />,
-            title: 'Project-Based Learning',
-            description: 'Build real applications that you can add to your portfolio and showcase to employers',
+            q: 'Apakah ada jaminan uang kembali?',
+            a: 'Tentu. Kami memberikan jaminan kepuasan 100% uang kembali dalam 7 hari pertama jika Anda merasa materi kami tidak sesuai dengan ekspektasi Anda.',
         },
         {
-            icon: <Users className="h-6 w-6" />,
-            title: 'Personal Mentorship',
-            description: 'Get direct feedback on your projects and career guidance from John personally',
+            q: 'Bagaimana metode pembayarannya?',
+            a: 'Kami menerima pembayaran melalui QRIS yang didukung oleh Midtrans, sehingga Anda bisa membayar dengan mudah melalui berbagai e-wallet dan mobile banking.',
         },
         {
-            icon: <Award className="h-6 w-6" />,
-            title: 'Job-Ready Skills',
-            description: 'Learn the exact skills and technologies used by top tech companies today',
-        },
-        {
-            icon: <Clock className="h-6 w-6" />,
-            title: 'Lifetime Access',
-            description: 'Keep access to all course materials forever, including future updates and bonuses',
-        },
-        {
-            icon: <Shield className="h-6 w-6" />,
-            title: '60-Day Guarantee',
-            description: 'Not satisfied? Get a full refund within 60 days, no questions asked',
+            q: 'Apakah saya akan mendapat sertifikat?',
+            a: 'Ya, setiap siswa yang berhasil menyelesaikan kelas (baik Pro maupun Gratis) akan mendapatkan e-sertifikat yang bisa dilampirkan di profil LinkedIn atau CV Anda.',
         },
     ];
 
-    // FAQ
-    const faqs: FAQ[] = [
-        {
-            question: 'Who is John Doe and why should I learn from him?',
-            answer: "I'm a Senior Software Engineer with 10+ years of experience at companies like Google, Netflix, and successful startups. I've mentored 100+ developers and helped them land jobs at top tech companies. My teaching focuses on real-world skills that employers actually want.",
-        },
-        {
-            question: 'What makes these courses different from other online courses?',
-            answer: "Unlike generic courses, mine are based on actual projects I've built in my career. You'll learn the same tools, patterns, and best practices used at top tech companies. Plus, you get personal feedback and mentorship from me throughout your journey.",
-        },
-        {
-            question: 'How long will it take to complete a course?',
-            answer: 'It depends on your pace and schedule. Most students complete courses in 2-3 months studying 5-10 hours per week. But you have lifetime access, so you can learn at your own speed without any pressure.',
-        },
-        {
-            question: 'Do I need prior experience to start?',
-            answer: 'My courses cater to all levels. Complete beginners can start with the Full-Stack course, while experienced developers can jump into advanced topics. Each course clearly states the prerequisites.',
-        },
-        {
-            question: 'Will I get help if Im stuck?',
-            answer: 'Absolutely! You get access to our private Discord community where I personally answer questions. Plus, all students can book 1-on-1 mentorship calls with me for career guidance and code reviews.',
-        },
-        {
-            question: 'What if I dont like the course?',
-            answer: "I offer a 60-day money-back guarantee. If you're not satisfied for any reason, just email me and I'll refund your purchase immediately. I want you to be completely confident in your investment.",
-        },
-    ];
-
-    const nextTestimonial = (): void => {
-        setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    };
-
-    const prevTestimonial = (): void => {
-        setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-    };
-
-    const handleSubscribe = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault();
-        console.log('Subscribed:', email);
-        setEmail('');
-        // TODO: Implement newsletter subscription
-    };
+    const CourseCard: React.FC<{ course: Course }> = ({ course }) => (
+        <Card className="flex flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
+            <CardHeader className="p-0">
+                <img src={course.thumbnail} alt={course.title} className="aspect-[16/9] w-full object-cover" />
+            </CardHeader>
+            <CardContent className="flex-grow space-y-2 p-4">
+                <Badge variant={course.isPro ? 'default' : 'secondary'}>{course.category}</Badge>
+                <h3 className="line-clamp-2 text-lg leading-tight font-bold">{course.title}</h3>
+                <div className="flex items-center gap-4 pt-1">
+                    <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-semibold">{course.rating}</span>
+                        <span className="text-xs text-muted-foreground">({course.students.toLocaleString()} siswa)</span>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter className="flex items-center justify-between p-4">
+                <p className="text-xl font-bold text-primary">{course.isPro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}</p>
+                {course.isPro ? (
+                    <Button size="sm">
+                        <ShoppingCart className="mr-2 h-4 w-4" /> Beli Kelas
+                    </Button>
+                ) : (
+                    <Button size="sm" variant="outline">
+                        <ArrowRight className="mr-2 h-4 w-4" /> Daftar Gratis
+                    </Button>
+                )}
+            </CardFooter>
+        </Card>
+    );
 
     return (
         <UserLayout>
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-primary/5">
-                <div className="bg-grid-white/[0.02] absolute inset-0 bg-[size:50px_50px]" />
-                <div className="relative container mx-auto px-4 py-20 lg:py-28">
-                    <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-                        {/* Left Content */}
-                        <div className="space-y-8">
-                            <Badge className="inline-flex items-center gap-2 px-4 py-2" variant="secondary">
-                                <Sparkles className="h-4 w-4" />
-                                <span>Trusted by 8,000+ Students Worldwide</span>
-                            </Badge>
+            <section className="bg-slate-50 py-20 dark:bg-slate-900/50">
+                <div className="container mx-auto px-4 text-center">
+                    <Badge variant="outline" className="mb-4 px-3 py-1">
+                        <Award className="mr-2 h-4 w-4 text-yellow-500" />
+                        Platform Kursus Online Eksklusif dari {NAMA_LEMBAGA}
+                    </Badge>
+                    <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-6xl">Tingkatkan Skill, Raih Karir Impian Anda</h1>
+                    <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
+                        Akses ratusan kursus berkualitas dari kami, bayar sekali untuk akses semua materi Pro selamanya.
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <Button size="lg" className="px-8 py-6 text-lg">
+                            Lihat Katalog Kelas <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
+                        <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
+                            <PlayCircle className="mr-2 h-5 w-5" /> Coba Kelas Gratis
+                        </Button>
+                    </div>
+                </div>
+            </section>
 
-                            <div className="space-y-6">
-                                <h1 className="text-4xl leading-tight font-bold lg:text-6xl">
-                                    Master Tech Skills with a
-                                    <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"> Real Expert</span>
-                                </h1>
-
-                                <p className="max-w-lg text-xl text-muted-foreground">
-                                    Learn from John Doe, Senior Engineer at top tech companies. Get the exact skills that land jobs at Google,
-                                    Netflix, and successful startups.
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col gap-4 sm:flex-row">
-                                <Button size="lg" className="group px-8 py-6 text-lg">
-                                    Browse Courses
-                                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                                </Button>
-                                <Button size="lg" variant="outline" className="group px-8 py-6 text-lg">
-                                    <PlayCircle className="mr-2 h-5 w-5" />
-                                    Watch Free Preview
-                                </Button>
-                            </div>
-
-                            {/* Social Proof */}
-                            <div className="flex items-center gap-8 pt-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex -space-x-2">
-                                        {testimonials.slice(0, 3).map((testimonial) => (
-                                            <Avatar key={testimonial.id} className="h-10 w-10 border-2 border-background">
-                                                <AvatarImage src={testimonial.avatar} />
-                                                <AvatarFallback>{testimonial.name[0]}</AvatarFallback>
-                                            </Avatar>
-                                        ))}
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">8K+ Happy Students</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                    ))}
-                                    <span className="ml-2 text-sm text-muted-foreground">4.9/5 Rating</span>
-                                </div>
+            {/* Widget Cuaca & Bantuan Darurat */}
+            <section className="container mx-auto -mt-8 px-4">
+                <Card className="border-2 border-primary/10 bg-card/80 shadow-lg backdrop-blur">
+                    <div className="flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
+                        <div className="flex items-center gap-3">
+                            <CloudSun className="h-8 w-8 text-blue-500" />
+                            <div>
+                                <p className="text-lg font-bold">Cuaca Jakarta</p>
+                                <p className="text-sm text-muted-foreground">Cerah Berawan, 30°C</p>
                             </div>
                         </div>
+                        <div className="hidden h-10 w-px bg-border md:block" />
+                        <div className="flex items-center gap-3">
+                            <LifeBuoy className="h-8 w-8 text-red-500" />
+                            <div>
+                                <p className="text-lg font-bold">Butuh Bantuan?</p>
+                                <p className="text-sm text-muted-foreground">Hubungi kami jika butuh bantuan cepat.</p>
+                            </div>
+                        </div>
+                        <Button
+                            variant="secondary"
+                            onClick={() => window.open('https://wa.me/6281234567890?text=Halo,%20saya%20butuh%20bantuan.', '_blank')}
+                        >
+                            <MessageSquare className="mr-2 h-4 w-4" /> Hubungi via WhatsApp
+                        </Button>
+                    </div>
+                </Card>
+            </section>
 
-                        {/* Right Content - Instructor Profile */}
-                        <div className="relative">
-                            <Card className="border-2 border-primary/20 bg-card/50 p-6 backdrop-blur">
-                                <div className="space-y-4 text-center">
-                                    <Avatar className="mx-auto h-24 w-24">
-                                        <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop" />
-                                        <AvatarFallback>JD</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h3 className="text-2xl font-bold">John Doe</h3>
-                                        <p className="text-muted-foreground">Senior Software Engineer</p>
-                                        <p className="text-sm text-primary">Google • Netflix • Startup Founder</p>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4 text-center">
-                                        <div>
-                                            <p className="text-2xl font-bold text-primary">10+</p>
-                                            <p className="text-xs text-muted-foreground">Years Experience</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-bold text-primary">8K+</p>
-                                            <p className="text-xs text-muted-foreground">Students Taught</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-2xl font-bold text-primary">95%</p>
-                                            <p className="text-xs text-muted-foreground">Job Success Rate</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 text-left text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Built products used by millions</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Mentored 100+ successful developers</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Founded 2 successful startups</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
+            {/* Kelas Pro */}
+            <section id="kelas-pro" className="py-20">
+                <div className="container mx-auto px-4">
+                    <h2 className="mb-2 text-center text-3xl font-bold">Kelas Profesional Unggulan</h2>
+                    <p className="mx-auto mb-8 max-w-xl text-center text-muted-foreground">
+                        Investasi terbaik untuk karir Anda. Dapatkan akses ke semua kelas Pro dengan sekali bayar.
+                    </p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {proCourses.map((course) => (
+                            <CourseCard key={course.id} course={course} />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Mengapa Memilih Kami */}
+            <section id="why-us" className="bg-slate-50 py-20 dark:bg-slate-900/50">
+                <div className="container mx-auto px-4">
+                    <h2 className="mb-12 text-center text-3xl font-bold">Mengapa Belajar di {NAMA_LEMBAGA}?</h2>
+                    <div className="grid grid-cols-1 gap-8 text-center md:grid-cols-3">
+                        <div className="flex flex-col items-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                <BookOpen className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-bold">Kurikulum Standar Industri</h3>
+                            <p className="text-muted-foreground">
+                                Materi disusun oleh para ahli dan selalu diperbarui sesuai kebutuhan industri terkini.
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                <Users className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-bold">Mentor Berpengalaman</h3>
+                            <p className="text-muted-foreground">
+                                Dapatkan bimbingan langsung dari praktisi yang telah bertahun-tahun berkarir di bidangnya.
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                <Zap className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-bold">Akses Seumur Hidup</h3>
+                            <p className="text-muted-foreground">
+                                Cukup bayar sekali untuk menikmati semua kelas Pro, termasuk update dan kelas baru di masa depan.
+                            </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section id="about" className="bg-muted/30 py-20">
+            {/* Kelas Gratis */}
+            <section id="kelas-gratis" className="py-20">
                 <div className="container mx-auto px-4">
-                    <div className="mb-16 text-center">
-                        <h2 className="mb-4 text-4xl font-bold">Why Learn with John?</h2>
-                        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                            Get the insider knowledge and mentorship that traditional courses can't provide
-                        </p>
+                    <h2 className="mb-2 text-center text-3xl font-bold">Mulai Belajar dengan Kelas Gratis</h2>
+                    <p className="mx-auto mb-8 max-w-xl text-center text-muted-foreground">
+                        Cicipi materi dasar dari berbagai bidang tanpa biaya. Cukup daftar dan langsung bisa akses.
+                    </p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {freeCourses.map((course) => (
+                            <CourseCard key={course.id} course={course} />
+                        ))}
                     </div>
+                </div>
+            </section>
 
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {features.map((feature, index) => (
-                            <Card key={index} className="border-2 transition-all hover:border-primary/50 hover:shadow-lg">
-                                <CardHeader>
-                                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                        {feature.icon}
+            {/* Testimoni */}
+            <section id="testimonials" className="bg-slate-50 py-20 dark:bg-slate-900/50">
+                <div className="container mx-auto px-4">
+                    <h2 className="mb-2 text-center text-3xl font-bold">Apa Kata Alumni Kami?</h2>
+                    <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
+                        Kami bangga telah membantu ribuan siswa mencapai tujuan karir mereka.
+                    </p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {testimonials.map((item) => (
+                            <Card key={item.id} className="flex flex-col p-6">
+                                <div className="flex-grow">
+                                    <div className="mb-4 flex items-center">
+                                        {[...Array(item.rating)].map((_, i) => (
+                                            <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                        ))}
                                     </div>
-                                    <CardTitle className="text-xl">{feature.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground">{feature.description}</p>
-                                </CardContent>
+                                    <p className="text-muted-foreground">"{item.comment}"</p>
+                                </div>
+                                <div className="mt-6 flex items-center">
+                                    <Avatar>
+                                        <AvatarImage src={item.avatar} alt={item.name} />
+                                        <AvatarFallback>{item.name.substring(0, 2)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="ml-4">
+                                        <p className="font-bold">{item.name}</p>
+                                        <p className="text-sm text-muted-foreground">{item.role}</p>
+                                    </div>
+                                </div>
                             </Card>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Courses Section */}
-            <section id="courses" className="py-20">
-                <div className="container mx-auto px-4">
-                    <div className="mb-12 text-center">
-                        <h2 className="mb-4 text-4xl font-bold">Featured Courses</h2>
-                        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">Carefully crafted courses based on real industry experience</p>
-                    </div>
-
-                    <Tabs defaultValue="all" className="w-full">
-                        <TabsList className="mx-auto mb-8 grid w-full max-w-md grid-cols-4">
-                            <TabsTrigger value="all">All</TabsTrigger>
-                            <TabsTrigger value="development">Development</TabsTrigger>
-                            <TabsTrigger value="design">Design</TabsTrigger>
-                            <TabsTrigger value="business">Business</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="all" className="mt-0">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                                {courses.map((course) => (
-                                    <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-xl">
-                                        <div className="relative">
-                                            <img
-                                                src={course.thumbnail}
-                                                alt={course.title}
-                                                className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                            />
-                                            <Badge className="absolute top-4 left-4" variant="secondary">
-                                                {course.badge}
-                                            </Badge>
-                                        </div>
-                                        <CardHeader>
-                                            <CardTitle className="line-clamp-2 text-lg">{course.title}</CardTitle>
-                                            <p className="text-sm text-muted-foreground">{course.description}</p>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">{course.level}</span>
-                                                <div className="flex items-center gap-1 text-muted-foreground">
-                                                    <Clock className="h-3 w-3" />
-                                                    <span>{course.duration}</span>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1">
-                                                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                    <span className="font-semibold">{course.rating}</span>
-                                                    <span className="text-sm text-muted-foreground">({course.students.toLocaleString()})</span>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-2xl font-bold">${course.price}</span>
-                                                    {course.originalPrice && (
-                                                        <span className="text-sm text-muted-foreground line-through">${course.originalPrice}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <Button size="sm" className="group">
-                                                Enroll Now
-                                                <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                ))}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="development" className="mt-0">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                                {courses
-                                    .filter((course) => course.category === 'development')
-                                    .map((course) => (
-                                        <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-xl">
-                                            <div className="relative">
-                                                <img
-                                                    src={course.thumbnail}
-                                                    alt={course.title}
-                                                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                                <Badge className="absolute top-4 left-4" variant="secondary">
-                                                    {course.badge}
-                                                </Badge>
-                                            </div>
-                                            <CardHeader>
-                                                <CardTitle className="line-clamp-2 text-lg">{course.title}</CardTitle>
-                                                <p className="text-sm text-muted-foreground">{course.description}</p>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1">
-                                                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                        <span className="font-semibold">{course.rating}</span>
-                                                        <span className="text-sm text-muted-foreground">({course.students.toLocaleString()})</span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex items-center justify-between">
-                                                <span className="text-2xl font-bold">${course.price}</span>
-                                                <Button size="sm">Enroll Now</Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="design" className="mt-0">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                                {courses
-                                    .filter((course) => course.category === 'design')
-                                    .map((course) => (
-                                        <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-xl">
-                                            <div className="relative">
-                                                <img
-                                                    src={course.thumbnail}
-                                                    alt={course.title}
-                                                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                                <Badge className="absolute top-4 left-4" variant="secondary">
-                                                    {course.badge}
-                                                </Badge>
-                                            </div>
-                                            <CardHeader>
-                                                <CardTitle className="line-clamp-2 text-lg">{course.title}</CardTitle>
-                                                <p className="text-sm text-muted-foreground">{course.description}</p>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1">
-                                                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                        <span className="font-semibold">{course.rating}</span>
-                                                        <span className="text-sm text-muted-foreground">({course.students.toLocaleString()})</span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex items-center justify-between">
-                                                <span className="text-2xl font-bold">${course.price}</span>
-                                                <Button size="sm">Enroll Now</Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="business" className="mt-0">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                                {courses
-                                    .filter((course) => course.category === 'business')
-                                    .map((course) => (
-                                        <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-xl">
-                                            <div className="relative">
-                                                <img
-                                                    src={course.thumbnail}
-                                                    alt={course.title}
-                                                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                                <Badge className="absolute top-4 left-4" variant="secondary">
-                                                    {course.badge}
-                                                </Badge>
-                                            </div>
-                                            <CardHeader>
-                                                <CardTitle className="line-clamp-2 text-lg">{course.title}</CardTitle>
-                                                <p className="text-sm text-muted-foreground">{course.description}</p>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1">
-                                                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                        <span className="font-semibold">{course.rating}</span>
-                                                        <span className="text-sm text-muted-foreground">({course.students.toLocaleString()})</span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex items-center justify-between">
-                                                <span className="text-2xl font-bold">${course.price}</span>
-                                                <Button size="sm">Enroll Now</Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                            </div>
-                        </TabsContent>
-                    </Tabs>
-                </div>
-            </section>
-
-            {/* Success Stories Section */}
-            <section id="testimonials" className="bg-muted/30 py-20">
-                <div className="container mx-auto px-4">
-                    <div className="mb-16 text-center">
-                        <h2 className="mb-4 text-4xl font-bold">Student Success Stories</h2>
-                        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                            See how John's students transformed their careers and achieved their goals
-                        </p>
-                    </div>
-
-                    <div className="mx-auto max-w-4xl">
-                        <Card className="relative overflow-hidden border-2">
-                            <CardContent className="p-8 md:p-12">
-                                <div className="mb-6 flex items-center justify-between">
-                                    <Quote className="h-12 w-12 text-primary/20" />
-                                    <div className="text-right">
-                                        <Badge variant="outline" className="mb-2">
-                                            Success Story
-                                        </Badge>
-                                        <div className="flex gap-1">
-                                            {[1, 2, 3, 4, 5].map((i) => (
-                                                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p className="mb-8 text-lg leading-relaxed italic md:text-xl">"{testimonials[currentTestimonial].content}"</p>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="h-16 w-16">
-                                            <AvatarImage src={testimonials[currentTestimonial].avatar} />
-                                            <AvatarFallback>{testimonials[currentTestimonial].name[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="text-lg font-semibold">{testimonials[currentTestimonial].name}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {testimonials[currentTestimonial].role} at {testimonials[currentTestimonial].company}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="hidden text-right md:block">
-                                        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                                            <p className="mb-1 text-xs font-medium text-green-600">Career Transformation</p>
-                                            <p className="text-sm text-green-800">
-                                                <span className="block text-xs opacity-75">
-                                                    {testimonials[currentTestimonial].beforeAfter.before}
-                                                </span>
-                                                <ArrowRight className="mx-1 inline h-3 w-3" />
-                                                <span className="font-medium">{testimonials[currentTestimonial].beforeAfter.after}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 md:hidden">
-                                    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                                        <p className="mb-1 text-xs font-medium text-green-600">Career Transformation</p>
-                                        <p className="text-sm text-green-800">
-                                            <span className="block text-xs opacity-75">{testimonials[currentTestimonial].beforeAfter.before}</span>
-                                            <ArrowRight className="mx-1 inline h-3 w-3" />
-                                            <span className="font-medium">{testimonials[currentTestimonial].beforeAfter.after}</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-
-                            <div className="absolute right-4 bottom-4 flex gap-2">
-                                <Button size="sm" variant="outline" onClick={prevTestimonial} className="h-10 w-10 p-0">
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={nextTestimonial} className="h-10 w-10 p-0">
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* FAQ Section */}
+            {/* FAQ */}
             <section id="faq" className="py-20">
-                <div className="container mx-auto px-4">
-                    <div className="mb-12 text-center">
-                        <h2 className="mb-4 text-4xl font-bold">Frequently Asked Questions</h2>
-                        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                            Got questions? Here are the most common ones I get from students
-                        </p>
-                    </div>
-
-                    <div className="mx-auto max-w-3xl">
-                        <Accordion type="single" collapsible className="space-y-4">
-                            {faqs.map((faq, index) => (
-                                <AccordionItem
-                                    key={index}
-                                    value={`item-${index}`}
-                                    className="rounded-lg border-2 px-6 transition-colors hover:border-primary/50"
-                                >
-                                    <AccordionTrigger className="py-6 text-left hover:no-underline">
-                                        <span className="pr-4 font-semibold">{faq.question}</span>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pt-2 pb-6 leading-relaxed text-muted-foreground">{faq.answer}</AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </div>
-                </div>
-            </section>
-
-            {/* Newsletter Section */}
-            <section className="bg-primary/5 py-20">
-                <div className="container mx-auto px-4">
-                    <Card className="mx-auto max-w-2xl border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5">
-                        <CardContent className="p-8 text-center">
-                            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                                <Mail className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="mb-4 text-2xl font-bold">Join 5,000+ Developers</h3>
-                            <p className="mb-6 text-muted-foreground">
-                                Get free coding tips, career advice, and be the first to know about new courses and special discounts
-                            </p>
-                            <form onSubmit={handleSubscribe} className="mx-auto flex max-w-md flex-col gap-4 sm:flex-row">
-                                <Input
-                                    type="email"
-                                    placeholder="Enter your email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="flex-1"
-                                    required
-                                />
-                                <Button type="submit" className="group">
-                                    Subscribe Free
-                                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </Button>
-                            </form>
-                            <p className="mt-4 text-xs text-muted-foreground">
-                                No spam ever. Unsubscribe anytime.
-                                <span className="font-medium"> Free coding resources included!</span>
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section id="contact" className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 py-20">
-                <div className="container mx-auto px-4 text-center">
-                    <div className="mx-auto max-w-3xl space-y-6">
-                        <h2 className="text-4xl font-bold">Ready to Transform Your Career?</h2>
-                        <p className="text-xl text-muted-foreground">
-                            Join thousands of students who've accelerated their careers with real-world skills and personal mentorship
-                        </p>
-                        <div className="flex flex-col justify-center gap-4 pt-4 sm:flex-row">
-                            <Button size="lg" className="group px-8 py-6 text-lg">
-                                Start Learning Today
-                                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                            </Button>
-                            <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                                Schedule a Call
-                            </Button>
-                        </div>
-                        <p className="pt-4 text-sm text-muted-foreground">
-                            <span className="font-medium">60-day money-back guarantee</span> •
-                            <span className="font-medium"> Personal mentorship included</span> •<span className="font-medium"> Lifetime access</span>
-                        </p>
-                    </div>
+                <div className="container mx-auto max-w-3xl px-4">
+                    <h2 className="mb-8 text-center text-3xl font-bold">Pertanyaan yang Sering Diajukan</h2>
+                    <Accordion type="single" collapsible className="w-full">
+                        {faqs.map((faq, index) => (
+                            <AccordionItem value={`item-${index + 1}`} key={index}>
+                                <AccordionTrigger className="text-left">{faq.q}</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">{faq.a}</AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
             </section>
         </UserLayout>

@@ -247,5 +247,4 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
         </div>
     );
 };
-
 export default UserLayout;
