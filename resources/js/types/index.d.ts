@@ -31,13 +31,44 @@ export interface SharedData {
     [key: string]: unknown;
 }
 
+// Ubah atau tambahkan isi file ini
+
 export interface User {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
-    email_verified_at: string | null;
+    email_verified_at: string;
+    role: 'admin' | 'user';
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+}
+
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+    auth: {
+        user: User;
+    };
+};
+
+export interface PaginatedData<T> {
+    data: T[];
+    links: {
+        first: string | null;
+        last: string | null;
+        prev: string | null;
+        next: string | null;
+    };
+    meta: {
+        current_page: number;
+        from: number;
+        last_page: number;
+        links: {
+            url: string | null;
+            label: string;
+            active: boolean;
+        }[];
+        path: string;
+        per_page: number;
+        to: number;
+        total: number;
+    };
 }

@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\UserController;
@@ -30,9 +30,9 @@ Route::get('/dashboard', function () {
 
 // Routes untuk Admin
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('/users', [AdminController::class, 'users'])->name('users');
-    Route::post('/users/{user}/role', [AdminController::class, 'updateRole'])->name('users.role');
+    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::resource('users', AdminUserController::class);
+
 });
 
 // Routes untuk User

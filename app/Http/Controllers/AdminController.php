@@ -2,51 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    /**
+     * Menampilkan halaman dashboard admin beserta data statistik.
+     */
+    public function index(): Response
     {
-        $userCount = User::where('role', 'user')->count();
-        $adminCount = User::where('role', 'admin')->count();
+        // Ambil data statistik sederhana dari database
         $totalUsers = User::count();
+        $totalCourses = Course::count();
+        // Anda bisa menambahkan data lain seperti total institusi, transaksi, dll.
 
         return Inertia::render('admin/dashboard', [
             'stats' => [
-                'users' => $userCount,
-                'admins' => $adminCount,
-                'total' => $totalUsers,
-            ]
+                'totalUsers' => $totalUsers,
+                'totalCourses' => $totalCourses,
+            ],
         ]);
-    }
-
-    public function users()
-    {
-        $users = User::select('id', 'name', 'email', 'role', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return Inertia::render('admin/users', [
-            'users' => $users
-        ]);
-    }
-
-    public function updateRole(Request $request, User $user)
-    {
-        $request->validate([
-            'role' => 'required|in:admin,user'
-        ]);
-
-        // Prevent admin from changing their own role
-        if ($user->id === auth()->id()) {
-            return back()->withErrors(['role' => 'You cannot change your own role.']);
-        }
-
-        $user->update(['role' => $request->role]);
-
-        return back()->with('success', 'User role updated successfully.');
     }
 }

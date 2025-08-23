@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -10,6 +12,11 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -17,11 +24,21 @@ class User extends Authenticatable
         'role',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -30,7 +47,41 @@ class User extends Authenticatable
         ];
     }
 
-    // Role helper methods
+    /**
+     * Kursus yang diikuti oleh pengguna.
+     */
+    public function courses(): BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'enrollments');
+    }
+
+    /**
+     * Transaksi yang dimiliki oleh pengguna.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Ulasan institusi yang diberikan oleh pengguna.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Ulasan kursus yang diberikan oleh pengguna.
+     */
+    public function courseReviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+
+    /**
+     * Cek apakah pengguna adalah admin.
+     */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -39,10 +90,5 @@ class User extends Authenticatable
     public function isUser(): bool
     {
         return $this->role === 'user';
-    }
-
-    public function hasRole(string $role): bool
-    {
-        return $this->role === $role;
     }
 }
