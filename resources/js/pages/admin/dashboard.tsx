@@ -1,7 +1,7 @@
 // resources/js/pages/admin/dashboard.tsx
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
 import { Head } from '@inertiajs/react';
 import { BookOpen, Users } from 'lucide-react';
@@ -25,9 +25,9 @@ interface DashboardProps extends PageProps {
 
 export default function Dashboard({ stats, recentUsers }: DashboardProps) {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 </div>
@@ -75,6 +75,6 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                     </Card>
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

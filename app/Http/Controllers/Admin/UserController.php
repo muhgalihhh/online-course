@@ -21,44 +21,81 @@ class UserController extends Controller
     }
 
     /**
-     * (Opsional) Tampilkan form untuk membuat user baru.
-     * Anda akan membutuhkan halaman React: admin/users/create.tsx
+     * Tampilkan form untuk membuat user baru.
      */
-    public function create()
+    public function create(): Response
     {
-        // return Inertia::render('admin/users/create');
+        return Inertia::render('admin/users/create');
     }
 
     /**
-     * (Opsional) Simpan user baru ke database.
+     * Simpan user baru ke database.
      */
     public function store(Request $request)
     {
-        // Logika validasi dan penyimpanan
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:admin,user',
+        ]);
+
+        $validated['password'] = bcrypt($validated['password']);
+
+        User::create($validated);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User berhasil dibuat.');
     }
 
     /**
-     * (Opsional) Tampilkan form untuk mengedit user.
-     * Anda akan membutuhkan halaman React: admin/users/edit.tsx
+     * Tampilkan form untuk mengedit user.
      */
-    public function edit(User $user)
+    public function edit(User $user): Response
     {
-        // return Inertia::render('admin/users/edit', ['user' => $user]);
+        return Inertia::render('admin/users/edit', [
+            'user' => $user,
+        ]);
     }
 
     /**
-     * (Opsional) Update data user di database.
+     * Update data user di database.
      */
     public function update(Request $request, User $user)
     {
-        // Logika validasi dan update
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'role' => 'required|in:admin,user',
+        ]);
+
+        if (isset($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User berhasil diperbarui.');
     }
 
     /**
-     * (Opsional) Hapus user dari database.
+     * Hapus user dari database.
      */
     public function destroy(User $user)
     {
-        // Logika penghapusan
+        // Cek apakah user yang akan dihapus adalah user yang sedang login
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User berhasil dihapus.');
     }
 }
