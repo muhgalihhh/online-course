@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useInitials } from '@/hooks/use-initials';
 import { type BreadcrumbItem, type User } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield } from 'lucide-react';
+import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield, User } from 'lucide-react';
 
 interface AdminHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
