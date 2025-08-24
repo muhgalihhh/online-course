@@ -22,4 +22,25 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        cors: {
+            origin: [
+                'http://localhost:5173',
+                'http://localhost:8000',
+                'https://*.ngrok-free.app',
+                'https://*.ngrok.io',
+                'https://*.ngrok.app'
+            ],
+            credentials: true
+        },
+        hmr: {
+            host: 'localhost',
+            port: 5173
+        },
+        watch: {
+            usePolling: true
+        }
+    },
 });
