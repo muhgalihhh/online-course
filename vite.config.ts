@@ -34,27 +34,27 @@ export default defineConfig({
                 'https://*.ngrok-free.app',
                 'https://*.ngrok.io',
                 'https://*.ngrok.app',
-                'https://joint-strongly-bulldog.ngrok-free.app'
+                'https://joint-strongly-bulldog.ngrok-free.app',
             ],
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
         },
         hmr: {
             host: 'localhost',
             port: 5173,
             protocol: 'ws',
             clientPort: 5173,
-            overlay: false
+            overlay: false,
         },
         watch: {
-            usePolling: true
+            usePolling: true,
         },
         headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
-        }
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+        },
     },
     preview: {
         host: '0.0.0.0',
@@ -67,11 +67,11 @@ export default defineConfig({
                 'https://*.ngrok-free.app',
                 'https://*.ngrok.io',
                 'https://*.ngrok.app',
-                'https://joint-strongly-bulldog.ngrok-free.app'
+                'https://joint-strongly-bulldog.ngrok-free.app',
             ],
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-        }
-    }
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+        },
+    },
 });
