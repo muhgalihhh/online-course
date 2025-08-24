@@ -1,144 +1,147 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import AdminLayout from '@/layouts/admin-layout';
+import { AdminContentWrapper } from '@/components/admin-content-wrapper';
+import { AdminSection } from '@/components/admin-section';
+import { AdminForm } from '@/components/admin-form';
+import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageHeader } from '@/components/page-header';
-import { FormActions } from '@/components/form-actions';
-import { ErrorMessage } from '@/components/error-message';
-import AdminLayout from '@/layouts/admin-layout';
-import { PageProps } from '@/types';
-import { Head, useForm, Link, router } from '@inertiajs/react';
-import { UserPlus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { type BreadcrumbItem } from '@/types';
+import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 
-interface UserCreateProps extends PageProps {}
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: route('admin.dashboard') },
+    { title: 'Users', href: route('admin.users.index') },
+    { title: 'Create User', href: route('admin.users.create') }
+];
 
-export default function UserCreate({}: UserCreateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function AdminUsersCreate() {
+    const [formData, setFormData] = useState({
         name: '',
         email: '',
+        role: '',
         password: '',
         password_confirmation: '',
-        role: 'user',
+        is_active: true
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('admin.users.store'));
+        console.log('Form submitted:', formData);
     };
 
     const handleCancel = () => {
-        router.visit(route('admin.users.index'));
+        // Navigate back to users index
+        window.history.back();
     };
 
     return (
-        <AdminLayout
-            breadcrumbs={[
-                { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Users', href: route('admin.users.index') },
-                { title: 'Create', href: route('admin.users.create') },
-            ]}
-        >
-            <Head title="Create User" />
-
-            <div className="space-y-6">
-                <PageHeader
-                    title="Tambah User Baru"
-                    description="Buat akun pengguna baru untuk platform ini"
+        <AdminLayout breadcrumbs={breadcrumbs}>
+            <AdminContentWrapper>
+                {/* Page Header */}
+                <PageHeader 
+                    title="Create User"
+                    description="Add a new user to the system"
                     backUrl={route('admin.users.index')}
-                    badge={{
-                        text: 'New User',
-                        icon: UserPlus,
-                        variant: 'outline'
-                    }}
                 />
 
-                <Card className="max-w-2xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                            <UserPlus className="h-5 w-5" />
-                            <span>Informasi User</span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Create User Form */}
+                <AdminSection>
+                    <AdminForm
+                        title="User Information"
+                        description="Fill in the user details below"
+                        onSubmit={handleSubmit}
+                        submitLabel="Create User"
+                        cancelLabel="Cancel"
+                        onCancel={handleCancel}
+                    >
+                        <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Nama Lengkap</Label>
+                                <Label htmlFor="name">Full Name</Label>
                                 <Input
                                     id="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="Masukkan nama lengkap"
-                                    className={errors.name ? 'border-red-500' : ''}
+                                    placeholder="Enter full name"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
                                 />
-                                {errors.name && <ErrorMessage message={errors.name} />}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">Email Address</Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    placeholder="Masukkan email"
-                                    className={errors.email ? 'border-red-500' : ''}
+                                    placeholder="Enter email address"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
                                 />
-                                {errors.email && <ErrorMessage message={errors.email} />}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                        placeholder="Masukkan password"
-                                        className={errors.password ? 'border-red-500' : ''}
-                                    />
-                                    {errors.password && <ErrorMessage message={errors.password} />}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
-                                    <Input
-                                        id="password_confirmation"
-                                        type="password"
-                                        value={data.password_confirmation}
-                                        onChange={(e) => setData('password_confirmation', e.target.value)}
-                                        placeholder="Konfirmasi password"
-                                        className={errors.password_confirmation ? 'border-red-500' : ''}
-                                    />
-                                    {errors.password_confirmation && <ErrorMessage message={errors.password_confirmation} />}
-                                </div>
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="role">Role</Label>
-                                <Select value={data.role} onValueChange={(value) => setData('role', value)}>
-                                    <SelectTrigger className={errors.role ? 'border-red-500' : ''}>
-                                        <SelectValue placeholder="Pilih role" />
+                                <Select
+                                    value={formData.role}
+                                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="user">User</SelectItem>
                                         <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="moderator">Moderator</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                {errors.role && <ErrorMessage message={errors.role} />}
                             </div>
 
-                            <FormActions
-                                onCancel={handleCancel}
-                                submitText="Simpan User"
-                                loading={processing}
-                                loadingText="Menyimpan..."
-                            />
-                        </form>
-                    </CardContent>
-                </Card>
-            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Enter password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                <Input
+                                    id="password_confirmation"
+                                    type="password"
+                                    placeholder="Confirm password"
+                                    value={formData.password_confirmation}
+                                    onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="is_active">Status</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="is_active"
+                                        checked={formData.is_active}
+                                        onCheckedChange={(checked) => 
+                                            setFormData({ ...formData, is_active: checked as boolean })
+                                        }
+                                    />
+                                    <Label htmlFor="is_active" className="text-sm font-normal">
+                                        User is active
+                                    </Label>
+                                </div>
+                            </div>
+                        </div>
+                    </AdminForm>
+                </AdminSection>
+            </AdminContentWrapper>
         </AdminLayout>
     );
 }

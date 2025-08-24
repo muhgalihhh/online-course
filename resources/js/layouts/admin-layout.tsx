@@ -21,7 +21,7 @@ export default function AdminLayout({ children, breadcrumbs = [] }: AdminLayoutP
     useToastNotifications();
 
     return (
-        <div className="admin-layout">
+        <div className="min-h-screen bg-background">
             <AppShell variant="sidebar">
                 {/* Header - Fixed at top */}
                 <AdminHeader breadcrumbs={breadcrumbs} />
@@ -33,8 +33,8 @@ export default function AdminLayout({ children, breadcrumbs = [] }: AdminLayoutP
                     
                     {/* Content area - Flexible width with smooth transitions */}
                     <main className={cn(
-                        "admin-content flex-1 flex flex-col bg-background",
-                        isCollapsed ? "admin-content-collapsed" : "admin-content-expanded"
+                        "flex-1 flex flex-col bg-background transition-all duration-300 ease-in-out",
+                        isCollapsed ? "md:ml-16" : "md:ml-64"
                     )}>
                         <AppContent variant="sidebar" className="flex-1 overflow-hidden">
                             <AdminContentWrapper>

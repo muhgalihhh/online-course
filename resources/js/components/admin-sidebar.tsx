@@ -69,9 +69,8 @@ export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
 
             {/* Desktop Sidebar */}
             <aside className={cn(
-                "admin-sidebar hidden md:flex md:flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-                "h-full",
-                isCollapsed ? "admin-sidebar-collapsed" : "admin-sidebar-expanded"
+                "hidden md:flex md:flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ease-in-out h-full",
+                isCollapsed ? "w-16" : "w-64"
             )}>
                 <AdminSidebarContent isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
             </aside>
@@ -100,7 +99,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                             <span className="text-sm font-bold text-primary-foreground">A</span>
                         </div>
                         {!isCollapsed && (
-                            <span className="text-lg font-semibold truncate sidebar-transition">
+                            <span className="text-lg font-semibold truncate transition-all duration-300">
                                 Admin Panel
                             </span>
                         )}
@@ -110,7 +109,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                             variant="ghost"
                             size="sm"
                             onClick={toggleSidebar}
-                            className="h-8 w-8 p-0 shrink-0 hover:bg-muted sidebar-item"
+                            className="h-8 w-8 p-0 shrink-0 hover:bg-muted"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             <span className="sr-only">Collapse sidebar</span>
@@ -120,7 +119,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
             </div>
 
             {/* Navigation */}
-            <ScrollArea className="flex-1 px-3 py-4 scrollbar-thin">
+            <ScrollArea className="flex-1 px-3 py-4">
                 <nav className="space-y-1">
                     {menuItems.map((item) => {
                         const isActive = url.startsWith(item.href);
@@ -129,18 +128,18 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                                 <Button
                                     variant={isActive ? 'secondary' : 'ghost'}
                                     className={cn(
-                                        'w-full justify-start h-10 sidebar-item',
-                                        isActive && 'sidebar-item-active',
+                                        'w-full justify-start h-10 transition-all duration-200 hover:bg-muted/50',
+                                        isActive && 'bg-secondary text-secondary-foreground shadow-sm',
                                         isCollapsed && 'justify-center px-2'
                                     )}
                                     title={isCollapsed ? item.title : undefined}
                                 >
                                     <item.icon className={cn(
-                                        "h-4 w-4 sidebar-transition",
+                                        "h-4 w-4 transition-all duration-200",
                                         !isCollapsed && "mr-3"
                                     )} />
                                     {!isCollapsed && (
-                                        <span className="truncate sidebar-transition">
+                                        <span className="truncate transition-all duration-300">
                                             {item.title}
                                         </span>
                                     )}
@@ -158,7 +157,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                         variant="ghost"
                         size="sm"
                         onClick={toggleSidebar}
-                        className="h-8 w-8 p-0 mx-auto hover:bg-muted sidebar-item"
+                        className="h-8 w-8 p-0 mx-auto hover:bg-muted"
                         title="Expand sidebar"
                     >
                         <ChevronRight className="h-4 w-4" />

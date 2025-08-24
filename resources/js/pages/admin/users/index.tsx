@@ -1,124 +1,164 @@
 // resources/js/pages/admin/users/index.tsx
 
-import { DeleteConfirmation } from '@/components/delete-confirmation';
-import { Pagination } from '@/components/pagination';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
-import { PageProps, PaginatedData, User } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { Edit, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { AdminContentWrapper } from '@/components/admin-content-wrapper';
+import { AdminSection } from '@/components/admin-section';
+import { AdminTable } from '@/components/admin-table';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { type BreadcrumbItem } from '@/types';
+import { Link } from '@inertiajs/react';
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 
-// Definisikan props yang diterima dari controller
-interface UserIndexProps extends PageProps {
-    users: PaginatedData<User>;
-}
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: route('admin.dashboard') },
+    { title: 'Users', href: route('admin.users.index') }
+];
 
-export default function UserIndex({ users }: UserIndexProps) {
-    const [deleteDialog, setDeleteDialog] = useState<{
-        isOpen: boolean;
-        userId: number | null;
-        userName: string;
-    }>({
-        isOpen: false,
-        userId: null,
-        userName: '',
-    });
+// Mock data
+const users = [
+    {
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        role: 'admin',
+        status: 'active',
+        avatar: null,
+        created_at: '2024-01-15'
+    },
+    {
+        id: 2,
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        role: 'user',
+        status: 'active',
+        avatar: null,
+        created_at: '2024-01-20'
+    },
+    {
+        id: 3,
+        name: 'Bob Johnson',
+        email: 'bob@example.com',
+        role: 'user',
+        status: 'inactive',
+        avatar: null,
+        created_at: '2024-01-25'
+    }
+];
 
-    const handleDelete = (userId: number, userName: string) => {
-        setDeleteDialog({
-            isOpen: true,
-            userId,
-            userName,
-        });
-    };
-
-    const confirmDelete = () => {
-        if (deleteDialog.userId) {
-            router.delete(route('admin.users.destroy', deleteDialog.userId));
+export default function AdminUsersIndex() {
+    const columns = [
+        {
+            key: 'avatar',
+            header: '',
+            cell: (user: any) => (
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="text-xs">
+                        {user.name.split(' ').map((n: string) => n[0]).join('')}
+                    </AvatarFallback>
+                </Avatar>
+            ),
+            className: 'w-12'
+        },
+        {
+            key: 'name',
+            header: 'Name',
+            cell: (user: any) => (
+                <div>
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                </div>
+            )
+        },
+        {
+            key: 'role',
+            header: 'Role',
+            cell: (user: any) => (
+                <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                    {user.role}
+                </Badge>
+            )
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (user: any) => (
+                <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
+                    {user.status}
+                </Badge>
+            )
+        },
+        {
+            key: 'created_at',
+            header: 'Joined',
+            cell: (user: any) => (
+                <span className="text-sm text-muted-foreground">
+                    {new Date(user.created_at).toLocaleDateString()}
+                </span>
+            )
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            cell: (user: any) => (
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/users/${user.id}`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                        </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/users/${user.id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                        </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                    </Button>
+                </div>
+            ),
+            className: 'w-32'
         }
-    };
+    ];
 
     return (
-        <AdminLayout
-            breadcrumbs={[
-                { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Users', href: route('admin.users.index') },
-            ]}
-        >
-            <Head title="Manage Users" />
-
-            <div>
-                <div className="mb-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Daftar Pengguna</h1>
-                    <Link href={route('admin.users.create')}>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tambah User
+        <AdminLayout breadcrumbs={breadcrumbs}>
+            <AdminContentWrapper>
+                {/* Page Header */}
+                <PageHeader 
+                    title="Users"
+                    description="Manage user accounts and permissions"
+                    actions={
+                        <Button asChild>
+                            <Link href={route('admin.users.create')}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add User
+                            </Link>
                         </Button>
-                    </Link>
-                </div>
+                    }
+                />
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Pengguna</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Peran</TableHead>
-                                    <TableHead>Tanggal Bergabung</TableHead>
-                                    <TableHead>Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.data.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>
-                                        </TableCell>
-                                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <div className="flex space-x-2">
-                                                <Link href={route('admin.users.edit', user.id)}>
-                                                    <Button variant="outline" size="sm">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id, user.name)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        {users.links && users.links.length > 0 && (
-                            <div className="mt-4">
-                                <Pagination links={users.links} />
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            <DeleteConfirmation
-                isOpen={deleteDialog.isOpen}
-                onClose={() => setDeleteDialog({ isOpen: false, userId: null, userName: '' })}
-                onConfirm={confirmDelete}
-                title="Hapus User"
-                description="Apakah Anda yakin ingin menghapus user"
-                itemName={deleteDialog.userName}
-            />
+                {/* Users Table */}
+                <AdminSection>
+                    <AdminTable
+                        title="All Users"
+                        description="List of all registered users in the system"
+                        data={users}
+                        columns={columns}
+                        searchable
+                        filterable
+                        exportable
+                        onSearch={(value) => console.log('Search:', value)}
+                        onExport={() => console.log('Export')}
+                    />
+                </AdminSection>
+            </AdminContentWrapper>
         </AdminLayout>
     );
 }

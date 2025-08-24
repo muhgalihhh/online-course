@@ -1,8 +1,8 @@
-# Admin Layout Guide
+# Admin Layout Guide - Optimized with shadcn/ui
 
 ## Overview
 
-Layout admin telah diperbaiki dengan desain yang lebih rapi, transisi yang halus, dan responsivitas yang lebih baik. Berikut adalah panduan penggunaan komponen-komponen admin yang telah diperbaiki.
+Layout admin telah dioptimalkan untuk menggunakan shadcn/ui components dengan maksimal, menghilangkan custom CSS dan memastikan konsistensi desain. Semua komponen menggunakan design system shadcn/ui yang terstandarisasi.
 
 ## Komponen Utama
 
@@ -24,29 +24,29 @@ export default function AdminPage() {
 
 ### 2. AdminSidebar
 
-Sidebar dengan navigasi menu dan toggle functionality.
+Sidebar dengan navigasi menu dan toggle functionality menggunakan shadcn/ui components.
 
 **Fitur:**
 - Auto-collapse pada mobile
-- Transisi halus saat expand/collapse
+- Transisi halus menggunakan Tailwind CSS
 - State tersimpan di localStorage
-- Responsive design
+- Responsive design dengan shadcn/ui Sheet component
 
 ### 3. AdminHeader
 
-Header dengan search, notifications, dan user menu.
+Header dengan search, notifications, dan user menu menggunakan shadcn/ui components.
 
 **Fitur:**
 - Sticky positioning
-- Search bar responsive
-- Notifications dropdown
-- User profile dropdown
+- Search bar responsive dengan shadcn/ui Input
+- Notifications dropdown dengan shadcn/ui DropdownMenu
+- User profile dropdown dengan shadcn/ui Avatar
 
 ## Komponen Pendukung
 
 ### 1. AdminContentWrapper
 
-Wrapper untuk konten dengan spacing yang konsisten.
+Wrapper untuk konten dengan spacing yang konsisten menggunakan Tailwind CSS.
 
 ```tsx
 import { AdminContentWrapper } from '@/components/admin-content-wrapper';
@@ -62,7 +62,7 @@ import { AdminContentWrapper } from '@/components/admin-content-wrapper';
 
 ### 2. AdminSection
 
-Section untuk grouping konten.
+Section untuk grouping konten menggunakan shadcn/ui styling patterns.
 
 ```tsx
 import { AdminSection } from '@/components/admin-section';
@@ -77,7 +77,7 @@ import { AdminSection } from '@/components/admin-section';
 
 ### 3. AdminCard
 
-Card component untuk konten yang terstruktur.
+Card component menggunakan shadcn/ui Card components.
 
 ```tsx
 import { AdminCard } from '@/components/admin-card';
@@ -91,9 +91,47 @@ import { AdminCard } from '@/components/admin-card';
 </AdminCard>
 ```
 
-### 4. PageHeader
+### 4. AdminTable
 
-Header halaman dengan breadcrumbs dan actions.
+Table component menggunakan shadcn/ui Table components dengan fitur built-in.
+
+```tsx
+import { AdminTable } from '@/components/admin-table';
+
+<AdminTable
+    title="Users"
+    description="List of all users"
+    data={users}
+    columns={columns}
+    searchable
+    filterable
+    exportable
+    onSearch={handleSearch}
+    onExport={handleExport}
+/>
+```
+
+### 5. AdminForm
+
+Form component menggunakan shadcn/ui Card dan Button components.
+
+```tsx
+import { AdminForm } from '@/components/admin-form';
+
+<AdminForm
+    title="Create User"
+    description="Add a new user to the system"
+    onSubmit={handleSubmit}
+    submitLabel="Create User"
+    loading={isLoading}
+>
+    {/* Form fields */}
+</AdminForm>
+```
+
+### 6. PageHeader
+
+Header halaman dengan breadcrumbs dan actions menggunakan shadcn/ui components.
 
 ```tsx
 import { PageHeader } from '@/components/page-header';
@@ -106,33 +144,35 @@ import { PageHeader } from '@/components/page-header';
 />
 ```
 
-## CSS Classes
+## shadcn/ui Components Used
 
-### Layout Classes
-- `.admin-layout`: Layout utama
-- `.admin-sidebar`: Sidebar container
-- `.admin-sidebar-collapsed`: Sidebar collapsed state
-- `.admin-sidebar-expanded`: Sidebar expanded state
-- `.admin-content`: Content area
-- `.admin-content-collapsed`: Content dengan sidebar collapsed
-- `.admin-content-expanded`: Content dengan sidebar expanded
+### Layout Components
+- `Card`, `CardContent`, `CardHeader`, `CardTitle`
+- `Table`, `TableBody`, `TableCell`, `TableHead`, `TableHeader`, `TableRow`
+- `Button` (various variants)
+- `Input`
+- `Badge`
+- `Avatar`, `AvatarFallback`, `AvatarImage`
+- `DropdownMenu`, `DropdownMenuContent`, `DropdownMenuItem`, etc.
+- `Sheet`, `SheetContent`, `SheetTrigger`
+- `ScrollArea`
 
-### Transition Classes
-- `.sidebar-transition`: Transisi untuk elemen sidebar
-- `.sidebar-item`: Item navigasi sidebar
-- `.sidebar-item-active`: Item navigasi aktif
-- `.scrollbar-thin`: Custom scrollbar styling
+### Styling Approach
+- Menggunakan Tailwind CSS utility classes
+- Memanfaatkan shadcn/ui design tokens
+- Konsisten dengan design system shadcn/ui
+- Tidak ada custom CSS classes
 
 ## Responsive Behavior
 
 ### Desktop (md+)
-- Sidebar dapat di-toggle
+- Sidebar dapat di-toggle dengan transisi halus
 - Content area menyesuaikan dengan sidebar state
-- Transisi halus saat collapse/expand
+- Menggunakan Tailwind responsive classes
 
 ### Mobile (< md)
 - Sidebar otomatis collapsed
-- Mobile sidebar menggunakan Sheet component
+- Mobile sidebar menggunakan shadcn/ui Sheet component
 - Content area full width
 
 ## State Management
@@ -148,7 +188,7 @@ const { isCollapsed, toggleSidebar, isMobile } = useSidebar();
 **Features:**
 - State tersimpan di localStorage
 - Auto-responsive behavior
-- Smooth transitions
+- Smooth transitions menggunakan Tailwind CSS
 
 ## Best Practices
 
@@ -159,73 +199,51 @@ const { isCollapsed, toggleSidebar, isMobile } = useSidebar();
         <PageHeader title="Page Title" />
         <AdminSection title="Section Title">
             <AdminCard title="Card Title">
-                {/* Content */}
+                <AdminTable data={data} columns={columns} />
             </AdminCard>
         </AdminSection>
     </AdminContentWrapper>
 </AdminLayout>
 ```
 
-### 2. Responsive Design
-- Gunakan `AdminContentWrapper` untuk spacing konsisten
-- Gunakan `AdminCard` untuk konten yang terstruktur
-- Gunakan `AdminSection` untuk grouping konten
+### 2. shadcn/ui Integration
+- Gunakan shadcn/ui components sebagai dasar
+- Manfaatkan built-in variants dan styling
+- Konsisten dengan design system
+- Gunakan Tailwind CSS untuk custom styling
 
-### 3. Navigation
-- Sidebar state otomatis tersimpan
-- Mobile-friendly dengan Sheet component
-- Smooth transitions di semua ukuran layar
-
-## Customization
-
-### CSS Variables
-Semua styling menggunakan CSS variables yang dapat dikustomisasi:
-
-```css
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    /* ... */
-}
-```
-
-### Component Props
-Semua komponen mendukung `className` prop untuk custom styling:
-
-```tsx
-<AdminCard className="custom-card">
-    {/* Content */}
-</AdminCard>
-```
+### 3. Component Composition
+- Compose components menggunakan shadcn/ui patterns
+- Gunakan proper TypeScript interfaces
+- Maintain consistent prop naming
 
 ## Migration Guide
 
 ### Dari Layout Lama
-1. Ganti `div` wrapper dengan `AdminContentWrapper`
-2. Gunakan `AdminCard` untuk konten yang sebelumnya menggunakan card
-3. Gunakan `AdminSection` untuk grouping konten
-4. Update breadcrumbs menggunakan komponen `Breadcrumbs` yang diperbaiki
+1. Ganti custom CSS classes dengan Tailwind utilities
+2. Gunakan shadcn/ui components yang sesuai
+3. Update component imports untuk menggunakan shadcn/ui
+4. Remove custom CSS styling
 
 ### Breaking Changes
-- Layout structure sedikit berubah untuk performa yang lebih baik
-- CSS classes baru untuk transisi yang lebih halus
-- Responsive behavior yang lebih konsisten
+- Semua custom CSS classes dihapus
+- Menggunakan shadcn/ui components secara eksklusif
+- Tailwind CSS untuk semua styling
+- Design system yang lebih konsisten
 
 ## Troubleshooting
 
-### Sidebar Tidak Toggle
-- Pastikan `useSidebar` hook digunakan dengan benar
-- Check localStorage untuk state yang tersimpan
-- Verify responsive breakpoints
+### Component Styling Issues
+- Pastikan menggunakan shadcn/ui components dengan benar
+- Check Tailwind CSS classes
+- Verify design tokens consistency
 
-### Layout Tidak Responsive
-- Pastikan CSS classes diterapkan dengan benar
-- Check viewport meta tag
-- Verify Tailwind responsive classes
+### Responsive Issues
+- Gunakan Tailwind responsive classes
+- Check shadcn/ui responsive behavior
+- Verify component variants
 
-### Transisi Tidak Halus
-- Pastikan CSS transition classes diterapkan
-- Check browser support untuk CSS transitions
-- Verify tidak ada CSS yang override transitions
+### Performance Issues
+- shadcn/ui components sudah dioptimalkan
+- Tailwind CSS purging untuk production
+- Minimal JavaScript overhead

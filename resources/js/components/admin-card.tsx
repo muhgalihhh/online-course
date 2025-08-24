@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 
@@ -28,33 +29,23 @@ export function AdminCard({
     };
 
     return (
-        <div className={cn(
-            "rounded-lg border bg-card text-card-foreground shadow-sm",
-            className
-        )}>
+        <Card className={className}>
             {(title || description) && (
-                <div className={cn(
-                    "border-b bg-muted/50 px-6 py-4",
-                    headerClassName
-                )}>
-                    {title && (
-                        <h3 className="text-lg font-semibold text-foreground">
-                            {title}
-                        </h3>
-                    )}
+                <CardHeader className={cn("border-b bg-muted/50", headerClassName)}>
+                    <CardTitle className="text-lg">{title}</CardTitle>
                     {description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             {description}
                         </p>
                     )}
-                </div>
+                </CardHeader>
             )}
-            <div className={cn(
+            <CardContent className={cn(
                 paddingClasses[padding],
                 contentClassName
             )}>
                 {children}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

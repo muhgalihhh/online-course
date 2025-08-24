@@ -7,6 +7,8 @@ export { AdminHeader } from '@/components/admin-header';
 export { AdminContentWrapper } from '@/components/admin-content-wrapper';
 export { AdminSection } from '@/components/admin-section';
 export { AdminCard } from '@/components/admin-card';
+export { AdminTable } from '@/components/admin-table';
+export { AdminForm } from '@/components/admin-form';
 
 // Utility Components
 export { PageHeader } from '@/components/page-header';
