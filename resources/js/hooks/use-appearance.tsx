@@ -45,7 +45,10 @@ export function initializeTheme() {
     applyTheme(savedAppearance);
 
     // Add the event listener for system theme changes...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    const mq = mediaQuery();
+    if (mq) {
+        mq.addEventListener('change', handleSystemThemeChange);
+    }
 }
 
 export function useAppearance() {
@@ -67,7 +70,12 @@ export function useAppearance() {
         const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
         updateAppearance(savedAppearance || 'system');
 
-        return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
+        return () => {
+            const mq = mediaQuery();
+            if (mq) {
+                mq.removeEventListener('change', handleSystemThemeChange);
+            }
+        };
     }, [updateAppearance]);
 
     return { appearance, updateAppearance } as const;
