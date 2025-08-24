@@ -226,7 +226,7 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
@@ -234,8 +234,8 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                                 <Users className="h-5 w-5 text-blue-600" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-medium">Kelola Users</p>
-                                <p className="text-xs text-muted-foreground">Tambah, edit, hapus user</p>
+                                <p className="text-sm font-medium">Users</p>
+                                <p className="text-xs text-muted-foreground">Kelola pengguna</p>
                             </div>
                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -249,8 +249,38 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                                 <BookOpen className="h-5 w-5 text-green-600" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-medium">Kelola Kursus</p>
-                                <p className="text-xs text-muted-foreground">Tambah, edit, hapus kursus</p>
+                                <p className="text-sm font-medium">Courses</p>
+                                <p className="text-xs text-muted-foreground">Kelola kursus</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                                <Layers className="h-5 w-5 text-orange-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium">Chapters</p>
+                                <p className="text-xs text-muted-foreground">Kelola bab</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-100 rounded-lg">
+                                <FileText className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium">Materials</p>
+                                <p className="text-xs text-muted-foreground">Kelola materi</p>
                             </div>
                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -264,8 +294,8 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
                                 <CreditCard className="h-5 w-5 text-yellow-600" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-medium">Transaksi</p>
-                                <p className="text-xs text-muted-foreground">Lihat semua transaksi</p>
+                                <p className="text-sm font-medium">Transactions</p>
+                                <p className="text-xs text-muted-foreground">Lihat transaksi</p>
                             </div>
                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </div>

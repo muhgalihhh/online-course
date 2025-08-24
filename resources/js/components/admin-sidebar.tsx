@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Building2, CreditCard, Menu, Users, LayoutDashboard, Tag, ChevronLeft, ChevronRight, BarChart3, MessageSquare, Settings } from 'lucide-react';
+import { BookOpen, Building2, CreditCard, Menu, Users, LayoutDashboard, Tag, ChevronLeft, ChevronRight, BarChart3, MessageSquare, Settings, FileText, Layers } from 'lucide-react';
 import { useSidebar } from '@/hooks/use-sidebar';
 
 interface AdminSidebarProps {
@@ -26,6 +26,16 @@ const menuItems = [
         title: 'Courses',
         href: route('admin.courses.index'),
         icon: BookOpen,
+    },
+    {
+        title: 'Chapters',
+        href: route('admin.chapters.index'),
+        icon: Layers,
+    },
+    {
+        title: 'Materials',
+        href: route('admin.materials.index'),
+        icon: FileText,
     },
     {
         title: 'Categories',
