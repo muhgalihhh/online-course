@@ -9,10 +9,10 @@ import { LoaderCircle } from 'lucide-react';
 export default function ConfirmPassword() {
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
+            title="Konfirmasi Password"
+            description="Ini adalah area aman dari aplikasi. Silakan konfirmasi password Anda sebelum melanjutkan."
         >
-            <Head title="Confirm password" />
+            <Head title="Konfirmasi Password" />
 
             <Form method="post" action={route('password.confirm')} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
@@ -27,7 +27,7 @@ export default function ConfirmPassword() {
                         <div className="flex items-center">
                             <Button className="w-full" disabled={processing}>
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                Confirm password
+                                Konfirmasi Password
                             </Button>
                         </div>
                     </div>
