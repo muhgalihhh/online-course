@@ -10,6 +10,20 @@ export function useSidebar() {
     return false
   })
 
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   const toggleSidebar = () => {
     setIsCollapsed(prev => !prev)
   }
@@ -22,6 +36,13 @@ export function useSidebar() {
     setIsCollapsed(false)
   }
 
+  // Auto-collapse on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setIsCollapsed(true)
+    }
+  }, [isMobile])
+
   // Save state to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -31,6 +52,7 @@ export function useSidebar() {
 
   return {
     isCollapsed,
+    isMobile,
     toggleSidebar,
     collapseSidebar,
     expandSidebar,

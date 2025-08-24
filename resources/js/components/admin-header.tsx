@@ -32,7 +32,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
     };
 
     return (
-        <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-4">
                 {/* Left side - Toggle Sidebar and Search */}
                 <div className="flex items-center gap-4">
@@ -40,14 +40,17 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                         variant="ghost"
                         size="sm"
                         onClick={toggleSidebar}
-                        className="h-9 w-9 p-0"
+                        className="h-9 w-9 p-0 hover:bg-muted md:hidden"
                     >
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
                     <div className="relative hidden sm:block sm:w-64 lg:w-80">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="Search users, courses, transactions..." className="pl-10" />
+                        <Input 
+                            placeholder="Search users, courses, transactions..." 
+                            className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring" 
+                        />
                     </div>
                 </div>
 
@@ -56,7 +59,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                     {/* Notifications */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                            <Button variant="ghost" size="icon" className="relative h-9 w-9 hover:bg-muted">
                                 <Bell className="h-5 w-5" />
                                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
                                     3
@@ -67,7 +70,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <div className="max-h-64 overflow-y-auto">
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
+                                <DropdownMenuItem className="flex flex-col items-start p-3 hover:bg-muted/50">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-blue-500" />
                                         <span className="text-sm font-medium">New user registered</span>
@@ -75,7 +78,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                                     <p className="mt-1 text-xs text-muted-foreground">John Doe has joined the platform</p>
                                     <span className="mt-1 text-xs text-muted-foreground">2 minutes ago</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
+                                <DropdownMenuItem className="flex flex-col items-start p-3 hover:bg-muted/50">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-green-500" />
                                         <span className="text-sm font-medium">Course completed</span>
@@ -83,7 +86,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                                     <p className="mt-1 text-xs text-muted-foreground">Advanced React course has been completed</p>
                                     <span className="mt-1 text-xs text-muted-foreground">1 hour ago</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
+                                <DropdownMenuItem className="flex flex-col items-start p-3 hover:bg-muted/50">
                                     <div className="flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-yellow-500" />
                                         <span className="text-sm font-medium">System update</span>
@@ -94,7 +97,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                             </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                                <Link href="#" className="w-full text-center">
+                                <Link href="#" className="w-full text-center hover:bg-muted/50">
                                     View all notifications
                                 </Link>
                             </DropdownMenuItem>
@@ -104,7 +107,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                            <Button variant="ghost" className="relative h-9 w-9 rounded-full hover:bg-muted">
                                 <Avatar className="h-9 w-9">
                                     <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
                                     <AvatarFallback className="text-xs">{getInitials(auth.user.name)}</AvatarFallback>
@@ -125,32 +128,32 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="flex items-center">
+                                    <Link href={route('profile.edit')} className="flex items-center hover:bg-muted/50">
                                         <User className="mr-2 h-4 w-4" />
                                         <span>Profile</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('admin.dashboard')} className="flex items-center">
+                                    <Link href={route('admin.dashboard')} className="flex items-center hover:bg-muted/50">
                                         <BarChart3 className="mr-2 h-4 w-4" />
                                         <span>Dashboard</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="flex items-center">
+                                    <Link href={route('profile.edit')} className="flex items-center hover:bg-muted/50">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href="#" className="flex items-center">
+                                    <Link href="#" className="flex items-center hover:bg-muted/50">
                                         <HelpCircle className="mr-2 h-4 w-4" />
                                         <span>Help & Support</span>
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 hover:bg-red-50">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Log out</span>
                             </DropdownMenuItem>

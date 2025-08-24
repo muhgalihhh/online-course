@@ -53,23 +53,28 @@ export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
             {/* Mobile Sidebar */}
             <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="ghost" size="sm" className="md:hidden">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="md:hidden h-9 w-9 p-0"
+                    >
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
+                <SheetContent side="left" className="w-64 p-0 border-r">
                     <AdminSidebarContent />
                 </SheetContent>
             </Sheet>
 
             {/* Desktop Sidebar */}
-            <div className={cn(
-                "hidden md:flex md:flex-col transition-all duration-300 border-r bg-background",
-                isCollapsed ? "md:w-16" : "md:w-64"
+            <aside className={cn(
+                "admin-sidebar hidden md:flex md:flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+                "h-full",
+                isCollapsed ? "admin-sidebar-collapsed" : "admin-sidebar-expanded"
             )}>
                 <AdminSidebarContent isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-            </div>
+            </aside>
         </>
     );
 }
@@ -83,21 +88,29 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
     const { url } = usePage();
 
     return (
-        <div className="flex flex-grow flex-col">
-            <div className="flex h-16 items-center border-b px-4">
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex h-16 items-center border-b px-4 shrink-0">
                 <div className="flex items-center justify-between w-full">
-                    <Link href={route('admin.dashboard')} className="flex items-center gap-2">
+                    <Link 
+                        href={route('admin.dashboard')} 
+                        className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                    >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
                             <span className="text-sm font-bold text-primary-foreground">A</span>
                         </div>
-                        {!isCollapsed && <span className="text-lg font-semibold truncate">Admin Panel</span>}
+                        {!isCollapsed && (
+                            <span className="text-lg font-semibold truncate sidebar-transition">
+                                Admin Panel
+                            </span>
+                        )}
                     </Link>
                     {!isCollapsed && toggleSidebar && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={toggleSidebar}
-                            className="h-8 w-8 p-0 shrink-0"
+                            className="h-8 w-8 p-0 shrink-0 hover:bg-muted sidebar-item"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             <span className="sr-only">Collapse sidebar</span>
@@ -106,7 +119,8 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 px-3 py-4">
+            {/* Navigation */}
+            <ScrollArea className="flex-1 px-3 py-4 scrollbar-thin">
                 <nav className="space-y-1">
                     {menuItems.map((item) => {
                         const isActive = url.startsWith(item.href);
@@ -115,14 +129,21 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                                 <Button
                                     variant={isActive ? 'secondary' : 'ghost'}
                                     className={cn(
-                                        'w-full justify-start h-10',
-                                        isActive && 'bg-secondary text-secondary-foreground',
+                                        'w-full justify-start h-10 sidebar-item',
+                                        isActive && 'sidebar-item-active',
                                         isCollapsed && 'justify-center px-2'
                                     )}
                                     title={isCollapsed ? item.title : undefined}
                                 >
-                                    {item.icon && <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />}
-                                    {!isCollapsed && <span className="truncate">{item.title}</span>}
+                                    <item.icon className={cn(
+                                        "h-4 w-4 sidebar-transition",
+                                        !isCollapsed && "mr-3"
+                                    )} />
+                                    {!isCollapsed && (
+                                        <span className="truncate sidebar-transition">
+                                            {item.title}
+                                        </span>
+                                    )}
                                 </Button>
                             </Link>
                         );
@@ -130,14 +151,14 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                 </nav>
             </ScrollArea>
             
-            {/* Collapse button when sidebar is collapsed */}
+            {/* Footer with toggle button when collapsed */}
             {isCollapsed && toggleSidebar && (
-                <div className="border-t p-2">
+                <div className="border-t p-2 shrink-0">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={toggleSidebar}
-                        className="h-8 w-8 p-0 mx-auto"
+                        className="h-8 w-8 p-0 mx-auto hover:bg-muted sidebar-item"
                         title="Expand sidebar"
                     >
                         <ChevronRight className="h-4 w-4" />
