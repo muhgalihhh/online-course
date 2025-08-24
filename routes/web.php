@@ -35,19 +35,19 @@ Route::get('/dashboard', function () {
 // Routes untuk Admin
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
-    
+
     // User Management
     Route::resource('users', AdminUserController::class);
-    
+
     // Course Management
     Route::resource('courses', AdminCourseController::class);
-    
+
     // Category Management
     Route::resource('categories', AdminCategoryController::class);
-    
+
     // Institution Management
     Route::resource('institutions', AdminInstitutionController::class);
-    
+
     // Transaction Management
     Route::resource('transactions', AdminTransactionController::class)->except(['create', 'store', 'edit', 'update']);
     Route::patch('/transactions/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])->name('transactions.update-status');
