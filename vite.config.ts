@@ -37,10 +37,25 @@ export default defineConfig({
         },
         hmr: {
             host: 'localhost',
-            port: 5173
+            port: 5173,
+            protocol: 'ws'
         },
         watch: {
             usePolling: true
         }
     },
+    preview: {
+        host: '0.0.0.0',
+        port: 5173,
+        cors: {
+            origin: [
+                'http://localhost:5173',
+                'http://localhost:8000',
+                'https://*.ngrok-free.app',
+                'https://*.ngrok.io',
+                'https://*.ngrok.app'
+            ],
+            credentials: true
+        }
+    }
 });

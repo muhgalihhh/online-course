@@ -25,6 +25,12 @@ if ! grep -q "SESSION_DOMAIN" .env; then
     echo "SESSION_DOMAIN=.ngrok-free.app" >> .env
 fi
 
+# Add VITE_BASE_URL for ngrok
+if ! grep -q "VITE_BASE_URL" .env; then
+    echo "🌐 Adding VITE_BASE_URL for ngrok..."
+    echo "VITE_BASE_URL=https://9c43d871631f.ngrok-free.app" >> .env
+fi
+
 echo "✅ Environment configured for ngrok"
 echo ""
 echo "📋 Next steps:"
@@ -34,7 +40,13 @@ echo "3. Start ngrok: ngrok http 8000"
 echo ""
 echo "🌐 Your ngrok URL: https://9c43d871631f.ngrok-free.app"
 echo ""
-echo "⚠️  Make sure to:"
-echo "   - Clear browser cache"
-echo "   - Disable browser security for localhost (if needed)"
+echo "⚠️  Important notes:"
+echo "   - Make sure Vite is running on 0.0.0.0:5173"
+echo "   - Clear browser cache and cookies"
+echo "   - If CORS errors persist, try accessing via localhost first"
 echo "   - Check that both servers are running on 0.0.0.0"
+echo ""
+echo "🔧 Troubleshooting:"
+echo "   - If HMR doesn't work, restart Vite server"
+echo "   - If CORS errors occur, check vite.config.ts CORS settings"
+echo "   - Make sure ngrok domain is in allowed origins"
