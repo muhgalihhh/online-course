@@ -2,12 +2,15 @@ import GuestLayout from '@/layouts/guest-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import WeatherWidget from '@/components/weather-widget';
+import LiveChatWidget from '@/components/live-chat-widget';
+import InstitutionCard from '@/components/institution-card';
 import { 
     BookOpen, 
     GraduationCap, 
     Star, 
     Users, 
-    Clock, 
     Download, 
     MessageCircle, 
     CloudRain,
@@ -15,10 +18,11 @@ import {
     Shield,
     Zap,
     Globe,
-    Smartphone,
-    Headphones,
-    FileText,
-    Video
+    MapPin,
+    Phone,
+    Mail,
+    Clock,
+    CheckCircle
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
@@ -65,26 +69,59 @@ export default function Welcome() {
 
     const topInstitutions = [
         {
+            id: 1,
             name: "Lembaga Bahasa Inggris Pare",
+            phone: "+62 812-3456-7890",
+            email: "info@pareenglish.com",
+            address: "Jl. Brawijaya No. 123, Pare, Kediri, Jawa Timur",
+            website: "https://pareenglish.com",
             rating: 4.9,
+            reviews: 1250,
             students: 2500,
             courses: 15,
+            description: "Lembaga bahasa Inggris terpercaya dengan metode pembelajaran yang efektif dan pengajar berpengalaman.",
+            category: "Bahasa Inggris",
             location: "Pare, Kediri"
         },
         {
+            id: 2,
             name: "Kampung Inggris",
+            phone: "+62 812-3456-7891",
+            email: "info@kampunginggris.com",
+            address: "Jl. Ahmad Yani No. 45, Pare, Kediri, Jawa Timur",
+            website: "https://kampunginggris.com",
             rating: 4.8,
+            reviews: 2100,
             students: 3000,
             courses: 20,
+            description: "Kampung Inggris terkenal dengan metode immersion yang membuat siswa cepat beradaptasi dengan bahasa Inggris.",
+            category: "Bahasa Inggris",
             location: "Pare, Kediri"
         },
         {
+            id: 3,
             name: "English Village",
+            phone: "+62 812-3456-7892",
+            email: "info@englishvillage.com",
+            address: "Jl. Sudirman No. 67, Pare, Kediri, Jawa Timur",
+            website: "https://englishvillage.com",
             rating: 4.7,
+            reviews: 980,
             students: 1800,
             courses: 12,
+            description: "English Village menawarkan lingkungan belajar yang nyaman dengan fasilitas modern dan pengajar native speaker.",
+            category: "Bahasa Inggris",
             location: "Pare, Kediri"
         }
+    ];
+
+    const benefits = [
+        "Akses ke ratusan lembaga pendidikan berkualitas",
+        "Kelas gratis dan premium dengan sertifikasi",
+        "Download materi PDF untuk belajar offline",
+        "Live chat support 24/7",
+        "Widget cuaca real-time",
+        "Integrasi booking penginapan"
     ];
 
     return (
@@ -137,37 +174,39 @@ export default function Welcome() {
                         </div>
 
                         <div className="relative">
-                            <div className="relative rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-8">
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                            <GraduationCap className="h-6 w-6" />
+                            <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/20 to-primary/5">
+                                <CardContent className="p-6">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                <GraduationCap className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">Lembaga Bahasa Inggris Pare</h3>
+                                                <p className="text-sm text-muted-foreground">Rating: 4.9 ⭐</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-semibold">Lembaga Bahasa Inggris Pare</h3>
-                                            <p className="text-sm text-muted-foreground">Rating: 4.9 ⭐</p>
+                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                <BookOpen className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">Kampung Inggris</h3>
+                                                <p className="text-sm text-muted-foreground">Rating: 4.8 ⭐</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                <Users className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">English Village</h3>
+                                                <p className="text-sm text-muted-foreground">Rating: 4.7 ⭐</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                            <BookOpen className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold">Kampung Inggris</h3>
-                                            <p className="text-sm text-muted-foreground">Rating: 4.8 ⭐</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                            <Users className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold">English Village</h3>
-                                            <p className="text-sm text-muted-foreground">Rating: 4.7 ⭐</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     </div>
                 </div>
@@ -178,15 +217,17 @@ export default function Welcome() {
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
                         {stats.map((stat, index) => (
-                            <div key={index} className="text-center">
-                                <div className="mb-2 flex justify-center">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                        {stat.icon}
+                            <Card key={index} className="border-0 shadow-sm">
+                                <CardContent className="p-6 text-center">
+                                    <div className="mb-2 flex justify-center">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                            {stat.icon}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-2xl font-bold">{stat.value}</div>
-                                <div className="text-sm text-muted-foreground">{stat.label}</div>
-                            </div>
+                                    <div className="text-2xl font-bold">{stat.value}</div>
+                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                 </div>
@@ -204,7 +245,7 @@ export default function Welcome() {
                     
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {features.map((feature, index) => (
-                            <Card key={index} className="border-0 shadow-lg">
+                            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
                                 <CardHeader>
                                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
                                         {feature.icon}
@@ -222,8 +263,40 @@ export default function Welcome() {
                 </div>
             </section>
 
-            {/* Top Institutions Section */}
+            {/* Benefits Section */}
             <section className="py-16">
+                <div className="container mx-auto px-4">
+                    <div className="grid gap-12 lg:grid-cols-2">
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold">Mengapa Memilih Pare EduHub?</h2>
+                            <p className="text-muted-foreground text-lg">
+                                Platform pembelajaran online terdepan yang menghubungkan lembaga pendidikan dengan peserta didik. 
+                                Dapatkan akses ke ribuan kursus berkualitas dari lembaga terpercaya.
+                            </p>
+                            <div className="space-y-4">
+                                {benefits.map((benefit, index) => (
+                                    <div key={index} className="flex items-center gap-3">
+                                        <CheckCircle className="h-5 w-5 text-primary" />
+                                        <span className="text-muted-foreground">{benefit}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="pt-4">
+                                <Button size="lg">
+                                    <Link href="/register">Bergabung Sekarang</Link>
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-6">
+                            <WeatherWidget />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Top Institutions Section */}
+            <section className="py-16 bg-muted/30">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl font-bold mb-4">Lembaga Terpopuler</h2>
@@ -233,38 +306,12 @@ export default function Welcome() {
                     </div>
                     
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {topInstitutions.map((institution, index) => (
-                            <Card key={index} className="hover:shadow-lg transition-shadow">
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <CardTitle className="text-lg">{institution.name}</CardTitle>
-                                            <CardDescription className="mt-2">
-                                                📍 {institution.location}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge variant="secondary" className="flex items-center gap-1">
-                                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                            {institution.rating}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Users className="h-4 w-4" />
-                                            <span>{institution.students.toLocaleString()} siswa</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <BookOpen className="h-4 w-4" />
-                                            <span>{institution.courses} kursus</span>
-                                        </div>
-                                        <Button className="w-full mt-4">
-                                            <Link href={`/lembaga/${index + 1}`}>Lihat Detail</Link>
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                        {topInstitutions.map((institution) => (
+                            <InstitutionCard 
+                                key={institution.id} 
+                                institution={institution} 
+                                showDetails={true}
+                            />
                         ))}
                     </div>
                 </div>
@@ -287,6 +334,9 @@ export default function Welcome() {
                     </div>
                 </div>
             </section>
+            
+            {/* Live Chat Widget */}
+            <LiveChatWidget />
         </GuestLayout>
     );
 }
