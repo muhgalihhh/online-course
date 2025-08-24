@@ -34,14 +34,16 @@ export default defineConfig({
                 'https://*.ngrok-free.app',
                 'https://*.ngrok.io',
                 'https://*.ngrok.app',
+                'https://*.ngrok.dev',
+                'https://*.ngrok.com',
                 'https://joint-strongly-bulldog.ngrok-free.app',
             ],
             credentials: true,
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control'],
         },
         hmr: {
-            host: 'localhost',
+            host: '0.0.0.0',
             port: 5173,
             protocol: 'ws',
             clientPort: 5173,
@@ -52,9 +54,13 @@ export default defineConfig({
         },
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, HEAD',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control',
+            'Access-Control-Allow-Credentials': 'true',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
+        // Tambahan untuk ngrok
+        origin: 'http://localhost:5173',
     },
     preview: {
         host: '0.0.0.0',
@@ -67,11 +73,21 @@ export default defineConfig({
                 'https://*.ngrok-free.app',
                 'https://*.ngrok.io',
                 'https://*.ngrok.app',
+                'https://*.ngrok.dev',
+                'https://*.ngrok.com',
                 'https://joint-strongly-bulldog.ngrok-free.app',
             ],
             credentials: true,
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control'],
+        },
+    },
+    // Tambahan untuk asset loading
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: undefined,
+            },
         },
     },
 });
