@@ -20,31 +20,33 @@ export default function AdminLayout({ children, breadcrumbs = [] }: AdminLayoutP
     useToastNotifications();
 
     return (
-        <AppShell variant="sidebar">
-            <div className="flex h-screen flex-col">
-                {/* Header - Fixed at top */}
-                <AdminHeader breadcrumbs={breadcrumbs} />
-                
-                {/* Main content area with sidebar and content */}
-                <div className="flex flex-1 overflow-hidden">
-                    {/* Sidebar - Below header, fixed height */}
-                    <AdminSidebar breadcrumbs={breadcrumbs} />
+        <div className="min-h-screen bg-background">
+            <AppShell variant="sidebar">
+                <div className="flex h-screen flex-col">
+                    {/* Header - Fixed at top */}
+                    <AdminHeader breadcrumbs={breadcrumbs} />
                     
-                    {/* Content area - Adjusts based on sidebar state */}
-                    <div className={cn(
-                        "flex flex-1 flex-col transition-all duration-300",
-                        isCollapsed ? "md:ml-16" : "md:ml-64"
-                    )}>
-                        <AppContent variant="sidebar" className="overflow-x-hidden">
-                            <div className="flex-1 space-y-4 p-4 lg:p-6">
-                                <FlashMessages />
-                                {children}
-                            </div>
-                        </AppContent>
+                    {/* Main content area with sidebar and content */}
+                    <div className="flex flex-1 overflow-hidden">
+                        {/* Sidebar - Below header, fixed height */}
+                        <AdminSidebar breadcrumbs={breadcrumbs} />
+                        
+                        {/* Content area - Adjusts based on sidebar state */}
+                        <div className={cn(
+                            "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+                            isCollapsed ? "md:ml-16" : "md:ml-64"
+                        )}>
+                            <AppContent variant="sidebar" className="overflow-x-hidden">
+                                <div className="flex-1 space-y-6 p-4 lg:p-6 lg:space-y-8">
+                                    <FlashMessages />
+                                    {children}
+                                </div>
+                            </AppContent>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </AppShell>
             <Toaster />
-        </AppShell>
+        </div>
     );
 }

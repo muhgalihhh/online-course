@@ -2,11 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DeleteConfirmation } from '@/components/delete-confirmation';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { useState } from 'react';
 
 interface Category {
     id: number;
@@ -21,6 +23,30 @@ interface CategoryIndexProps extends PageProps {
 }
 
 export default function CategoryIndex({ categories }: CategoryIndexProps) {
+    const [deleteDialog, setDeleteDialog] = useState<{
+        isOpen: boolean;
+        categoryId: number | null;
+        categoryName: string;
+    }>({
+        isOpen: false,
+        categoryId: null,
+        categoryName: '',
+    });
+
+    const handleDelete = (categoryId: number, categoryName: string) => {
+        setDeleteDialog({
+            isOpen: true,
+            categoryId,
+            categoryName,
+        });
+    };
+
+    const confirmDelete = () => {
+        if (deleteDialog.categoryId) {
+            router.delete(route('admin.categories.destroy', deleteDialog.categoryId));
+        }
+    };
+
     return (
         <AdminLayout
             breadcrumbs={[
@@ -72,7 +98,11 @@ export default function CategoryIndex({ categories }: CategoryIndexProps) {
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
-                                                <Button variant="destructive" size="sm">
+                                                <Button 
+                                                    variant="destructive" 
+                                                    size="sm"
+                                                    onClick={() => handleDelete(category.id, category.name)}
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -89,6 +119,15 @@ export default function CategoryIndex({ categories }: CategoryIndexProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            <DeleteConfirmation
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog({ isOpen: false, categoryId: null, categoryName: '' })}
+                onConfirm={confirmDelete}
+                title="Hapus Kategori"
+                description="Apakah Anda yakin ingin menghapus kategori"
+                itemName={deleteDialog.categoryName}
+            />
         </AdminLayout>
     );
 }
