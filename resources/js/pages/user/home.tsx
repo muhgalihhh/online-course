@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import UserLayout from '@/layouts/user-layout'; // Asumsikan Anda memiliki layout ini
+import UserLayout from '@/layouts/user-layout';
 import { ArrowRight, Award, BookOpen, CloudSun, LifeBuoy, MessageSquare, PlayCircle, ShoppingCart, Star, Users, Zap } from 'lucide-react';
 import React from 'react';
 
@@ -31,7 +31,7 @@ interface Review {
 
 const Home: React.FC = () => {
     // --- Data Statis (Contoh) ---
-    const NAMA_LEMBAGA = 'Akademi Koding Pro'; // Ganti dengan nama lembaga Anda
+    const NAMA_PLATFORM = 'Pare EduHub'; // Ganti dengan nama platform Anda
 
     const proCourses: Course[] = [
         {
@@ -111,7 +111,7 @@ const Home: React.FC = () => {
             name: 'Budi Santoso',
             role: 'Full-Stack Developer',
             avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-            comment: `Materi di ${NAMA_LEMBAGA} sangat terstruktur dan mudah diikuti. Saya berhasil mendapatkan pekerjaan impian saya setelah lulus dari sini!`,
+            comment: `Materi di ${NAMA_PLATFORM} sangat terstruktur dan mudah diikuti. Saya berhasil mendapatkan pekerjaan impian saya setelah lulus dari sini!`,
             rating: 5,
         },
         {
@@ -185,11 +185,11 @@ const Home: React.FC = () => {
     return (
         <UserLayout>
             {/* Hero Section */}
-            <section className="bg-slate-50 py-20 dark:bg-slate-900/50">
+            <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-20">
                 <div className="container mx-auto px-4 text-center">
                     <Badge variant="outline" className="mb-4 px-3 py-1">
                         <Award className="mr-2 h-4 w-4 text-yellow-500" />
-                        Platform Kursus Online Eksklusif dari {NAMA_LEMBAGA}
+                        Platform Kursus Online Eksklusif dari {NAMA_PLATFORM}
                     </Badge>
                     <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-6xl">Tingkatkan Skill, Raih Karir Impian Anda</h1>
                     <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
@@ -250,9 +250,9 @@ const Home: React.FC = () => {
             </section>
 
             {/* Mengapa Memilih Kami */}
-            <section id="why-us" className="bg-slate-50 py-20 dark:bg-slate-900/50">
+            <section id="why-us" className="bg-muted/30 py-20">
                 <div className="container mx-auto px-4">
-                    <h2 className="mb-12 text-center text-3xl font-bold">Mengapa Belajar di {NAMA_LEMBAGA}?</h2>
+                    <h2 className="mb-12 text-center text-3xl font-bold">Mengapa Belajar di {NAMA_PLATFORM}?</h2>
                     <div className="grid grid-cols-1 gap-8 text-center md:grid-cols-3">
                         <div className="flex flex-col items-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -301,7 +301,7 @@ const Home: React.FC = () => {
             </section>
 
             {/* Testimoni */}
-            <section id="testimonials" className="bg-slate-50 py-20 dark:bg-slate-900/50">
+            <section id="testimonials" className="bg-muted/30 py-20">
                 <div className="container mx-auto px-4">
                     <h2 className="mb-2 text-center text-3xl font-bold">Apa Kata Alumni Kami?</h2>
                     <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">

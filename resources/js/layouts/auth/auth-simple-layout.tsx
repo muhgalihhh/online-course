@@ -10,11 +10,11 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
-        <div className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 md:p-10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+        <div className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-6 md:p-10">
             {/* Background decorative elements */}
             <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-600/20 blur-3xl"></div>
-                <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-400/20 to-blue-600/20 blur-3xl"></div>
+                <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 blur-3xl"></div>
+                <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 blur-3xl"></div>
             </div>
 
             <div className="relative w-full max-w-md">
@@ -24,10 +24,16 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                         <div className="flex flex-col items-center gap-6">
                             <Link href={route('home')} className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105">
                                 <div className="relative">
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 blur-xl transition-all duration-300 group-hover:from-blue-500/30 group-hover:to-purple-600/30"></div>
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 blur-xl transition-all duration-300 group-hover:from-primary/30 group-hover:to-primary/20"></div>
                                     <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-slate-50 shadow-lg ring-1 ring-slate-200/50 transition-all duration-300 group-hover:shadow-xl dark:from-slate-800 dark:to-slate-700 dark:ring-slate-700/50">
                                         <AppLogoIcon className="h-16 w-16 transition-transform duration-300 group-hover:scale-110" />
                                     </div>
+                                </div>
+                                <div className="text-center">
+                                    <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                                        Pare EduHub
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">Platform Kursus Online</p>
                                 </div>
                                 <span className="sr-only">{title}</span>
                             </Link>
