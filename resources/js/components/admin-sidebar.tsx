@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Building2, CreditCard, Menu, Users, LayoutDashboard, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Building2, CreditCard, Menu, Users, LayoutDashboard, Tag, ChevronLeft, ChevronRight, BarChart3, MessageSquare, Settings } from 'lucide-react';
 import { useSidebar } from '@/hooks/use-sidebar';
 
 interface AdminSidebarProps {
@@ -33,7 +33,7 @@ const menuItems = [
         icon: Tag,
     },
     {
-        title: 'Profil Institusi',
+        title: 'Institutions',
         href: route('admin.institutions.index'),
         icon: Building2,
     },
@@ -41,6 +41,21 @@ const menuItems = [
         title: 'Transactions',
         href: route('admin.transactions.index'),
         icon: CreditCard,
+    },
+    {
+        title: 'Analytics',
+        href: route('admin.analytics'),
+        icon: BarChart3,
+    },
+    {
+        title: 'Reviews',
+        href: route('admin.reviews'),
+        icon: MessageSquare,
+    },
+    {
+        title: 'Settings',
+        href: route('admin.settings'),
+        icon: Settings,
     },
 ];
 
@@ -65,7 +80,7 @@ export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
 
             {/* Desktop Sidebar */}
             <div className={cn(
-                "hidden md:flex md:flex-col transition-all duration-300 border-r bg-background",
+                "hidden md:flex md:flex-col transition-all duration-300 border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
                 isCollapsed ? "md:w-16" : "md:w-64"
             )}>
                 <AdminSidebarContent isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
@@ -84,6 +99,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
 
     return (
         <div className="flex flex-grow flex-col">
+            {/* Header */}
             <div className="flex h-16 items-center border-b px-4">
                 <div className="flex items-center justify-between w-full">
                     <Link href={route('admin.dashboard')} className="flex items-center gap-2">
@@ -97,7 +113,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                             variant="ghost"
                             size="sm"
                             onClick={toggleSidebar}
-                            className="h-8 w-8 p-0 shrink-0"
+                            className="h-8 w-8 p-0 shrink-0 hover:bg-muted"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             <span className="sr-only">Collapse sidebar</span>
@@ -106,6 +122,7 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                 </div>
             </div>
 
+            {/* Navigation */}
             <ScrollArea className="flex-1 px-3 py-4">
                 <nav className="space-y-1">
                     {menuItems.map((item) => {
@@ -115,14 +132,23 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                                 <Button
                                     variant={isActive ? 'secondary' : 'ghost'}
                                     className={cn(
-                                        'w-full justify-start h-10',
-                                        isActive && 'bg-secondary text-secondary-foreground',
-                                        isCollapsed && 'justify-center px-2'
+                                        'w-full justify-start h-10 transition-colors',
+                                        isActive && 'bg-secondary text-secondary-foreground shadow-sm',
+                                        isCollapsed && 'justify-center px-2',
+                                        !isCollapsed && 'px-3'
                                     )}
                                     title={isCollapsed ? item.title : undefined}
                                 >
-                                    {item.icon && <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />}
-                                    {!isCollapsed && <span className="truncate">{item.title}</span>}
+                                    {item.icon && (
+                                        <item.icon className={cn(
+                                            "h-4 w-4 transition-colors",
+                                            !isCollapsed && "mr-3",
+                                            isActive ? "text-secondary-foreground" : "text-muted-foreground"
+                                        )} />
+                                    )}
+                                    {!isCollapsed && (
+                                        <span className="truncate font-medium">{item.title}</span>
+                                    )}
                                 </Button>
                             </Link>
                         );
@@ -130,14 +156,14 @@ function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSideba
                 </nav>
             </ScrollArea>
             
-            {/* Collapse button when sidebar is collapsed */}
+            {/* Collapse/Expand button when sidebar is collapsed */}
             {isCollapsed && toggleSidebar && (
                 <div className="border-t p-2">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={toggleSidebar}
-                        className="h-8 w-8 p-0 mx-auto"
+                        className="h-8 w-8 p-0 mx-auto hover:bg-muted"
                         title="Expand sidebar"
                     >
                         <ChevronRight className="h-4 w-4" />
