@@ -1,183 +1,45 @@
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
-import { type BreadcrumbItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Building2, CreditCard, Menu, Users, LayoutDashboard, Tag, ChevronLeft, ChevronRight, BarChart3, MessageSquare, Settings, FileText, Layers } from 'lucide-react';
-import { useSidebar } from '@/hooks/use-sidebar';
+import { BookOpen, Building, ChevronLeft, ChevronRight, ClipboardList, Home, LineChart, ShoppingCart, Star, Users } from 'lucide-react';
 
-interface AdminSidebarProps {
-    breadcrumbs?: BreadcrumbItem[];
-}
-
-const menuItems = [
-    {
-        title: 'Dashboard',
-        href: route('admin.dashboard'),
-        icon: LayoutDashboard,
-    },
-    {
-        title: 'Users',
-        href: route('admin.users.index'),
-        icon: Users,
-    },
-    {
-        title: 'Courses',
-        href: route('admin.courses.index'),
-        icon: BookOpen,
-    },
-    {
-        title: 'Chapters',
-        href: route('admin.chapters.index'),
-        icon: Layers,
-    },
-    {
-        title: 'Materials',
-        href: route('admin.materials.index'),
-        icon: FileText,
-    },
-    {
-        title: 'Categories',
-        href: route('admin.categories.index'),
-        icon: Tag,
-    },
-    {
-        title: 'Institutions',
-        href: route('admin.institutions.index'),
-        icon: Building2,
-    },
-    {
-        title: 'Transactions',
-        href: route('admin.transactions.index'),
-        icon: CreditCard,
-    },
-    {
-        title: 'Analytics',
-        href: route('admin.analytics'),
-        icon: BarChart3,
-    },
-    {
-        title: 'Reviews',
-        href: route('admin.reviews'),
-        icon: MessageSquare,
-    },
-    {
-        title: 'Settings',
-        href: route('admin.settings'),
-        icon: Settings,
-    },
+const navigation = [
+    { name: 'Dashboard', href: 'admin.dashboard', icon: Home },
+    { name: 'Institutions', href: 'admin.institutions.index', icon: Building },
+    { name: 'Categories', href: 'admin.categories.index', icon: ClipboardList },
+    { name: 'Courses', href: 'admin.courses.index', icon: BookOpen },
+    { name: 'Users', href: 'admin.users.index', icon: Users },
+    { name: 'Transactions', href: 'admin.transactions.index', icon: ShoppingCart },
+    { name: 'Reviews', href: 'admin.reviews', icon: Star },
+    { name: 'Analytics', href: 'admin.analytics', icon: LineChart },
 ];
 
-export function AdminSidebar({ breadcrumbs }: AdminSidebarProps) {
-    const { url } = usePage();
-    const { isCollapsed, toggleSidebar } = useSidebar();
-
-    return (
-        <>
-            {/* Mobile Sidebar */}
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="sm" className="md:hidden">
-                        <Menu className="h-5 w-5" />
-                        <span className="sr-only">Toggle sidebar</span>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
-                    <AdminSidebarContent />
-                </SheetContent>
-            </Sheet>
-
-            {/* Desktop Sidebar */}
-            <div className={cn(
-                "hidden md:flex md:flex-col transition-all duration-300 border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-                isCollapsed ? "md:w-16" : "md:w-64"
-            )}>
-                <AdminSidebarContent isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-            </div>
-        </>
-    );
+interface AdminSidebarProps {
+    isExpanded: boolean;
+    onToggle?: () => void;
 }
 
-interface AdminSidebarContentProps {
-    isCollapsed?: boolean;
-    toggleSidebar?: () => void;
-}
-
-function AdminSidebarContent({ isCollapsed = false, toggleSidebar }: AdminSidebarContentProps) {
+export default function AdminSidebar({ isExpanded, onToggle }: AdminSidebarProps) {
     const { url } = usePage();
 
     return (
-        <div className="flex flex-grow flex-col">
-            {/* Header */}
-            <div className="flex h-16 items-center border-b px-4">
-                <div className="flex items-center justify-between w-full">
-                    <Link href={route('admin.dashboard')} className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
-                            <span className="text-sm font-bold text-primary-foreground">A</span>
-                        </div>
-                        {!isCollapsed && <span className="text-lg font-semibold truncate">Admin Panel</span>}
-                    </Link>
-                    {!isCollapsed && toggleSidebar && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={toggleSidebar}
-                            className="h-8 w-8 p-0 shrink-0 hover:bg-muted"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span className="sr-only">Collapse sidebar</span>
+        <div className="flex h-full flex-col justify-between">
+            <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
+                {navigation.map((item) => (
+                    <Link key={item.name} href={route(item.href)}>
+                        <Button variant={route().current(item.href) ? 'secondary' : 'ghost'} className="w-full justify-start gap-2">
+                            <item.icon className="h-4 w-4" />
+                            <span className={`whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100' : 'w-0 opacity-0'}`}>
+                                {item.name}
+                            </span>
                         </Button>
-                    )}
-                </div>
-            </div>
-
-            {/* Navigation */}
-            <ScrollArea className="flex-1 px-3 py-4">
-                <nav className="space-y-1">
-                    {menuItems.map((item) => {
-                        const isActive = url.startsWith(item.href);
-                        return (
-                            <Link key={item.href} href={item.href}>
-                                <Button
-                                    variant={isActive ? 'secondary' : 'ghost'}
-                                    className={cn(
-                                        'w-full justify-start h-10 transition-colors',
-                                        isActive && 'bg-secondary text-secondary-foreground shadow-sm',
-                                        isCollapsed && 'justify-center px-2',
-                                        !isCollapsed && 'px-3'
-                                    )}
-                                    title={isCollapsed ? item.title : undefined}
-                                >
-                                    {item.icon && (
-                                        <item.icon className={cn(
-                                            "h-4 w-4 transition-colors",
-                                            !isCollapsed && "mr-3",
-                                            isActive ? "text-secondary-foreground" : "text-muted-foreground"
-                                        )} />
-                                    )}
-                                    {!isCollapsed && (
-                                        <span className="truncate font-medium">{item.title}</span>
-                                    )}
-                                </Button>
-                            </Link>
-                        );
-                    })}
-                </nav>
-            </ScrollArea>
-            
-            {/* Collapse/Expand button when sidebar is collapsed */}
-            {isCollapsed && toggleSidebar && (
-                <div className="border-t p-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleSidebar}
-                        className="h-8 w-8 p-0 mx-auto hover:bg-muted"
-                        title="Expand sidebar"
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                        <span className="sr-only">Expand sidebar</span>
+                    </Link>
+                ))}
+            </nav>
+            {/* Tombol Toggle hanya untuk desktop */}
+            {onToggle && (
+                <div className="hidden border-t px-2 py-4 md:block">
+                    <Button variant="ghost" className="w-full justify-end" onClick={onToggle}>
+                        {isExpanded ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                     </Button>
                 </div>
             )}
