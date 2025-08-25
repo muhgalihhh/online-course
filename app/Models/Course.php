@@ -20,6 +20,7 @@ class Course extends Model
         'description',
         'price',
         'is_pro',
+        'thumbnail_path',
     ];
 
     protected $casts = [

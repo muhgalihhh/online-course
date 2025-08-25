@@ -17,6 +17,7 @@ class Institution extends Model
         'email',
         'address',
         'website',
+        'photo_path',
     ];
 
     /**
