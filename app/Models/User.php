@@ -97,10 +97,14 @@ class User extends Authenticatable
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->profile_photo_path) {
+            // Pastikan URL menggunakan storage link yang benar
             return Storage::disk('public')->url($this->profile_photo_path);
         }
 
-        // Jika tidak ada foto, gunakan API ui-avatars
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        // Jika tidak ada foto, gunakan API ui-avatars dengan warna yang lebih menarik
+        $name = urlencode($this->name);
+        $colors = ['7F9CF5', 'F56565', '48BB78', 'ED8936', '9F7AEA'];
+        $color = $colors[array_rand($colors)];
+        return "https://ui-avatars.com/api/?name={$name}&color=FFFFFF&background={$color}&size=200&bold=true";
     }
 }

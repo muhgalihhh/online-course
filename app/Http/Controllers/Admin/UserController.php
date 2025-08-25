@@ -15,12 +15,29 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::latest()->paginate(10);
+        $query = User::query();
+
+        // Filter by search (name or email)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->where('role', $request->get('role'));
+        }
+
+        $users = $query->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('admin/users/index', [
             'users' => $users,
+            'filters' => $request->only(['search', 'role']),
         ]);
     }
 

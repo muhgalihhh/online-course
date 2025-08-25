@@ -33,7 +33,11 @@ export default function UserCreate() {
 
     useEffect(() => {
         if (data.profile_photo_path) {
-            setPreview(URL.createObjectURL(data.profile_photo_path));
+            const objectUrl = URL.createObjectURL(data.profile_photo_path);
+            setPreview(objectUrl);
+
+            // Membersihkan object URL setelah komponen di-unmount
+            return () => URL.revokeObjectURL(objectUrl);
         } else {
             setPreview(null);
         }
@@ -67,14 +71,21 @@ export default function UserCreate() {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex items-center space-x-4">
                                 <Avatar className="h-20 w-20">
-                                    <AvatarImage src={preview || undefined} />
-                                    <AvatarFallback>{useInitials(data.name)}</AvatarFallback>
+                                    <AvatarImage 
+                                        src={preview || undefined} 
+                                        alt={data.name || 'User'}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
+                                        {useInitials(data.name)}
+                                    </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-2">
-                                    <Label htmlFor="profile_photo_path">Foto Profil</Label>
+                                    <Label htmlFor="profile_photo_path">Foto Profil (Opsional)</Label>
                                     <Input
                                         id="profile_photo_path"
                                         type="file"
+                                        accept="image/*"
                                         onChange={(e) => setData('profile_photo_path', e.target.files ? e.target.files[0] : null)}
                                         className={errors.profile_photo_path ? 'border-red-500' : ''}
                                     />
