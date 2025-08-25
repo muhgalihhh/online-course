@@ -44,7 +44,7 @@ const menu = [
     {
         label: 'Reviews',
         icon: 'MessageSquare',
-        href: 'admin.reviews',
+        href: 'admin.reviews.index',
     },
 ];
 
