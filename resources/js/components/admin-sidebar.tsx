@@ -1,16 +1,65 @@
 import { Button } from '@/components/ui/button';
+import Settings from '@/pages/admin/settings';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Building, ChevronLeft, ChevronRight, ClipboardList, Home, LineChart, ShoppingCart, Star, Users } from 'lucide-react';
+import {
+    BarChart4,
+    BookCheck,
+    BookCopy,
+    ChevronLeft,
+    ChevronRight,
+    FolderKanban,
+    LayoutDashboard,
+    Library,
+    MessageSquareQuote,
+    Users,
+} from 'lucide-react';
 
 const navigation = [
-    { name: 'Dashboard', href: 'admin.dashboard', icon: Home },
-    { name: 'Institutions', href: 'admin.institutions.index', icon: Building },
-    { name: 'Categories', href: 'admin.categories.index', icon: ClipboardList },
-    { name: 'Courses', href: 'admin.courses.index', icon: BookOpen },
-    { name: 'Users', href: 'admin.users.index', icon: Users },
-    { name: 'Transactions', href: 'admin.transactions.index', icon: ShoppingCart },
-    { name: 'Reviews', href: 'admin.reviews', icon: Star },
-    { name: 'Analytics', href: 'admin.analytics', icon: LineChart },
+    {
+        name: 'Dashboard',
+        href: 'admin.dashboard',
+        icon: LayoutDashboard,
+    },
+    {
+        name: 'Institutions',
+        href: 'admin.institutions.index',
+        icon: Library,
+    },
+    {
+        name: 'Categories',
+        href: 'admin.categories.index',
+        icon: FolderKanban,
+    },
+    {
+        name: 'Courses',
+        href: 'admin.courses.index',
+        icon: BookCopy,
+    },
+    {
+        name: 'Users',
+        href: 'admin.users.index',
+        icon: Users,
+    },
+    {
+        name: 'Transactions',
+        href: 'admin.transactions.index',
+        icon: BookCheck,
+    },
+    {
+        name: 'Reviews',
+        href: 'admin.reviews',
+        icon: MessageSquareQuote,
+    },
+    {
+        name: 'Analytics',
+        href: 'admin.analytics',
+        icon: BarChart4,
+    },
+    {
+        name: 'Settings',
+        href: 'admin.settings',
+        icon: Settings,
+    },
 ];
 
 interface AdminSidebarProps {
