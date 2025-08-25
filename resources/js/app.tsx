@@ -4,8 +4,14 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import { Ziggy } from './ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+// Setup Ziggy globally
+if (typeof window !== 'undefined') {
+    window.Ziggy = Ziggy;
+}
 
 createInertiaApp({
     title: (title) => title ? `${title} - ${appName}` : appName,

@@ -5,6 +5,16 @@ import { Icon } from '@/components/ui/icon';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
+// Helper function to safely generate route
+const safeRoute = (name: string) => {
+    try {
+        return route(name);
+    } catch (error) {
+        console.warn(`Route '${name}' not found:`, error);
+        return '#';
+    }
+};
+
 const menu = [
     {
         label: 'Dashboard',
@@ -61,7 +71,7 @@ export default function AdminSidebar() {
                     {menu.map((item, index) => (
                         <li key={index}>
                             <Link
-                                href={route(item.href)}
+                                href={safeRoute(item.href)}
                                 className={cn(
                                     'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
                                     route().current(item.href) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
