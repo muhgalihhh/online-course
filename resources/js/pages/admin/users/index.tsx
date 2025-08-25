@@ -1,4 +1,7 @@
+// resources/js/pages/admin/users/index.tsx
+
 import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -14,7 +17,8 @@ import {
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast'; // Ganti import ini
+import { useInitials } from '@/hooks/use-initials';
+import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/layouts/admin-layout';
 import { User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -40,7 +44,8 @@ type IndexPageProps = {
 export default function Index({ users, filters }: IndexPageProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
-    const { toast } = useToast(); // Gunakan useToast hook
+    const { toast } = useToast();
+    const getInitials = useInitials();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -92,16 +97,23 @@ export default function Index({ users, filters }: IndexPageProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Foto Profil</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Role</TableHead>
                                 <TableHead>Created At</TableHead>
-                                <TableHead></TableHead>
+                                <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {users.data.map((user) => (
                                 <TableRow key={user.id}>
+                                    <TableCell>
+                                        <Avatar>
+                                            <AvatarImage src={user.profile_photo_url} alt={user.name} />
+                                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        </Avatar>
+                                    </TableCell>
                                     <TableCell>{user.name}</TableCell>
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
@@ -125,13 +137,11 @@ export default function Index({ users, filters }: IndexPageProps) {
                                                         router.delete(route('admin.users.destroy', user.id), {
                                                             onSuccess: () =>
                                                                 toast({
-                                                                    // Panggil toast seperti ini
                                                                     title: 'Success',
                                                                     description: 'User deleted successfully',
                                                                 }),
                                                             onError: () =>
                                                                 toast({
-                                                                    // Panggil toast seperti ini
                                                                     title: 'Error',
                                                                     description: 'Failed to delete user',
                                                                     variant: 'destructive',
