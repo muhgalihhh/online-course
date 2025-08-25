@@ -6,25 +6,34 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
 import { cn } from '@/lib/utils';
 import { PageProps, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { MoreHorizontal, Pencil, PlusCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { MoreHorizontal, Pencil, PlusCircle, Search, Trash2, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface UserIndexProps extends PageProps {
     users: {
         data: User[];
         links: any[];
     };
+    filters: {
+        search?: string;
+        role?: string;
+    };
 }
 
-export default function UserIndex({ users }: UserIndexProps) {
+export default function UserIndex({ users, filters }: UserIndexProps) {
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [search, setSearch] = useState(filters.search || '');
+    const [roleFilter, setRoleFilter] = useState(filters.role || '');
 
     const openDeleteDialog = (user: User) => {
         setUserToDelete(user);
@@ -41,6 +50,34 @@ export default function UserIndex({ users }: UserIndexProps) {
             });
         }
     };
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.get(route('admin.users.index'), {
+                search,
+                role: roleFilter,
+            }, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search, roleFilter]);
+
+    const clearFilters = () => {
+        setSearch('');
+        setRoleFilter('');
+        router.get(route('admin.users.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    const hasFilters = search || roleFilter;
 
     return (
         <AdminLayout
@@ -72,6 +109,52 @@ export default function UserIndex({ users }: UserIndexProps) {
                         </Link>
                     }
                 />
+
+                {/* Filter Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Filter Pengguna</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="search">Cari Nama atau Email</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                    <Input
+                                        id="search"
+                                        placeholder="Cari pengguna..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="role">Filter Role</Label>
+                                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Semua Role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">Semua Role</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end">
+                                {hasFilters && (
+                                    <Button variant="outline" onClick={clearFilters} className="w-full">
+                                        <X className="mr-2 h-4 w-4" />
+                                        Bersihkan Filter
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Tabel Pengguna</CardTitle>
@@ -80,7 +163,7 @@ export default function UserIndex({ users }: UserIndexProps) {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Foto & Nama</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
                                     <TableHead>Tanggal Verifikasi</TableHead>
@@ -93,22 +176,33 @@ export default function UserIndex({ users }: UserIndexProps) {
                                         <TableRow key={user.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar>
-                                                        <AvatarImage src={user.profile_photo_url} alt={user.name} />
-                                                        <AvatarFallback>{useInitials(user.name)}</AvatarFallback>
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage 
+                                                            src={user.profile_photo_url} 
+                                                            alt={user.name}
+                                                            className="object-cover"
+                                                        />
+                                                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                                                            {useInitials(user.name)}
+                                                        </AvatarFallback>
                                                     </Avatar>
-                                                    <span className="font-medium">{user.name}</span>
+                                                    <div>
+                                                        <div className="font-medium">{user.name}</div>
+                                                        <div className="text-sm text-gray-500">ID: {user.id}</div>
+                                                    </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">{user.email}</div>
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     className={cn({
-                                                        'bg-blue-500 text-white': user.role === 'admin',
-                                                        'bg-gray-200 text-gray-800': user.role === 'user',
+                                                        'bg-blue-500 text-white hover:bg-blue-600': user.role === 'admin',
+                                                        'bg-gray-200 text-gray-800 hover:bg-gray-300': user.role === 'user',
                                                     })}
                                                 >
-                                                    {user.role}
+                                                    {user.role === 'admin' ? 'Admin' : 'User'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -148,7 +242,7 @@ export default function UserIndex({ users }: UserIndexProps) {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center">
-                                            Tidak ada data pengguna.
+                                            {hasFilters ? 'Tidak ada pengguna yang sesuai dengan filter.' : 'Tidak ada data pengguna.'}
                                         </TableCell>
                                     </TableRow>
                                 )}

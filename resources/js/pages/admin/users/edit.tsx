@@ -84,18 +84,30 @@ export default function UserEdit({ user }: UserEditProps) {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex items-center space-x-4">
                                 <Avatar className="h-20 w-20">
-                                    <AvatarImage src={preview || user.profile_photo_url} alt={user.name} />
-                                    <AvatarFallback>{useInitials(user.name)}</AvatarFallback>
+                                    <AvatarImage 
+                                        src={preview || user.profile_photo_url} 
+                                        alt={user.name}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
+                                        {useInitials(user.name)}
+                                    </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-2">
                                     <Label htmlFor="profile_photo_path">Ganti Foto Profil (Opsional)</Label>
                                     <Input
                                         id="profile_photo_path"
                                         type="file"
+                                        accept="image/*"
                                         onChange={(e) => setData('profile_photo_path', e.target.files ? e.target.files[0] : null)}
                                         className={errors.profile_photo_path ? 'border-red-500' : ''}
                                     />
                                     {errors.profile_photo_path && <ErrorMessage message={errors.profile_photo_path} />}
+                                    {user.profile_photo_path && !preview && (
+                                        <p className="text-sm text-gray-500">
+                                            Foto profil saat ini: {user.profile_photo_path}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

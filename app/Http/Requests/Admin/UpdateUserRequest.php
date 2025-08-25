@@ -28,7 +28,7 @@ class UpdateUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $userId . '|max:255',
             'password' => ['nullable', 'confirmed', Password::min(8)],
-            'role' => 'required|in:admin,instructor,student',
+            'role' => 'required|in:admin,user',
             'profile_photo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
