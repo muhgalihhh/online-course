@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,21 +35,23 @@ class UserController extends Controller
     /**
      * Simpan user baru ke database.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,user',
-        ]);
+        $data = $request->validated();
+        
+        // Hash password
+        $data['password'] = Hash::make($data['password']);
+        
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo_path')) {
+            $photoPath = $request->file('profile_photo_path')->store('users', 'public');
+            $data['profile_photo_path'] = $photoPath;
+        }
 
-        $validated['password'] = bcrypt($validated['password']);
-
-        User::create($validated);
+        User::create($data);
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil dibuat.');
+            ->with('success', 'Pengguna berhasil dibuat.');
     }
 
     /**
@@ -61,25 +67,33 @@ class UserController extends Controller
     /**
      * Update data user di database.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,user',
-        ]);
-
-        if (isset($validated['password'])) {
-            $validated['password'] = bcrypt($validated['password']);
+        $data = $request->validated();
+        
+        // Handle password update
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
         } else {
-            unset($validated['password']);
+            unset($data['password']);
+        }
+        
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo_path')) {
+            // Hapus foto lama jika ada
+            if ($user->profile_photo_path) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+            
+            // Simpan foto baru
+            $photoPath = $request->file('profile_photo_path')->store('users', 'public');
+            $data['profile_photo_path'] = $photoPath;
         }
 
-        $user->update($validated);
+        $user->update($data);
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil diperbarui.');
+            ->with('success', 'Pengguna berhasil diperbarui.');
     }
 
     /**
@@ -93,9 +107,24 @@ class UserController extends Controller
                 ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
+        // Hapus foto profil jika ada
+        if ($user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+        }
+
         $user->delete();
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil dihapus.');
+            ->with('success', 'Pengguna berhasil dihapus.');
+    }
+    
+    /**
+     * Tampilkan detail user.
+     */
+    public function show(User $user): Response
+    {
+        return Inertia::render('admin/users/show', [
+            'user' => $user->load(['courses', 'transactions']),
+        ]);
     }
 }

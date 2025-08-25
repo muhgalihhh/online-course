@@ -26,11 +26,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Category Management
     Route::resource('categories', AdminCategoryController::class);
     
-    // Institution Management
-    Route::resource('institutions', AdminInstitutionController::class);
+    // Institution Management (Single Institution)
+    Route::get('/institution', [AdminInstitutionController::class, 'edit'])->name('institution.edit');
+    Route::patch('/institution', [AdminInstitutionController::class, 'update'])->name('institution.update');
     
-    // Transaction Management
-    Route::resource('transactions', AdminTransactionController::class)->except(['create', 'store', 'edit', 'update']);
+    // Transaction Management (Dummy System)
+    Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/{transaction}', [AdminTransactionController::class, 'show'])->name('transactions.show');
     Route::patch('/transactions/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])->name('transactions.update-status');
     
     // Chapter Management
@@ -45,10 +47,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
     
-    // Reviews
-    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews');
-    Route::patch('/reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('reviews.update-status');
-    Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    // Reviews (Institution and Course Reviews)
+    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('/reviews/update-status', [AdminReviewController::class, 'updateStatus'])->name('reviews.update-status');
+    Route::delete('/reviews/destroy', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
     
     // Settings
     Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings');

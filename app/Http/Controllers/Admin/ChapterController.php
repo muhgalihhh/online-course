@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Chapter;
 use App\Models\Course;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,10 +85,29 @@ class ChapterController extends Controller
      */
     public function destroy(Chapter $chapter)
     {
+        // Hapus semua file materi yang terkait dengan bab
+        foreach ($chapter->courseMaterials as $material) {
+            if ($material->file_path) {
+                Storage::disk('public')->delete($material->file_path);
+            }
+        }
+        
         $chapter->delete();
 
         return redirect()->route('admin.chapters.index')
             ->with('success', 'Bab berhasil dihapus.');
+    }
+    
+    /**
+     * Tampilkan detail bab.
+     */
+    public function show(Chapter $chapter): Response
+    {
+        return Inertia::render('admin/chapters/show', [
+            'chapter' => $chapter->load(['course.institution', 'course.category', 'courseMaterials' => function($query) {
+                $query->orderBy('order');
+            }]),
+        ]);
     }
 
     /**
