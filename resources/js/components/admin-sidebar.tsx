@@ -1,97 +1,79 @@
-import { Button } from '@/components/ui/button';
-import Settings from '@/pages/admin/settings';
 import { Link, usePage } from '@inertiajs/react';
-import {
-    BarChart4,
-    BookCheck,
-    BookCopy,
-    ChevronLeft,
-    ChevronRight,
-    FolderKanban,
-    LayoutDashboard,
-    Library,
-    MessageSquareQuote,
-    Users,
-} from 'lucide-react';
 
-const navigation = [
+import AppLogo from '@/components/app-logo';
+import { Icon } from '@/components/ui/icon';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+
+const menu = [
     {
-        name: 'Dashboard',
+        label: 'Dashboard',
+        icon: 'LayoutDashboard',
         href: 'admin.dashboard',
-        icon: LayoutDashboard,
     },
     {
-        name: 'Institutions',
-        href: 'admin.institutions.index',
-        icon: Library,
-    },
-    {
-        name: 'Categories',
-        href: 'admin.categories.index',
-        icon: FolderKanban,
-    },
-    {
-        name: 'Courses',
-        href: 'admin.courses.index',
-        icon: BookCopy,
-    },
-    {
-        name: 'Users',
-        href: 'admin.users.index',
-        icon: Users,
-    },
-    {
-        name: 'Transactions',
-        href: 'admin.transactions.index',
-        icon: BookCheck,
-    },
-    {
-        name: 'Reviews',
-        href: 'admin.reviews',
-        icon: MessageSquareQuote,
-    },
-    {
-        name: 'Analytics',
+        label: 'Analytics',
+        icon: 'LineChart',
         href: 'admin.analytics',
-        icon: BarChart4,
     },
     {
-        name: 'Settings',
-        href: 'admin.settings',
-        icon: Settings,
+        label: 'Transactions',
+        icon: 'ArrowLeftRight',
+        href: 'admin.transactions.index',
+    },
+    {
+        label: 'Users',
+        icon: 'Users',
+        href: 'admin.users.index',
+    },
+    {
+        label: 'Courses',
+        icon: 'Book',
+        href: 'admin.courses.index',
+    },
+    {
+        label: 'Categories',
+        icon: 'LayoutGrid',
+        href: 'admin.categories.index',
+    },
+    {
+        label: 'Institutions',
+        icon: 'School',
+        href: 'admin.institutions.index',
+    },
+    {
+        label: 'Reviews',
+        icon: 'MessageSquare',
+        href: 'admin.reviews',
     },
 ];
 
-interface AdminSidebarProps {
-    isExpanded: boolean;
-    onToggle?: () => void;
-}
-
-export default function AdminSidebar({ isExpanded, onToggle }: AdminSidebarProps) {
-    const { url } = usePage();
+export default function AdminSidebar() {
+    const { component } = usePage();
 
     return (
-        <div className="flex h-full flex-col justify-between">
-            <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
-                {navigation.map((item) => (
-                    <Link key={item.name} href={route(item.href)}>
-                        <Button variant={route().current(item.href) ? 'secondary' : 'ghost'} className="w-full justify-start gap-2">
-                            <item.icon className="h-4 w-4" />
-                            <span className={`whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100' : 'w-0 opacity-0'}`}>
-                                {item.name}
-                            </span>
-                        </Button>
-                    </Link>
-                ))}
-            </nav>
-            {/* Tombol Toggle hanya untuk desktop */}
-            {onToggle && (
-                <div className="hidden border-t px-2 py-4 md:block">
-                    <Button variant="ghost" className="w-full justify-end" onClick={onToggle}>
-                        {isExpanded ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                    </Button>
-                </div>
-            )}
-        </div>
+        <aside className="hidden w-64 flex-col border-r lg:flex">
+            <div className="flex h-14 items-center border-b px-4">
+                <AppLogo />
+            </div>
+            <ScrollArea className="h-full px-4">
+                <ul className="space-y-2">
+                    {menu.map((item, index) => (
+                        <li key={index}>
+                            <Link
+                                href={route(item.href)}
+                                className={cn(
+                                    'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+                                    route().current(item.href) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                                )}
+                            >
+                                <Icon name={item.icon as any} className="mr-2 h-4 w-4" />
+                                <span>{item.label}</span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            </ScrollArea>
+        </aside>
     );
 }
