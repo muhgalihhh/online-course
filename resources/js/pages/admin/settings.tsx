@@ -1,19 +1,17 @@
 // resources/js/pages/admin/settings.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { Settings, Globe, Shield, Bell, Mail, Database, Palette, Users, CreditCard, Save, RefreshCw } from 'lucide-react';
+import { Bell, CreditCard, Database, Globe, Mail, Palette, RefreshCw, Save, Settings as SettingsIcon, Shield, Users } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -50,9 +48,7 @@ export default function Settings({}: SettingsProps) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                    <p className="text-muted-foreground">
-                        Kelola pengaturan sistem dan konfigurasi platform
-                    </p>
+                    <p className="text-muted-foreground">Kelola pengaturan sistem dan konfigurasi platform</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm">
@@ -70,7 +66,7 @@ export default function Settings({}: SettingsProps) {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="general" className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
+                        <SettingsIcon className="h-4 w-4" />
                         General
                     </TabsTrigger>
                     <TabsTrigger value="appearance" className="flex items-center gap-2">
@@ -112,8 +108,8 @@ export default function Settings({}: SettingsProps) {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="platform-description">Description</Label>
-                                    <Textarea 
-                                        id="platform-description" 
+                                    <Textarea
+                                        id="platform-description"
                                         defaultValue="Platform kursus online terbaik untuk pembelajaran digital"
                                         rows={3}
                                     />
@@ -158,18 +154,14 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Auto-approve Users</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Otomatis menyetujui pendaftaran user baru
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Otomatis menyetujui pendaftaran user baru</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Allow User Registration</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Mengizinkan user baru untuk mendaftar
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Mengizinkan user baru untuk mendaftar</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -202,19 +194,17 @@ export default function Settings({}: SettingsProps) {
                                 <div className="space-y-2">
                                     <Label>Primary Color</Label>
                                     <div className="flex gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-blue-500 cursor-pointer border-2 border-blue-600"></div>
-                                        <div className="w-8 h-8 rounded-full bg-green-500 cursor-pointer"></div>
-                                        <div className="w-8 h-8 rounded-full bg-purple-500 cursor-pointer"></div>
-                                        <div className="w-8 h-8 rounded-full bg-orange-500 cursor-pointer"></div>
-                                        <div className="w-8 h-8 rounded-full bg-red-500 cursor-pointer"></div>
+                                        <div className="h-8 w-8 cursor-pointer rounded-full border-2 border-blue-600 bg-blue-500"></div>
+                                        <div className="h-8 w-8 cursor-pointer rounded-full bg-green-500"></div>
+                                        <div className="h-8 w-8 cursor-pointer rounded-full bg-purple-500"></div>
+                                        <div className="h-8 w-8 cursor-pointer rounded-full bg-orange-500"></div>
+                                        <div className="h-8 w-8 cursor-pointer rounded-full bg-red-500"></div>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Show Logo</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Menampilkan logo platform
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Menampilkan logo platform</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -241,18 +231,14 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Collapsible Sidebar</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Sidebar dapat di-collapse
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Sidebar dapat di-collapse</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Show Breadcrumbs</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Menampilkan breadcrumb navigation
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Menampilkan breadcrumb navigation</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -288,18 +274,14 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Two-Factor Authentication</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Wajib untuk admin
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Wajib untuk admin</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Session Timeout</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Auto logout setelah 30 menit
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Auto logout setelah 30 menit</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -318,15 +300,13 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>IP Whitelist</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Batasi akses berdasarkan IP
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Batasi akses berdasarkan IP</p>
                                     </div>
                                     <Switch />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Allowed IP Addresses</Label>
-                                    <Textarea 
+                                    <Textarea
                                         placeholder="192.168.1.1&#10;10.0.0.1"
                                         rows={3}
                                     />
@@ -334,9 +314,7 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Rate Limiting</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Batasi request per menit
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Batasi request per menit</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -363,36 +341,28 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>New User Registration</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Kirim email saat user baru mendaftar
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Kirim email saat user baru mendaftar</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Course Enrollment</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Kirim email saat user mendaftar kursus
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Kirim email saat user mendaftar kursus</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Payment Confirmation</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Kirim email konfirmasi pembayaran
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Kirim email konfirmasi pembayaran</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>System Updates</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Kirim email update sistem
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Kirim email update sistem</p>
                                     </div>
                                     <Switch />
                                 </div>
@@ -407,18 +377,14 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Push Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Aktifkan push notifications
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Aktifkan push notifications</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Sound Alerts</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Putar suara saat notifikasi
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Putar suara saat notifikasi</p>
                                     </div>
                                     <Switch />
                                 </div>
@@ -461,9 +427,7 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Use TLS</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Enkripsi koneksi email
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Enkripsi koneksi email</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
@@ -492,10 +456,7 @@ export default function Settings({}: SettingsProps) {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Email Footer</Label>
-                                    <Textarea 
-                                        defaultValue="© 2024 EduPlatform. All rights reserved."
-                                        rows={3}
-                                    />
+                                    <Textarea defaultValue="© 2024 EduPlatform. All rights reserved." rows={3} />
                                 </div>
                             </CardContent>
                         </Card>
@@ -524,18 +485,14 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Debug Mode</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Aktifkan mode debug
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Aktifkan mode debug</p>
                                     </div>
                                     <Switch />
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Maintenance Mode</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Aktifkan mode maintenance
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Aktifkan mode maintenance</p>
                                     </div>
                                     <Switch />
                                 </div>
@@ -579,9 +536,7 @@ export default function Settings({}: SettingsProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Auto-refund</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Otomatis refund untuk transaksi gagal
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Otomatis refund untuk transaksi gagal</p>
                                     </div>
                                     <Switch defaultChecked />
                                 </div>
