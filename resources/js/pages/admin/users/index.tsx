@@ -1,44 +1,44 @@
-// resources/js/pages/admin/users/index.tsx
-
 import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
-import { PageProps, PaginatedData, User } from '@/types';
+import { cn } from '@/lib/utils';
+import { PageProps, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, PlusCircle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-// Definisikan props yang diterima dari controller
 interface UserIndexProps extends PageProps {
-    users: PaginatedData<User>;
+    users: {
+        data: User[];
+        links: any[];
+    };
 }
 
 export default function UserIndex({ users }: UserIndexProps) {
-    const [deleteDialog, setDeleteDialog] = useState<{
-        isOpen: boolean;
-        userId: number | null;
-        userName: string;
-    }>({
-        isOpen: false,
-        userId: null,
-        userName: '',
-    });
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-    const handleDelete = (userId: number, userName: string) => {
-        setDeleteDialog({
-            isOpen: true,
-            userId,
-            userName,
-        });
+    const openDeleteDialog = (user: User) => {
+        setUserToDelete(user);
+        setConfirmDelete(true);
     };
 
-    const confirmDelete = () => {
-        if (deleteDialog.userId) {
-            router.delete(route('admin.users.destroy', deleteDialog.userId));
+    const handleDelete = () => {
+        if (userToDelete) {
+            router.delete(route('admin.users.destroy', userToDelete.id), {
+                onSuccess: () => {
+                    setConfirmDelete(false);
+                    setUserToDelete(null);
+                },
+            });
         }
     };
 
@@ -49,22 +49,32 @@ export default function UserIndex({ users }: UserIndexProps) {
                 { title: 'Users', href: route('admin.users.index') },
             ]}
         >
-            <Head title="Manage Users" />
+            <Head title="Users" />
 
-            <div>
-                <div className="mb-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Daftar Pengguna</h1>
-                    <Link href={route('admin.users.create')}>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tambah User
-                        </Button>
-                    </Link>
-                </div>
+            <DeleteConfirmation
+                isOpen={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                onConfirm={handleDelete}
+                title="Hapus Pengguna"
+                description={`Apakah Anda yakin ingin menghapus pengguna "${userToDelete?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+            />
 
+            <div className="space-y-6">
+                <PageHeader
+                    title="Daftar Pengguna"
+                    description="Kelola semua pengguna terdaftar di platform ini"
+                    actions={
+                        <Link href={route('admin.users.create')}>
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Tambah User
+                            </Button>
+                        </Link>
+                    }
+                />
                 <Card>
                     <CardHeader>
-                        <CardTitle>Pengguna</CardTitle>
+                        <CardTitle>Tabel Pengguna</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -72,53 +82,82 @@ export default function UserIndex({ users }: UserIndexProps) {
                                 <TableRow>
                                     <TableHead>Nama</TableHead>
                                     <TableHead>Email</TableHead>
-                                    <TableHead>Peran</TableHead>
-                                    <TableHead>Tanggal Bergabung</TableHead>
-                                    <TableHead>Aksi</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Tanggal Verifikasi</TableHead>
+                                    <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {users.data.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>
-                                        </TableCell>
-                                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <div className="flex space-x-2">
-                                                <Link href={route('admin.users.edit', user.id)}>
-                                                    <Button variant="outline" size="sm">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id, user.name)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
+                                {users.data.length > 0 ? (
+                                    users.data.map((user) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar>
+                                                        <AvatarImage src={user.profile_photo_url} alt={user.name} />
+                                                        <AvatarFallback>{useInitials(user.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-medium">{user.name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    className={cn({
+                                                        'bg-blue-500 text-white': user.role === 'admin',
+                                                        'bg-gray-200 text-gray-800': user.role === 'user',
+                                                    })}
+                                                >
+                                                    {user.role}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {user.email_verified_at
+                                                    ? new Date(user.email_verified_at).toLocaleDateString('id-ID', {
+                                                          year: 'numeric',
+                                                          month: 'long',
+                                                          day: 'numeric',
+                                                      })
+                                                    : 'Belum diverifikasi'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Buka menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={route('admin.users.edit', user.id)}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                <span>Edit</span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => openDeleteDialog(user)} className="text-red-600">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            <span>Hapus</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center">
+                                            Tidak ada data pengguna.
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
                             </TableBody>
                         </Table>
-                        {users.links && users.links.length > 0 && (
-                            <div className="mt-4">
-                                <Pagination links={users.links} />
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
+                <Pagination links={users.links} />
             </div>
-
-            <DeleteConfirmation
-                isOpen={deleteDialog.isOpen}
-                onClose={() => setDeleteDialog({ isOpen: false, userId: null, userName: '' })}
-                onConfirm={confirmDelete}
-                title="Hapus User"
-                description="Apakah Anda yakin ingin menghapus user"
-                itemName={deleteDialog.userName}
-            />
         </AdminLayout>
     );
 }

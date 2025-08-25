@@ -1,39 +1,50 @@
+import { ErrorMessage } from '@/components/error-message';
+import { FormActions } from '@/components/form-actions';
+import { PageHeader } from '@/components/page-header';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageHeader } from '@/components/page-header';
-import { FormActions } from '@/components/form-actions';
-import { ErrorMessage } from '@/components/error-message';
+import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
-import { PageProps } from '@/types';
-import { Head, useForm, router } from '@inertiajs/react';
-import { User, Edit3 } from 'lucide-react';
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-}
+import { PageProps, User } from '@/types';
+import { Head, router, useForm } from '@inertiajs/react';
+import { UserCog } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface UserEditProps extends PageProps {
     user: User;
 }
 
 export default function UserEdit({ user }: UserEditProps) {
-    const { data, setData, put, processing, errors } = useForm({
+    const [preview, setPreview] = useState<string | null>(null);
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'PUT',
         name: user.name,
         email: user.email,
         password: '',
         password_confirmation: '',
         role: user.role,
+        profile_photo_path: null as File | null,
     });
+
+    useEffect(() => {
+        if (data.profile_photo_path) {
+            const objectUrl = URL.createObjectURL(data.profile_photo_path);
+            setPreview(objectUrl);
+
+            // Membersihkan object URL setelah komponen di-unmount
+            return () => URL.revokeObjectURL(objectUrl);
+        }
+    }, [data.profile_photo_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('admin.users.update', user.id));
+        post(route('admin.users.update', user.id), {
+            // Penting: paksa Inertia untuk mengingat scroll position setelah form submit
+            preserveScroll: true,
+        });
     };
 
     const handleCancel = () => {
@@ -45,32 +56,49 @@ export default function UserEdit({ user }: UserEditProps) {
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
                 { title: 'Users', href: route('admin.users.index') },
-                { title: 'Edit', href: route('admin.users.edit', user.id) },
+                { title: `Edit "${user.name}"`, href: route('admin.users.edit', user.id) },
             ]}
         >
-            <Head title="Edit User" />
+            <Head title={`Edit User - ${user.name}`} />
 
             <div className="space-y-6">
                 <PageHeader
-                    title="Edit User"
-                    description={`Update informasi pengguna ${user.name}`}
+                    title={`Edit User`}
+                    description={`Memperbarui detail untuk pengguna ${user.name}`}
                     backUrl={route('admin.users.index')}
                     badge={{
                         text: 'Editing',
-                        icon: Edit3,
-                        variant: 'outline'
+                        icon: UserCog,
+                        variant: 'outline',
                     }}
                 />
 
                 <Card className="max-w-2xl">
                     <CardHeader>
                         <CardTitle className="flex items-center space-x-2">
-                            <User className="h-5 w-5" />
+                            <UserCog className="h-5 w-5" />
                             <span>Informasi User</span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="flex items-center space-x-4">
+                                <Avatar className="h-20 w-20">
+                                    <AvatarImage src={preview || user.profile_photo_url} alt={user.name} />
+                                    <AvatarFallback>{useInitials(user.name)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-2">
+                                    <Label htmlFor="profile_photo_path">Ganti Foto Profil (Opsional)</Label>
+                                    <Input
+                                        id="profile_photo_path"
+                                        type="file"
+                                        onChange={(e) => setData('profile_photo_path', e.target.files ? e.target.files[0] : null)}
+                                        className={errors.profile_photo_path ? 'border-red-500' : ''}
+                                    />
+                                    {errors.profile_photo_path && <ErrorMessage message={errors.profile_photo_path} />}
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="name">Nama Lengkap</Label>
                                 <Input
@@ -96,7 +124,7 @@ export default function UserEdit({ user }: UserEditProps) {
                                 {errors.email && <ErrorMessage message={errors.email} />}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="password">Password Baru (Opsional)</Label>
                                     <Input
@@ -104,7 +132,7 @@ export default function UserEdit({ user }: UserEditProps) {
                                         type="password"
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
-                                        placeholder="Kosongkan jika tidak ingin mengubah"
+                                        placeholder="Kosongkan jika tidak diubah"
                                         className={errors.password ? 'border-red-500' : ''}
                                     />
                                     {errors.password && <ErrorMessage message={errors.password} />}
@@ -138,12 +166,7 @@ export default function UserEdit({ user }: UserEditProps) {
                                 {errors.role && <ErrorMessage message={errors.role} />}
                             </div>
 
-                            <FormActions
-                                onCancel={handleCancel}
-                                submitText="Update User"
-                                loading={processing}
-                                loadingText="Menyimpan..."
-                            />
+                            <FormActions onCancel={handleCancel} submitText="Update User" loading={processing} loadingText="Updating..." />
                         </form>
                     </CardContent>
                 </Card>

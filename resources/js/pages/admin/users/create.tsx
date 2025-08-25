@@ -1,26 +1,43 @@
+// resources/js/pages/admin/users/create.tsx
+
+import { ErrorMessage } from '@/components/error-message';
+import { FormActions } from '@/components/form-actions';
+import { PageHeader } from '@/components/page-header';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageHeader } from '@/components/page-header';
-import { FormActions } from '@/components/form-actions';
-import { ErrorMessage } from '@/components/error-message';
+import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
-import { PageProps } from '@/types';
-import { Head, useForm, Link, router } from '@inertiajs/react';
-import { UserPlus } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
 
-interface UserCreateProps extends PageProps {}
-
-export default function UserCreate({}: UserCreateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function UserCreate() {
+    const [preview, setPreview] = useState<string | null>(null);
+    const { data, setData, post, processing, errors } = useForm<{
+        name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        role: string;
+        profile_photo_path: File | null;
+    }>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
         role: 'user',
+        profile_photo_path: null,
     });
+
+    useEffect(() => {
+        if (data.profile_photo_path) {
+            setPreview(URL.createObjectURL(data.profile_photo_path));
+        } else {
+            setPreview(null);
+        }
+    }, [data.profile_photo_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,32 +53,35 @@ export default function UserCreate({}: UserCreateProps) {
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
                 { title: 'Users', href: route('admin.users.index') },
-                { title: 'Create', href: route('admin.users.create') },
+                { title: 'Create' },
             ]}
         >
             <Head title="Create User" />
-
             <div className="space-y-6">
-                <PageHeader
-                    title="Tambah User Baru"
-                    description="Buat akun pengguna baru untuk platform ini"
-                    backUrl={route('admin.users.index')}
-                    badge={{
-                        text: 'New User',
-                        icon: UserPlus,
-                        variant: 'outline'
-                    }}
-                />
-
+                <PageHeader title="Tambah User Baru" backUrl={route('admin.users.index')} />
                 <Card className="max-w-2xl">
                     <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                            <UserPlus className="h-5 w-5" />
-                            <span>Informasi User</span>
-                        </CardTitle>
+                        <CardTitle>Informasi User</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="flex items-center space-x-4">
+                                <Avatar className="h-20 w-20">
+                                    <AvatarImage src={preview || undefined} />
+                                    <AvatarFallback>{useInitials(data.name)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-2">
+                                    <Label htmlFor="profile_photo_path">Foto Profil</Label>
+                                    <Input
+                                        id="profile_photo_path"
+                                        type="file"
+                                        onChange={(e) => setData('profile_photo_path', e.target.files ? e.target.files[0] : null)}
+                                        className={errors.profile_photo_path ? 'border-red-500' : ''}
+                                    />
+                                    {errors.profile_photo_path && <ErrorMessage message={errors.profile_photo_path} />}
+                                </div>
+                            </div>
+                            {/* ... sisa form ... */}
                             <div className="space-y-2">
                                 <Label htmlFor="name">Nama Lengkap</Label>
                                 <Input
@@ -87,7 +107,7 @@ export default function UserCreate({}: UserCreateProps) {
                                 {errors.email && <ErrorMessage message={errors.email} />}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="password">Password</Label>
                                     <Input
@@ -109,9 +129,7 @@ export default function UserCreate({}: UserCreateProps) {
                                         value={data.password_confirmation}
                                         onChange={(e) => setData('password_confirmation', e.target.value)}
                                         placeholder="Konfirmasi password"
-                                        className={errors.password_confirmation ? 'border-red-500' : ''}
                                     />
-                                    {errors.password_confirmation && <ErrorMessage message={errors.password_confirmation} />}
                                 </div>
                             </div>
 
@@ -129,12 +147,7 @@ export default function UserCreate({}: UserCreateProps) {
                                 {errors.role && <ErrorMessage message={errors.role} />}
                             </div>
 
-                            <FormActions
-                                onCancel={handleCancel}
-                                submitText="Simpan User"
-                                loading={processing}
-                                loadingText="Menyimpan..."
-                            />
+                            <FormActions onCancel={handleCancel} submitText="Simpan User" loading={processing} />
                         </form>
                     </CardContent>
                 </Card>

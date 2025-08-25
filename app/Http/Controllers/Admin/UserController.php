@@ -7,57 +7,61 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class UserController extends Controller
 {
     /**
-     * Menampilkan daftar semua pengguna dengan paginasi.
+     * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index()
     {
+        $users = User::latest()->paginate(10);
+
         return Inertia::render('admin/users/index', [
-            'users' => User::latest()->paginate(10)->withQueryString(),
+            'users' => $users,
         ]);
     }
 
     /**
-     * Tampilkan form untuk membuat user baru.
+     * Show the form for creating a new resource.
      */
-    public function create(): Response
+    public function create()
     {
         return Inertia::render('admin/users/create');
     }
 
     /**
-     * Simpan user baru ke database.
+     * Store a newly created resource in storage.
      */
     public function store(StoreUserRequest $request)
     {
         $data = $request->validated();
-        
-        // Hash password
-        $data['password'] = Hash::make($data['password']);
-        
-        // Handle profile photo upload
+
         if ($request->hasFile('profile_photo_path')) {
-            $photoPath = $request->file('profile_photo_path')->store('users', 'public');
-            $data['profile_photo_path'] = $photoPath;
+            $data['profile_photo_path'] = $request->file('profile_photo_path')->store('profile-photos', 'public');
         }
+
+        $data['password'] = bcrypt($data['password']);
 
         User::create($data);
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Pengguna berhasil dibuat.');
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
     /**
-     * Tampilkan form untuk mengedit user.
+     * Display the specified resource.
      */
-    public function edit(User $user): Response
+    public function show(User $user)
+    {
+        // Not in use
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(User $user)
     {
         return Inertia::render('admin/users/edit', [
             'user' => $user,
@@ -65,66 +69,43 @@ class UserController extends Controller
     }
 
     /**
-     * Update data user di database.
+     * Update the specified resource in storage.
      */
     public function update(UpdateUserRequest $request, User $user)
     {
         $data = $request->validated();
-        
-        // Handle password update
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
-        }
-        
-        // Handle profile photo upload
+
         if ($request->hasFile('profile_photo_path')) {
-            // Hapus foto lama jika ada
+            // Delete old profile photo if it exists
             if ($user->profile_photo_path) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
-            
-            // Simpan foto baru
-            $photoPath = $request->file('profile_photo_path')->store('users', 'public');
-            $data['profile_photo_path'] = $photoPath;
+            $data['profile_photo_path'] = $request->file('profile_photo_path')->store('profile-photos', 'public');
+        }
+
+        if (empty($data['password'])) {
+            unset($data['password']);
+        } else {
+            $data['password'] = bcrypt($data['password']);
         }
 
         $user->update($data);
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Pengguna berhasil diperbarui.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
     /**
-     * Hapus user dari database.
+     * Remove the specified resource from storage.
      */
     public function destroy(User $user)
     {
-        // Cek apakah user yang akan dihapus adalah user yang sedang login
-        if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
-        }
-
-        // Hapus foto profil jika ada
+        // Delete profile photo if it exists
         if ($user->profile_photo_path) {
             Storage::disk('public')->delete($user->profile_photo_path);
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Pengguna berhasil dihapus.');
-    }
-    
-    /**
-     * Tampilkan detail user.
-     */
-    public function show(User $user): Response
-    {
-        return Inertia::render('admin/users/show', [
-            'user' => $user->load(['courses', 'transactions']),
-        ]);
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
 }
