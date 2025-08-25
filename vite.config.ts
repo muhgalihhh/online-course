@@ -23,7 +23,7 @@ export default defineConfig({
         },
     },
     server: {
-        host: '0.0.0.0',
+        host: 'localhost',
         port: 5173,
         strictPort: true,
         cors: {
@@ -43,7 +43,8 @@ export default defineConfig({
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control'],
         },
         hmr: {
-            host: '0.0.0.0',
+            // --- DAN PERUBAHAN DI SINI ---
+            host: 'localhost', // Pastikan HMR juga menggunakan localhost
             port: 5173,
             protocol: 'ws',
             clientPort: 5173,
@@ -59,7 +60,6 @@ export default defineConfig({
             'Access-Control-Allow-Credentials': 'true',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
-        // Tambahan untuk ngrok
         origin: 'http://localhost:5173',
     },
     preview: {
@@ -82,7 +82,6 @@ export default defineConfig({
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control'],
         },
     },
-    // Tambahan untuk asset loading
     build: {
         rollupOptions: {
             output: {
