@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/layouts/admin-layout';
 import { User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import qs from 'qs';
 import { useEffect, useState } from 'react';
 
@@ -44,8 +44,35 @@ type IndexPageProps = {
 export default function Index({ users, filters }: IndexPageProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
+    const [deleteDialog, setDeleteDialog] = useState({
+        isOpen: false,
+        userId: null as number | null,
+        userName: ''
+    });
     const { toast } = useToast();
     const getInitials = useInitials();
+
+    const confirmDelete = () => {
+        if (deleteDialog.userId) {
+            router.delete(route('admin.users.destroy', deleteDialog.userId), {
+                onSuccess: () => {
+                    toast({
+                        title: 'Success',
+                        description: 'User deleted successfully',
+                    });
+                    setDeleteDialog({ isOpen: false, userId: null, userName: '' });
+                },
+                onError: () => {
+                    toast({
+                        title: 'Error',
+                        description: 'Failed to delete user',
+                        variant: 'destructive',
+                    });
+                    setDeleteDialog({ isOpen: false, userId: null, userName: '' });
+                }
+            });
+        }
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -71,9 +98,6 @@ export default function Index({ users, filters }: IndexPageProps) {
             header={
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-semibold">Users</h1>
-                    <Link href={route('admin.users.create')} className={buttonVariants({ size: 'sm' })}>
-                        Create User
-                    </Link>
                 </div>
             }
         >
@@ -81,17 +105,23 @@ export default function Index({ users, filters }: IndexPageProps) {
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
-                    <Select value={roleFilter} onValueChange={setRoleFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Role</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="flex items-center space-x-4">
+                        <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+                        <Select value={roleFilter} onValueChange={setRoleFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Role</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="user">User</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Link href={route('admin.users.create')} className={buttonVariants({ size: 'sm' })}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah User
+                    </Link>
                 </div>
                 <div className="overflow-hidden rounded-md border">
                     <Table>
@@ -109,9 +139,15 @@ export default function Index({ users, filters }: IndexPageProps) {
                             {users.data.map((user) => (
                                 <TableRow key={user.id}>
                                     <TableCell>
-                                        <Avatar>
-                                            <AvatarImage src={user.profile_photo_url} alt={user.name} />
-                                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage 
+                                                src={user.profile_photo_url} 
+                                                alt={user.name}
+                                                className="object-cover"
+                                            />
+                                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                                                {getInitials(user.name)}
+                                            </AvatarFallback>
                                         </Avatar>
                                     </TableCell>
                                     <TableCell>{user.name}</TableCell>
@@ -132,23 +168,17 @@ export default function Index({ users, filters }: IndexPageProps) {
                                                 <DropdownMenuItem asChild>
                                                     <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                                 </DropdownMenuItem>
-                                                <DeleteConfirmation
-                                                    onConfirm={() => {
-                                                        router.delete(route('admin.users.destroy', user.id), {
-                                                            onSuccess: () =>
-                                                                toast({
-                                                                    title: 'Success',
-                                                                    description: 'User deleted successfully',
-                                                                }),
-                                                            onError: () =>
-                                                                toast({
-                                                                    title: 'Error',
-                                                                    description: 'Failed to delete user',
-                                                                    variant: 'destructive',
-                                                                }),
-                                                        });
-                                                    }}
-                                                />
+                                                <DropdownMenuItem 
+                                                    className="text-red-600"
+                                                    onClick={() => setDeleteDialog({
+                                                        isOpen: true,
+                                                        userId: user.id,
+                                                        userName: user.name
+                                                    })}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
@@ -199,6 +229,15 @@ export default function Index({ users, filters }: IndexPageProps) {
                     </PaginationContent>
                 </Pagination>
             </div>
+
+            <DeleteConfirmation
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog({ isOpen: false, userId: null, userName: '' })}
+                onConfirm={confirmDelete}
+                title="Hapus User"
+                description="Apakah Anda yakin ingin menghapus user"
+                itemName={deleteDialog.userName}
+            />
         </AdminLayout>
     );
 }

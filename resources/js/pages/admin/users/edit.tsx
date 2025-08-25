@@ -19,6 +19,7 @@ interface UserEditProps extends PageProps {
 
 export default function UserEdit({ user }: UserEditProps) {
     const [preview, setPreview] = useState<string | null>(null);
+    const getInitials = useInitials();
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         name: user.name,
@@ -90,7 +91,7 @@ export default function UserEdit({ user }: UserEditProps) {
                                         className="object-cover"
                                     />
                                     <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
-                                        {useInitials(user.name)}
+                                        {getInitials(user.name)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-2">
@@ -103,9 +104,14 @@ export default function UserEdit({ user }: UserEditProps) {
                                         className={errors.profile_photo_path ? 'border-red-500' : ''}
                                     />
                                     {errors.profile_photo_path && <ErrorMessage message={errors.profile_photo_path} />}
-                                    {user.profile_photo_path && !preview && (
+                                    {user.profile_photo_url && !preview && (
                                         <p className="text-sm text-gray-500">
-                                            Foto profil saat ini: {user.profile_photo_path}
+                                            Foto profil saat ini sudah ada. Pilih file baru untuk menggantinya.
+                                        </p>
+                                    )}
+                                    {preview && (
+                                        <p className="text-sm text-green-600">
+                                            Preview foto baru sudah ditampilkan di samping.
                                         </p>
                                     )}
                                 </div>
