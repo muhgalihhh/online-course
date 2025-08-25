@@ -15,6 +15,7 @@ class CourseReview extends Model
         'course_id',
         'rating',
         'comment',
+        'status',
     ];
 
     /**

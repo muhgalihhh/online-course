@@ -34,7 +34,7 @@ class TransactionController extends Controller
     }
 
     /**
-     * Update status transaksi.
+     * Update status transaksi dan handle enrollment otomatis.
      */
     public function updateStatus(Request $request, Transaction $transaction)
     {
@@ -42,20 +42,23 @@ class TransactionController extends Controller
             'status' => 'required|in:pending,completed,failed,cancelled',
         ]);
 
+        $oldStatus = $transaction->status;
         $transaction->update($validated);
 
-        return redirect()->route('admin.transactions.index')
+        // Jika status berubah menjadi completed dan transaksinya untuk course
+        if ($validated['status'] === 'completed' && $oldStatus !== 'completed') {
+            if ($transaction->transactionable_type === 'App\\Models\\Course') {
+                $user = $transaction->user;
+                $course = $transaction->transactionable;
+                
+                // Pastikan user belum terdaftar di kursus
+                if ($user && $course && !$user->courses()->where('course_id', $course->id)->exists()) {
+                    $user->courses()->attach($course->id, ['created_at' => now(), 'updated_at' => now()]);
+                }
+            }
+        }
+
+        return redirect()->route('admin.transactions.show', $transaction)
             ->with('success', 'Status transaksi berhasil diperbarui.');
-    }
-
-    /**
-     * Hapus transaksi dari database.
-     */
-    public function destroy(Transaction $transaction)
-    {
-        $transaction->delete();
-
-        return redirect()->route('admin.transactions.index')
-            ->with('success', 'Transaksi berhasil dihapus.');
     }
 }

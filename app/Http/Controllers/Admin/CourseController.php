@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCourseRequest;
+use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\Category;
 use App\Models\Institution;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,16 +42,15 @@ class CourseController extends Controller
     /**
      * Simpan kursus baru ke database.
      */
-    public function store(Request $request)
+    public function store(StoreCourseRequest $request)
     {
-        $validated = $request->validate([
-            'institution_id' => 'required|exists:institutions,id',
-            'category_id' => 'required|exists:categories,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'is_pro' => 'boolean',
-        ]);
+        $validated = $request->validated();
+
+        // Handle thumbnail upload
+        if ($request->hasFile('thumbnail_path')) {
+            $thumbnailPath = $request->file('thumbnail_path')->store('courses', 'public');
+            $validated['thumbnail_path'] = $thumbnailPath;
+        }
 
         Course::create($validated);
 
@@ -71,16 +73,21 @@ class CourseController extends Controller
     /**
      * Update data kursus di database.
      */
-    public function update(Request $request, Course $course)
+    public function update(UpdateCourseRequest $request, Course $course)
     {
-        $validated = $request->validate([
-            'institution_id' => 'required|exists:institutions,id',
-            'category_id' => 'required|exists:categories,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'is_pro' => 'boolean',
-        ]);
+        $validated = $request->validated();
+
+        // Handle thumbnail upload
+        if ($request->hasFile('thumbnail_path')) {
+            // Hapus thumbnail lama jika ada
+            if ($course->thumbnail_path) {
+                Storage::disk('public')->delete($course->thumbnail_path);
+            }
+            
+            // Upload thumbnail baru
+            $thumbnailPath = $request->file('thumbnail_path')->store('courses', 'public');
+            $validated['thumbnail_path'] = $thumbnailPath;
+        }
 
         $course->update($validated);
 
@@ -93,9 +100,35 @@ class CourseController extends Controller
      */
     public function destroy(Course $course)
     {
+        // Hapus thumbnail jika ada
+        if ($course->thumbnail_path) {
+            Storage::disk('public')->delete($course->thumbnail_path);
+        }
+        
+        // Hapus semua file materi yang terkait dengan kursus
+        foreach ($course->chapters as $chapter) {
+            foreach ($chapter->courseMaterials as $material) {
+                if ($material->file_path) {
+                    Storage::disk('public')->delete($material->file_path);
+                }
+            }
+        }
+        
         $course->delete();
 
         return redirect()->route('admin.courses.index')
             ->with('success', 'Kursus berhasil dihapus.');
+    }
+    
+    /**
+     * Tampilkan detail kursus.
+     */
+    public function show(Course $course): Response
+    {
+        return Inertia::render('admin/courses/show', [
+            'course' => $course->load(['institution', 'category', 'chapters' => function($query) {
+                $query->withCount('courseMaterials');
+            }, 'users']),
+        ]);
     }
 }

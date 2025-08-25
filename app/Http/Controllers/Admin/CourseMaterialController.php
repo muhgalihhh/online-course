@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCourseMaterialRequest;
+use App\Http\Requests\Admin\UpdateCourseMaterialRequest;
 use App\Models\CourseMaterial;
 use App\Models\Chapter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,22 +40,30 @@ class CourseMaterialController extends Controller
     /**
      * Simpan materi baru ke database.
      */
-    public function store(Request $request)
+    public function store(StoreCourseMaterialRequest $request)
     {
-        $validated = $request->validate([
-            'chapter_id' => 'required|exists:chapters,id',
-            'title' => 'required|string|max:255',
-            'order' => 'required|integer|min:1',
-            'type' => 'required|in:video,document,quiz',
-            'file_path' => 'nullable|string',
-            'youtube_url' => 'nullable|url',
-            'is_preview' => 'boolean',
-        ]);
+        $data = $request->validated();
+        
+        // Handle file upload untuk type pdf dan image
+        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image'])) {
+            $filePath = $request->file('file_path')->store('materials', 'public');
+            $data['file_path'] = $filePath;
+        }
+        
+        // Pastikan youtube_url kosong jika type bukan video
+        if ($data['type'] !== 'video') {
+            $data['youtube_url'] = null;
+        }
+        
+        // Pastikan file_path kosong jika type adalah video
+        if ($data['type'] === 'video') {
+            $data['file_path'] = null;
+        }
 
-        CourseMaterial::create($validated);
+        CourseMaterial::create($data);
 
         return redirect()->route('admin.materials.index')
-            ->with('success', 'Materi berhasil dibuat.');
+            ->with('success', 'Materi kursus berhasil dibuat.');
     }
 
     /**
@@ -69,22 +80,45 @@ class CourseMaterialController extends Controller
     /**
      * Update data materi di database.
      */
-    public function update(Request $request, CourseMaterial $material)
+    public function update(UpdateCourseMaterialRequest $request, CourseMaterial $material)
     {
-        $validated = $request->validate([
-            'chapter_id' => 'required|exists:chapters,id',
-            'title' => 'required|string|max:255',
-            'order' => 'required|integer|min:1',
-            'type' => 'required|in:video,document,quiz',
-            'file_path' => 'nullable|string',
-            'youtube_url' => 'nullable|url',
-            'is_preview' => 'boolean',
-        ]);
+        $data = $request->validated();
+        $oldType = $material->type;
+        
+        // Jika type berubah, hapus file lama yang tidak relevan
+        if ($oldType !== $data['type']) {
+            if ($oldType !== 'video' && $material->file_path) {
+                Storage::disk('public')->delete($material->file_path);
+                $material->file_path = null;
+            }
+        }
+        
+        // Handle file upload untuk type pdf dan image
+        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image'])) {
+            // Hapus file lama jika ada
+            if ($material->file_path) {
+                Storage::disk('public')->delete($material->file_path);
+            }
+            
+            // Upload file baru
+            $filePath = $request->file('file_path')->store('materials', 'public');
+            $data['file_path'] = $filePath;
+        }
+        
+        // Pastikan youtube_url kosong jika type bukan video
+        if ($data['type'] !== 'video') {
+            $data['youtube_url'] = null;
+        }
+        
+        // Pastikan file_path kosong jika type adalah video
+        if ($data['type'] === 'video') {
+            $data['file_path'] = null;
+        }
 
-        $material->update($validated);
+        $material->update($data);
 
         return redirect()->route('admin.materials.index')
-            ->with('success', 'Materi berhasil diperbarui.');
+            ->with('success', 'Materi kursus berhasil diperbarui.');
     }
 
     /**
@@ -92,10 +126,25 @@ class CourseMaterialController extends Controller
      */
     public function destroy(CourseMaterial $material)
     {
+        // Hapus file terkait jika ada
+        if ($material->file_path) {
+            Storage::disk('public')->delete($material->file_path);
+        }
+        
         $material->delete();
 
         return redirect()->route('admin.materials.index')
-            ->with('success', 'Materi berhasil dihapus.');
+            ->with('success', 'Materi kursus berhasil dihapus.');
+    }
+    
+    /**
+     * Tampilkan detail materi.
+     */
+    public function show(CourseMaterial $material): Response
+    {
+        return Inertia::render('admin/materials/show', [
+            'material' => $material->load(['chapter.course']),
+        ]);
     }
 
     /**

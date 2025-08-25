@@ -98,4 +98,16 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
             ->with('success', 'Kategori berhasil dihapus.');
     }
+    
+    /**
+     * Tampilkan detail kategori.
+     */
+    public function show(Category $category): Response
+    {
+        return Inertia::render('admin/categories/show', [
+            'category' => $category->load(['courses' => function($query) {
+                $query->withCount('chapters');
+            }]),
+        ]);
+    }
 }

@@ -15,6 +15,7 @@ class Review extends Model
         'institution_id',
         'rating',
         'comment',
+        'status',
     ];
 
     /**
