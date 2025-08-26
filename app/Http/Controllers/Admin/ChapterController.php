@@ -45,7 +45,10 @@ class ChapterController extends Controller
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'order' => 'required|integer|min:1',
+            'duration' => 'nullable|integer|min:1',
+            'is_free' => 'boolean',
         ]);
 
         Chapter::create($validated);
@@ -73,7 +76,10 @@ class ChapterController extends Controller
         $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'order' => 'required|integer|min:1',
+            'duration' => 'nullable|integer|min:1',
+            'is_free' => 'boolean',
         ]);
 
         $chapter->update($validated);

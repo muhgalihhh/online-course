@@ -33,13 +33,13 @@ interface Course {
 interface Chapter {
     id: number;
     title: string;
-    description: string;
+    description?: string;
     order: number;
-    duration: number; // in minutes
-    is_free: boolean;
+    duration?: number; // in minutes
+    is_free?: boolean;
     created_at: string;
     course: Course;
-    materials_count: number;
+    course_materials_count: number;
 }
 
 interface ChaptersProps extends PageProps {
@@ -193,9 +193,11 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                     <TableCell>
                                         <div>
                                             <div className="font-medium">{chapter.title}</div>
-                                            <div className="text-sm text-muted-foreground line-clamp-1">
-                                                {chapter.description}
-                                            </div>
+                                            {chapter.description && (
+                                                <div className="text-sm text-muted-foreground line-clamp-1">
+                                                    {chapter.description}
+                                                </div>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -207,14 +209,16 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                     <TableCell>
                                         <div className="flex items-center gap-1">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{formatDuration(chapter.duration)}</span>
+                                            <span className="text-sm">
+                                                {chapter.duration ? formatDuration(chapter.duration) : '-'}
+                                            </span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-1">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
                                             <Badge variant="secondary" className="text-xs">
-                                                {chapter.materials_count} materi
+                                                {chapter.course_materials_count} materi
                                             </Badge>
                                         </div>
                                     </TableCell>
@@ -286,7 +290,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {formatDuration(chapters.data.reduce((acc, chapter) => acc + chapter.duration, 0))}
+                            {formatDuration(chapters.data.reduce((acc, chapter) => acc + (chapter.duration || 0), 0))}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             Total durasi semua chapter
