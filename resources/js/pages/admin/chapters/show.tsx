@@ -22,6 +22,8 @@ interface ChapterShowProps extends PageProps {
 		title: string;
 		description?: string;
 		order: number;
+		duration?: number;
+		is_free?: boolean;
 		course: Course;
 		course_materials: Material[];
 	};
@@ -54,13 +56,25 @@ export default function ChapterShow({ chapter }: ChapterShowProps) {
 							<BookOpen className="h-5 w-5" />
 							{chapter.title}
 							<Badge variant="secondary">Chapter {chapter.order}</Badge>
+							{chapter.is_free && <Badge variant="default">Gratis</Badge>}
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<div className="text-sm text-muted-foreground">Kursus: {chapter.course.title}</div>
+						{chapter.duration && (
+							<div className="text-sm text-muted-foreground">
+								Durasi: {Math.floor(chapter.duration / 60) > 0 && `${Math.floor(chapter.duration / 60)}h `}{chapter.duration % 60}m
+							</div>
+						)}
 						{chapter.description && (
 							<p className="text-muted-foreground">{chapter.description}</p>
 						)}
+						<div className="flex items-center gap-4 text-sm">
+							<span className="text-muted-foreground">Status:</span>
+							<Badge variant={chapter.is_free ? "default" : "secondary"}>
+								{chapter.is_free ? "Chapter Gratis" : "Chapter Premium"}
+							</Badge>
+						</div>
 					</CardContent>
 				</Card>
 

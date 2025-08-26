@@ -14,7 +14,15 @@ class Chapter extends Model
     protected $fillable = [
         'course_id',
         'title',
+        'description',
         'order',
+        'duration',
+        'is_free',
+    ];
+
+    protected $casts = [
+        'is_free' => 'boolean',
+        'duration' => 'integer',
     ];
 
     /**
