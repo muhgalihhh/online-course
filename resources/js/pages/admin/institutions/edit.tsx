@@ -34,7 +34,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('admin.institutions.update', institution.id));
+        put(route('admin.institutions.update'));
     };
 
     return (
@@ -42,7 +42,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
                 { title: 'Profil Institusi', href: route('admin.institutions.index') },
-                { title: 'Edit Profil', href: route('admin.institutions.edit', institution.id) },
+                { title: 'Edit Profil', href: route('admin.institutions.edit') },
             ]}
         >
             <Head title="Edit Profil Institusi" />

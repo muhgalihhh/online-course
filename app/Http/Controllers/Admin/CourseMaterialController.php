@@ -24,6 +24,7 @@ class CourseMaterialController extends Controller
                 ->latest()
                 ->paginate(10)
                 ->withQueryString(),
+            'chapters' => Chapter::with(['course'])->get(),
         ]);
     }
 

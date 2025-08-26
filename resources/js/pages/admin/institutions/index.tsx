@@ -41,14 +41,14 @@ export default function InstitutionIndex({ institution }: InstitutionIndexProps)
                         </p>
                     </div>
                     {!institution ? (
-                        <Link href={route('admin.institutions.create')}>
+                        <Link href={route('admin.institutions.edit')}>
                             <Button>
                                 <Plus className="h-4 w-4 mr-2" />
-                                Buat Profil Institusi
+                                Buat/Atur Profil Institusi
                             </Button>
                         </Link>
                     ) : (
-                        <Link href={route('admin.institutions.edit', institution.id)}>
+                        <Link href={route('admin.institutions.edit')}>
                             <Button>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Profil
@@ -72,10 +72,10 @@ export default function InstitutionIndex({ institution }: InstitutionIndexProps)
                                 <p className="text-muted-foreground mb-4">
                                     Tambahkan informasi lengkap tentang institusi Anda untuk memberikan kepercayaan kepada peserta kursus.
                                 </p>
-                                <Link href={route('admin.institutions.create')}>
+                                <Link href={route('admin.institutions.edit')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
-                                        Buat Profil Institusi
+                                        Buat/Atur Profil Institusi
                                     </Button>
                                 </Link>
                             </div>

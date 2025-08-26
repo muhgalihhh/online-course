@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { useState } from 'react';
+import { DeleteConfirmation } from '@/components/delete-confirmation';
 
 interface Course {
     id: number;
@@ -30,6 +32,14 @@ interface CourseIndexProps extends PageProps {
 }
 
 export default function CourseIndex({ courses }: CourseIndexProps) {
+    const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; courseId: number | null; courseTitle: string }>({ isOpen: false, courseId: null, courseTitle: '' });
+
+    const confirmDelete = () => {
+        if (deleteDialog.courseId) {
+            router.delete(route('admin.courses.destroy', deleteDialog.courseId));
+        }
+    };
+
     return (
         <AdminLayout
             breadcrumbs={[
@@ -92,7 +102,11 @@ export default function CourseIndex({ courses }: CourseIndexProps) {
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
-                                                <Button variant="destructive" size="sm">
+                                                <Button 
+                                                    variant="destructive" 
+                                                    size="sm"
+                                                    onClick={() => setDeleteDialog({ isOpen: true, courseId: course.id, courseTitle: course.title })}
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -109,6 +123,15 @@ export default function CourseIndex({ courses }: CourseIndexProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            <DeleteConfirmation
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog({ isOpen: false, courseId: null, courseTitle: '' })}
+                onConfirm={confirmDelete}
+                title="Hapus Kursus"
+                description="Apakah Anda yakin ingin menghapus kursus"
+                itemName={deleteDialog.courseTitle}
+            />
         </AdminLayout>
     );
 }
