@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
     Pagination,
     PaginationContent,
@@ -15,7 +14,6 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useInitials } from '@/hooks/use-initials';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +21,8 @@ import AdminLayout from '@/layouts/admin-layout';
 import { User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
-import qs from 'qs';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 
 type IndexPageProps = {
     users: {
@@ -38,12 +36,14 @@ type IndexPageProps = {
     filters: {
         search: string;
         role: string;
+        date_from: string;
+        date_to: string;
+        sort_by: string;
+        sort_order: string;
     };
 };
 
 export default function Index({ users, filters }: IndexPageProps) {
-    const [search, setSearch] = useState(filters.search || '');
-    const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
     const [deleteDialog, setDeleteDialog] = useState({
         isOpen: false,
         userId: null as number | null,
@@ -51,6 +51,37 @@ export default function Index({ users, filters }: IndexPageProps) {
     });
     const { toast } = useToast();
     const getInitials = useInitials();
+
+    const filterConfig: FilterConfig = {
+        search: {
+            placeholder: "Search by name or email...",
+        },
+        select: {
+            role: {
+                label: "Role",
+                options: [
+                    { value: "admin", label: "Admin" },
+                    { value: "user", label: "User" }
+                ],
+                placeholder: "All Roles"
+            }
+        },
+        dateRange: {
+            enabled: true,
+            label: "Registration Date"
+        },
+        sort: {
+            enabled: true,
+            options: [
+                { value: "created_at", label: "Registration Date" },
+                { value: "name", label: "Name" },
+                { value: "email", label: "Email" },
+                { value: "role", label: "Role" }
+            ],
+            defaultSort: "created_at",
+            defaultOrder: "desc"
+        }
+    };
 
     const confirmDelete = () => {
         if (deleteDialog.userId) {
@@ -74,25 +105,6 @@ export default function Index({ users, filters }: IndexPageProps) {
         }
     };
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            router.get(
-                route('admin.users.index'),
-                {
-                    search,
-                    role: roleFilter === 'all' ? '' : roleFilter,
-                },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                },
-            );
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [search, roleFilter]);
-
     return (
         <AdminLayout
             header={
@@ -104,20 +116,14 @@ export default function Index({ users, filters }: IndexPageProps) {
             <Head title="Users" />
 
             <div className="space-y-4">
+                <AdminFilter 
+                    config={filterConfig}
+                    filters={filters}
+                    route="admin.users.index"
+                />
+
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
-                        <Select value={roleFilter} onValueChange={setRoleFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua Role</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="user">User</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <h2 className="text-lg font-semibold">User List</h2>
                     <Link href={route('admin.users.create')} className={buttonVariants({ size: 'sm' })}>
                         <Plus className="h-4 w-4 mr-2" />
                         Tambah User

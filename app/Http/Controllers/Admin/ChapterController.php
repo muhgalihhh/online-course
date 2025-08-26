@@ -15,15 +15,67 @@ class ChapterController extends Controller
     /**
      * Menampilkan daftar semua bab dengan paginasi.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Chapter::with(['course'])->withCount('courseMaterials');
+
+        // Filter by search (title or description)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by course
+        if ($request->filled('course_id')) {
+            $query->where('course_id', $request->get('course_id'));
+        }
+
+        // Filter by material count range
+        if ($request->filled('material_count_min')) {
+            $query->has('courseMaterials', '>=', $request->get('material_count_min'));
+        }
+        
+        if ($request->filled('material_count_max')) {
+            $query->has('courseMaterials', '<=', $request->get('material_count_max'));
+        }
+
+        // Filter by duration range
+        if ($request->filled('duration_min')) {
+            $query->where('duration', '>=', $request->get('duration_min'));
+        }
+        
+        if ($request->filled('duration_max')) {
+            $query->where('duration', '<=', $request->get('duration_max'));
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Sort by
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        if ($sortBy === 'course_materials_count') {
+            $query->orderBy('course_materials_count', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $chapters = $query->paginate(10)->withQueryString();
+
         return Inertia::render('admin/chapters/index', [
-            'chapters' => Chapter::with(['course'])
-                ->withCount('courseMaterials')
-                ->latest()
-                ->paginate(10)
-                ->withQueryString(),
+            'chapters' => $chapters,
             'courses' => Course::all(),
+            'filters' => $request->only(['search', 'course_id', 'material_count_min', 'material_count_max', 'duration_min', 'duration_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 

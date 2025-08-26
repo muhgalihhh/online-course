@@ -18,29 +18,49 @@ class CourseMaterialController extends Controller
     /**
      * Menampilkan daftar semua materi dengan paginasi.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $search = request('search');
-        $courseId = request('course_id');
-        $chapterId = request('chapter_id');
-        $type = request('type');
+        $query = CourseMaterial::with(['chapter.course']);
 
-        $query = CourseMaterial::with(['chapter.course'])
-            ->when($search, function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%");
-            })
-            ->when($type, function ($q) use ($type) {
-                $q->where('type', $type);
-            })
-            ->when($chapterId, function ($q) use ($chapterId) {
-                $q->where('chapter_id', $chapterId);
-            })
-            ->when($courseId, function ($q) use ($courseId) {
-                $q->whereHas('chapter', function ($chapterQuery) use ($courseId) {
-                    $chapterQuery->where('course_id', $courseId);
-                });
-            })
-            ->latest();
+        // Filter by search (title or content)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by type
+        if ($request->filled('type')) {
+            $query->where('type', $request->get('type'));
+        }
+
+        // Filter by chapter
+        if ($request->filled('chapter_id')) {
+            $query->where('chapter_id', $request->get('chapter_id'));
+        }
+
+        // Filter by course
+        if ($request->filled('course_id')) {
+            $query->whereHas('chapter', function ($chapterQuery) use ($request) {
+                $chapterQuery->where('course_id', $request->get('course_id'));
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Sort by
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
 
         // Get materials with proper grouping
         $materials = $query->paginate(10)->withQueryString();
@@ -73,12 +93,7 @@ class CourseMaterialController extends Controller
             'groupedMaterials' => $groupedMaterials,
             'chapters' => Chapter::with(['course'])->get(),
             'courses' => Course::all(),
-            'filters' => [
-                'search' => $search,
-                'course_id' => $courseId,
-                'chapter_id' => $chapterId,
-                'type' => $type,
-            ],
+            'filters' => $request->only(['search', 'course_id', 'chapter_id', 'type', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 

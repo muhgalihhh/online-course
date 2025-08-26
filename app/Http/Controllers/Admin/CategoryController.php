@@ -14,13 +14,52 @@ class CategoryController extends Controller
     /**
      * Menampilkan daftar semua kategori dengan paginasi.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Category::withCount('courses');
+
+        // Filter by search (name or description)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by course count range
+        if ($request->filled('course_count_min')) {
+            $query->has('courses', '>=', $request->get('course_count_min'));
+        }
+        
+        if ($request->filled('course_count_max')) {
+            $query->has('courses', '<=', $request->get('course_count_max'));
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Sort by
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        if ($sortBy === 'courses_count') {
+            $query->orderBy('courses_count', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $categories = $query->paginate(10)->withQueryString();
+
         return Inertia::render('admin/categories/index', [
-            'categories' => Category::withCount('courses')
-                ->latest()
-                ->paginate(10)
-                ->withQueryString(),
+            'categories' => $categories,
+            'filters' => $request->only(['search', 'course_count_min', 'course_count_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 

@@ -20,53 +20,139 @@ class ReviewController extends Controller
         $perPage = 10;
         $page = (int) $request->get('page', 1);
 
-        $institutionReviews = Review::with(['user', 'institution:id,name'])
-            ->get()
-            ->map(function ($r) {
-                return [
-                    'id' => $r->id,
-                    'rating' => $r->rating,
-                    'comment' => $r->comment,
-                    'status' => $r->status,
-                    'created_at' => $r->created_at,
-                    'user' => [
-                        'id' => $r->user?->id,
-                        'name' => $r->user?->name,
-                        'email' => $r->user?->email,
-                    ],
-                    'reviewable' => [
-                        'id' => $r->institution_id,
-                        'title' => $r->institution?->name,
-                        'type' => 'institution',
-                    ],
-                ];
+        // Build institution reviews query
+        $institutionQuery = Review::with(['user', 'institution:id,name']);
+        
+        // Apply filters to institution reviews
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $institutionQuery->where(function ($q) use ($search) {
+                $q->where('comment', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                               ->orWhere('email', 'like', "%{$search}%");
+                  });
             });
+        }
 
-        $courseReviews = CourseReview::with(['user', 'course:id,title'])
-            ->get()
-            ->map(function ($r) {
-                return [
-                    'id' => $r->id,
-                    'rating' => $r->rating,
-                    'comment' => $r->comment,
-                    'status' => $r->status,
-                    'created_at' => $r->created_at,
-                    'user' => [
-                        'id' => $r->user?->id,
-                        'name' => $r->user?->name,
-                        'email' => $r->user?->email,
-                    ],
-                    'reviewable' => [
-                        'id' => $r->course_id,
-                        'title' => $r->course?->title,
-                        'type' => 'course',
-                    ],
-                ];
+        if ($request->filled('status')) {
+            $institutionQuery->where('status', $request->get('status'));
+        }
+
+        if ($request->filled('rating_min')) {
+            $institutionQuery->where('rating', '>=', $request->get('rating_min'));
+        }
+
+        if ($request->filled('rating_max')) {
+            $institutionQuery->where('rating', '<=', $request->get('rating_max'));
+        }
+
+        if ($request->filled('date_from')) {
+            $institutionQuery->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $institutionQuery->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Filter by review type
+        if ($request->filled('review_type') && $request->get('review_type') === 'course') {
+            $institutionReviews = collect();
+        } else {
+            $institutionReviews = $institutionQuery->get()
+                ->map(function ($r) {
+                    return [
+                        'id' => $r->id,
+                        'rating' => $r->rating,
+                        'comment' => $r->comment,
+                        'status' => $r->status,
+                        'created_at' => $r->created_at,
+                        'user' => [
+                            'id' => $r->user?->id,
+                            'name' => $r->user?->name,
+                            'email' => $r->user?->email,
+                        ],
+                        'reviewable' => [
+                            'id' => $r->institution_id,
+                            'title' => $r->institution?->name,
+                            'type' => 'institution',
+                        ],
+                    ];
+                });
+        }
+
+        // Build course reviews query
+        $courseQuery = CourseReview::with(['user', 'course:id,title']);
+
+        // Apply filters to course reviews
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $courseQuery->where(function ($q) use ($search) {
+                $q->where('comment', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                               ->orWhere('email', 'like', "%{$search}%");
+                  });
             });
+        }
 
-        $merged = $institutionReviews->merge($courseReviews)
-            ->sortByDesc('created_at')
-            ->values();
+        if ($request->filled('status')) {
+            $courseQuery->where('status', $request->get('status'));
+        }
+
+        if ($request->filled('rating_min')) {
+            $courseQuery->where('rating', '>=', $request->get('rating_min'));
+        }
+
+        if ($request->filled('rating_max')) {
+            $courseQuery->where('rating', '<=', $request->get('rating_max'));
+        }
+
+        if ($request->filled('date_from')) {
+            $courseQuery->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $courseQuery->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Filter by review type
+        if ($request->filled('review_type') && $request->get('review_type') === 'institution') {
+            $courseReviews = collect();
+        } else {
+            $courseReviews = $courseQuery->get()
+                ->map(function ($r) {
+                    return [
+                        'id' => $r->id,
+                        'rating' => $r->rating,
+                        'comment' => $r->comment,
+                        'status' => $r->status,
+                        'created_at' => $r->created_at,
+                        'user' => [
+                            'id' => $r->user?->id,
+                            'name' => $r->user?->name,
+                            'email' => $r->user?->email,
+                        ],
+                        'reviewable' => [
+                            'id' => $r->course_id,
+                            'title' => $r->course?->title,
+                            'type' => 'course',
+                        ],
+                    ];
+                });
+        }
+
+        $merged = $institutionReviews->merge($courseReviews);
+
+        // Sort
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        if ($sortOrder === 'asc') {
+            $merged = $merged->sortBy($sortBy)->values();
+        } else {
+            $merged = $merged->sortByDesc($sortBy)->values();
+        }
 
         $total = $merged->count();
         $items = $merged->slice(($page - 1) * $perPage, $perPage)->values();
@@ -84,6 +170,7 @@ class ReviewController extends Controller
 
         return Inertia::render('admin/reviews', [
             'reviews' => $paginator,
+            'filters' => $request->only(['search', 'status', 'rating_min', 'rating_max', 'review_type', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 
