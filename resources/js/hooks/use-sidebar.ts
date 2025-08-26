@@ -11,7 +11,7 @@ export function useSidebar() {
   })
 
   const toggleSidebar = () => {
-    setIsCollapsed(prev => !prev)
+    setIsCollapsed((prev: boolean) => !prev)
   }
 
   const collapseSidebar = () => {

@@ -9,7 +9,11 @@ import { Head, usePage } from '@inertiajs/react';
 import { Menu, Package2 } from 'lucide-react';
 import { PropsWithChildren, useState } from 'react';
 
-export default function AdminSidebarLayout({ children }: PropsWithChildren) {
+interface AdminSidebarLayoutProps extends PropsWithChildren {
+    header?: React.ReactNode;
+}
+
+export default function AdminSidebarLayout({ children, header }: AdminSidebarLayoutProps) {
     const { auth } = usePage<{ auth: { user: User } }>().props;
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 
@@ -67,11 +71,14 @@ export default function AdminSidebarLayout({ children }: PropsWithChildren) {
                             </SheetContent>
                         </Sheet>
                         <div className="w-full flex-1">{/* ... Konten Header lainnya seperti Breadcrumbs atau Search Bar */}</div>
-                        <AdminHeader user={auth.user} />
+                        <AdminHeader onToggleSidebar={toggleSidebar} />
                     </header>
 
                     {/* Konten Utama */}
-                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
+                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                        {header ? <div className="mb-2 lg:mb-4">{header}</div> : null}
+                        {children}
+                    </main>
                 </div>
             </div>
             <Toaster />

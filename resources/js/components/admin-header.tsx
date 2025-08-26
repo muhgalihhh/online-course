@@ -13,15 +13,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
-import { type BreadcrumbItem, type User as UserType } from '@/types';
+import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield, User, Menu } from 'lucide-react';
 
 interface AdminHeaderProps {
-    breadcrumbs?: BreadcrumbItem[];
+    breadcrumbs?: Array<{ title: string; href?: string }>;
+    onToggleSidebar?: () => void;
 }
 
-export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
+export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderProps) {
     const page = usePage<{ auth: { user: UserType } }>();
     const { auth } = page.props;
     const getInitials = useInitials();
@@ -31,6 +32,8 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
         router.post(route('logout'));
     };
 
+    const handleToggleSidebar = onToggleSidebar ?? toggleSidebar;
+
     return (
         <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-4">
@@ -39,7 +42,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={toggleSidebar}
+                        onClick={handleToggleSidebar}
                         className="h-9 w-9 p-0"
                     >
                         <Menu className="h-5 w-5" />
@@ -106,7 +109,7 @@ export function AdminHeader({ breadcrumbs = [] }: AdminHeaderProps) {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                                 <Avatar className="h-9 w-9">
-                                    <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                                    <AvatarImage src={auth.user.profile_photo_url} alt={auth.user.name} />
                                     <AvatarFallback className="text-xs">{getInitials(auth.user.name)}</AvatarFallback>
                                 </Avatar>
                             </Button>
