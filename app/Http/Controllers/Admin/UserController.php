@@ -33,11 +33,25 @@ class UserController extends Controller
             $query->where('role', $request->get('role'));
         }
 
-        $users = $query->latest()->paginate(10)->withQueryString();
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Sort by
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $users = $query->paginate(10)->withQueryString();
 
         return Inertia::render('admin/users/index', [
             'users' => $users,
-            'filters' => $request->only(['search', 'role']),
+            'filters' => $request->only(['search', 'role', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 

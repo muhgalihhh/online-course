@@ -8,6 +8,7 @@ import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Eye, DollarSign } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 
 interface User {
     id: number;
@@ -32,10 +33,71 @@ interface Transaction {
 
 interface TransactionIndexProps extends PageProps {
     transactions: PaginatedData<Transaction>;
+    filters: {
+        search: string;
+        status: string;
+        payment_method: string;
+        amount_min: string;
+        amount_max: string;
+        date_from: string;
+        date_to: string;
+        sort_by: string;
+        sort_order: string;
+    };
 }
 
-export default function TransactionIndex({ transactions }: TransactionIndexProps) {
+export default function TransactionIndex({ transactions, filters }: TransactionIndexProps) {
     const { patch } = useForm();
+
+    const filterConfig: FilterConfig = {
+        search: {
+            placeholder: "Search by user name, email, or order ID...",
+        },
+        select: {
+            status: {
+                label: "Status",
+                options: [
+                    { value: "pending", label: "Pending" },
+                    { value: "completed", label: "Completed" },
+                    { value: "failed", label: "Failed" },
+                    { value: "cancelled", label: "Cancelled" }
+                ],
+                placeholder: "All Status"
+            },
+            payment_method: {
+                label: "Payment Method",
+                options: [
+                    { value: "credit_card", label: "Credit Card" },
+                    { value: "bank_transfer", label: "Bank Transfer" },
+                    { value: "gopay", label: "GoPay" },
+                    { value: "ovo", label: "OVO" },
+                    { value: "dana", label: "DANA" }
+                ],
+                placeholder: "All Payment Methods"
+            }
+        },
+        numberRange: {
+            amount: {
+                label: "Amount Range",
+                min: 0,
+                step: 1000
+            }
+        },
+        dateRange: {
+            enabled: true,
+            label: "Transaction Date"
+        },
+        sort: {
+            enabled: true,
+            options: [
+                { value: "created_at", label: "Transaction Date" },
+                { value: "amount", label: "Amount" },
+                { value: "status", label: "Status" }
+            ],
+            defaultSort: "created_at",
+            defaultOrder: "desc"
+        }
+    };
 
     const handleStatusChange = (transactionId: number, newStatus: string) => {
         patch(route('admin.transactions.update-status', transactionId), {
@@ -82,8 +144,14 @@ export default function TransactionIndex({ transactions }: TransactionIndexProps
         >
             <Head title="Manage Transactions" />
 
-            <div className="">
-                <div className="flex justify-between items-center mb-6">
+            <div className="space-y-4">
+                <AdminFilter 
+                    config={filterConfig}
+                    filters={filters}
+                    route="admin.transactions.index"
+                />
+
+                <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Daftar Transaksi</h1>
                 </div>
 

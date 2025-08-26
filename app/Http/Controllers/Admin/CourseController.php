@@ -18,13 +18,64 @@ class CourseController extends Controller
     /**
      * Menampilkan daftar semua kursus dengan paginasi.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Course::with(['institution', 'category']);
+
+        // Filter by search (title or description)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->get('category_id'));
+        }
+
+        // Filter by institution
+        if ($request->filled('institution_id')) {
+            $query->where('institution_id', $request->get('institution_id'));
+        }
+
+        // Filter by pro status
+        if ($request->filled('is_pro')) {
+            $query->where('is_pro', $request->get('is_pro') === 'true');
+        }
+
+        // Filter by price range
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->get('price_min'));
+        }
+        
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->get('price_max'));
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Sort by
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $courses = $query->paginate(10)->withQueryString();
+
         return Inertia::render('admin/courses/index', [
-            'courses' => Course::with(['institution', 'category'])
-                ->latest()
-                ->paginate(10)
-                ->withQueryString(),
+            'courses' => $courses,
+            'categories' => Category::all(),
+            'institutions' => Institution::all(),
+            'filters' => $request->only(['search', 'category_id', 'institution_id', 'is_pro', 'price_min', 'price_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 

@@ -9,6 +9,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
 import { useState } from 'react';
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 
 interface Category {
     id: number;
@@ -20,9 +21,18 @@ interface Category {
 
 interface CategoryIndexProps extends PageProps {
     categories: PaginatedData<Category>;
+    filters: {
+        search: string;
+        course_count_min: string;
+        course_count_max: string;
+        date_from: string;
+        date_to: string;
+        sort_by: string;
+        sort_order: string;
+    };
 }
 
-export default function CategoryIndex({ categories }: CategoryIndexProps) {
+export default function CategoryIndex({ categories, filters }: CategoryIndexProps) {
     const [deleteDialog, setDeleteDialog] = useState<{
         isOpen: boolean;
         categoryId: number | null;
@@ -32,6 +42,33 @@ export default function CategoryIndex({ categories }: CategoryIndexProps) {
         categoryId: null,
         categoryName: '',
     });
+
+    const filterConfig: FilterConfig = {
+        search: {
+            placeholder: "Search by name or description...",
+        },
+        numberRange: {
+            course_count: {
+                label: "Course Count Range",
+                min: 0,
+                step: 1
+            }
+        },
+        dateRange: {
+            enabled: true,
+            label: "Creation Date"
+        },
+        sort: {
+            enabled: true,
+            options: [
+                { value: "created_at", label: "Creation Date" },
+                { value: "name", label: "Name" },
+                { value: "courses_count", label: "Course Count" }
+            ],
+            defaultSort: "created_at",
+            defaultOrder: "desc"
+        }
+    };
 
     const handleDelete = (categoryId: number, categoryName: string) => {
         setDeleteDialog({
@@ -56,8 +93,14 @@ export default function CategoryIndex({ categories }: CategoryIndexProps) {
         >
             <Head title="Manage Categories" />
 
-            <div className="">
-                <div className="flex justify-between items-center mb-6">
+            <div className="space-y-4">
+                <AdminFilter 
+                    config={filterConfig}
+                    filters={filters}
+                    route="admin.categories.index"
+                />
+
+                <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold">Daftar Kategori</h1>
                     <Link href={route('admin.categories.create')}>
                         <Button>
