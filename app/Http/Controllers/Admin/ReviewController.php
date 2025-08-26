@@ -8,81 +8,124 @@ use App\Models\CourseReview;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ReviewController extends Controller
 {
     /**
-     * Menampilkan daftar semua review institusi dan course.
+     * Menampilkan daftar semua review (institusi dan course) dalam satu daftar terpaginasi.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        // Ambil review institusi dengan relasi user
-        $institutionReviews = Review::with('user')
-            ->latest()
-            ->paginate(10, ['*'], 'institution_page');
+        $perPage = 10;
+        $page = (int) $request->get('page', 1);
 
-        // Ambil review course dengan relasi user dan course
-        $courseReviews = CourseReview::with(['user', 'course'])
-            ->latest()
-            ->paginate(10, ['*'], 'course_page');
+        $institutionReviews = Review::with(['user', 'institution:id,name'])
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'rating' => $r->rating,
+                    'comment' => $r->comment,
+                    'status' => $r->status,
+                    'created_at' => $r->created_at,
+                    'user' => [
+                        'id' => $r->user?->id,
+                        'name' => $r->user?->name,
+                        'email' => $r->user?->email,
+                    ],
+                    'reviewable' => [
+                        'id' => $r->institution_id,
+                        'title' => $r->institution?->name,
+                        'type' => 'institution',
+                    ],
+                ];
+            });
 
-        return Inertia::render('admin/reviews/index', [
-            'institutionReviews' => $institutionReviews,
-            'courseReviews' => $courseReviews,
+        $courseReviews = CourseReview::with(['user', 'course:id,title'])
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'rating' => $r->rating,
+                    'comment' => $r->comment,
+                    'status' => $r->status,
+                    'created_at' => $r->created_at,
+                    'user' => [
+                        'id' => $r->user?->id,
+                        'name' => $r->user?->name,
+                        'email' => $r->user?->email,
+                    ],
+                    'reviewable' => [
+                        'id' => $r->course_id,
+                        'title' => $r->course?->title,
+                        'type' => 'course',
+                    ],
+                ];
+            });
+
+        $merged = $institutionReviews->merge($courseReviews)
+            ->sortByDesc('created_at')
+            ->values();
+
+        $total = $merged->count();
+        $items = $merged->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginator = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return Inertia::render('admin/reviews', [
+            'reviews' => $paginator,
         ]);
     }
 
     /**
-     * Update status review (institusi atau course).
+     * Update status review berdasarkan ID. Mendeteksi tipe otomatis.
      */
-    public function updateStatus(Request $request)
+    public function updateStatus(Request $request, int $review)
     {
         $validated = $request->validate([
-            'review_type' => 'required|in:institution,course',
-            'review_id' => 'required|integer',
             'status' => 'required|in:pending,approved,rejected',
         ]);
 
-        $reviewId = $validated['review_id'];
-        $status = $validated['status'];
-
-        if ($validated['review_type'] === 'institution') {
-            $review = Review::findOrFail($reviewId);
-            $review->update(['status' => $status]);
-            $message = 'Status review institusi berhasil diperbarui.';
-        } else {
-            $review = CourseReview::findOrFail($reviewId);
-            $review->update(['status' => $status]);
+        $model = CourseReview::find($review);
+        if ($model) {
+            $model->update(['status' => $validated['status']]);
             $message = 'Status review kursus berhasil diperbarui.';
+        } else {
+            $model = Review::findOrFail($review);
+            $model->update(['status' => $validated['status']]);
+            $message = 'Status review institusi berhasil diperbarui.';
         }
 
-        return redirect()->route('admin.reviews.index')
+        return redirect()->route('admin.reviews')
             ->with('success', $message);
     }
 
     /**
-     * Hapus review (institusi atau course).
+     * Hapus review berdasarkan ID. Mendeteksi tipe otomatis.
      */
-    public function destroy(Request $request)
+    public function destroy(int $review)
     {
-        $validated = $request->validate([
-            'review_type' => 'required|in:institution,course',
-            'review_id' => 'required|integer',
-        ]);
-
-        $reviewId = $validated['review_id'];
-
-        if ($validated['review_type'] === 'institution') {
-            $review = Review::findOrFail($reviewId);
-            $review->delete();
-            $message = 'Review institusi berhasil dihapus.';
-        } else {
-            $review = CourseReview::findOrFail($reviewId);
-            $review->delete();
+        $model = CourseReview::find($review);
+        if ($model) {
+            $model->delete();
             $message = 'Review kursus berhasil dihapus.';
+        } else {
+            $model = Review::findOrFail($review);
+            $model->delete();
+            $message = 'Review institusi berhasil dihapus.';
         }
 
-        return redirect()->route('admin.reviews.index')
+        return redirect()->route('admin.reviews')
             ->with('success', $message);
     }
 }

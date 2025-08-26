@@ -14,8 +14,8 @@ return new class extends Migration {
             // Rename phone_number to phone for consistency
             $table->renameColumn('phone_number', 'phone');
             
-            // Remove unique constraint from email since we only have one institution
-            $table->dropUnique(['email']);
+            			// Remove unique constraint from email since we only have one institution
+			$table->dropUnique('institutions_email_unique');
         });
     }
 
