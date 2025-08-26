@@ -17,6 +17,7 @@ class Transaction extends Model
         'transactionable_type',
         'midtrans_order_id',
         'amount',
+        'payment_method',
         'status',
         'payment_details',
     ];

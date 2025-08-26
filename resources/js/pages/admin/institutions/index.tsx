@@ -198,7 +198,7 @@ export default function InstitutionIndex({ institution }: InstitutionIndexProps)
                                     <CardTitle>Aksi</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <Link href={route('admin.institutions.edit', institution.id)} className="w-full">
+                                    <Link href={route('admin.institutions.edit')} className="w-full">
                                         <Button variant="outline" className="w-full">
                                             <Edit className="h-4 w-4 mr-2" />
                                             Edit Profil
