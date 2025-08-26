@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreCourseMaterialRequest;
 use App\Http\Requests\Admin\UpdateCourseMaterialRequest;
 use App\Models\CourseMaterial;
 use App\Models\Chapter;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -19,12 +20,38 @@ class CourseMaterialController extends Controller
      */
     public function index(): Response
     {
+        $search = request('search');
+        $courseId = request('course_id');
+        $chapterId = request('chapter_id');
+        $type = request('type');
+
+        $query = CourseMaterial::with(['chapter.course'])
+            ->when($search, function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%");
+            })
+            ->when($type, function ($q) use ($type) {
+                $q->where('type', $type);
+            })
+            ->when($chapterId, function ($q) use ($chapterId) {
+                $q->where('chapter_id', $chapterId);
+            })
+            ->when($courseId, function ($q) use ($courseId) {
+                $q->whereHas('chapter', function ($chapterQuery) use ($courseId) {
+                    $chapterQuery->where('course_id', $courseId);
+                });
+            })
+            ->latest();
+
         return Inertia::render('admin/materials/index', [
-            'materials' => CourseMaterial::with(['chapter.course'])
-                ->latest()
-                ->paginate(10)
-                ->withQueryString(),
+            'materials' => $query->paginate(10)->withQueryString(),
             'chapters' => Chapter::with(['course'])->get(),
+            'courses' => Course::all(),
+            'filters' => [
+                'search' => $search,
+                'course_id' => $courseId,
+                'chapter_id' => $chapterId,
+                'type' => $type,
+            ],
         ]);
     }
 
