@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react';
 
 export default function UserCreate() {
     const [preview, setPreview] = useState<string | null>(null);
+    const getInitials = useInitials();
     const { data, setData, post, processing, errors } = useForm<{
         name: string;
         email: string;
@@ -77,7 +78,7 @@ export default function UserCreate() {
                                         className="object-cover"
                                     />
                                     <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
-                                        {useInitials(data.name)}
+                                        {getInitials(data.name || 'User')}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-2">

@@ -3,6 +3,7 @@ import AdminSidebar from '@/components/admin-sidebar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Toaster } from '@/components/ui/toaster';
+import { useToastNotifications } from '@/hooks/use-toast-notifications';
 import { User } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { Menu, Package2 } from 'lucide-react';
@@ -11,6 +12,9 @@ import { PropsWithChildren, useState } from 'react';
 export default function AdminSidebarLayout({ children }: PropsWithChildren) {
     const { auth } = usePage<{ auth: { user: User } }>().props;
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+
+    // Initialize toast notifications for flash messages
+    useToastNotifications();
 
     const toggleSidebar = () => {
         setIsSidebarExpanded(!isSidebarExpanded);
