@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Video } from 'lucide-react';
 
 interface Chapter { id: number; title: string; course: { id: number; title: string } }
 
@@ -16,7 +16,7 @@ interface Material {
 	chapter_id: number;
 	title: string;
 	order: number;
-	type: 'pdf'|'image'|'video';
+	type: 'pdf'|'image'|'video_local'|'video_youtube';
 	file_path: string | null;
 	youtube_url: string | null;
 	is_preview: boolean;
@@ -29,7 +29,7 @@ interface EditMaterialProps extends PageProps {
 
 export default function EditMaterial({ material, chapters }: EditMaterialProps) {
 	const { data, setData, post, processing, errors } = useForm<{ 
-		chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video'; file_path: File | null; youtube_url: string; is_preview: boolean; _method?: string;
+		chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video_local'|'video_youtube'; file_path: File | null; youtube_url: string; is_preview: boolean; _method?: string;
 	}>({
 		chapter_id: material.chapter_id.toString(),
 		title: material.title,
@@ -45,6 +45,45 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 		e.preventDefault();
 		post(route('admin.materials.update', material.id));
 	};
+
+	const getFileAccept = () => {
+		switch (data.type) {
+			case 'pdf':
+				return '.pdf';
+			case 'image':
+				return '.jpg,.jpeg,.png,.gif,.webp';
+			case 'video_local':
+				return '.mp4,.mov,.avi,.mkv,.wmv,.flv,.webm';
+			default:
+				return '';
+		}
+	};
+
+	const getFileHelperText = () => {
+		switch (data.type) {
+			case 'pdf':
+				return 'Upload file PDF baru (maksimal 10MB) - opsional jika ingin mengganti';
+			case 'image':
+				return 'Upload gambar baru JPG, PNG, GIF, atau WebP (maksimal 5MB) - opsional jika ingin mengganti';
+			case 'video_local':
+				return 'Upload video baru MP4, MOV, AVI, dll (maksimal 100MB) - opsional jika ingin mengganti';
+			default:
+				return '';
+		}
+	};
+
+	// Group chapters by course for better organization
+	const courseGroups = chapters.reduce((acc, chapter) => {
+		const courseId = chapter.course.id;
+		if (!acc[courseId]) {
+			acc[courseId] = {
+				course: chapter.course,
+				chapters: []
+			};
+		}
+		acc[courseId].chapters.push(chapter);
+		return acc;
+	}, {} as Record<number, { course: { id: number; title: string }; chapters: Chapter[] }>);
 
 	return (
 		<AdminLayout
@@ -72,6 +111,21 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 						<CardTitle>Informasi Materi</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-4">
+						{/* Current file info */}
+						{(material.type !== 'video_youtube' && material.file_path) && (
+							<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+								<h4 className="font-medium text-blue-900 mb-2">File Saat Ini:</h4>
+								<p className="text-blue-700 text-sm">{material.file_path}</p>
+							</div>
+						)}
+
+						{(material.type === 'video_youtube' && material.youtube_url) && (
+							<div className="bg-red-50 border border-red-200 rounded-lg p-4">
+								<h4 className="font-medium text-red-900 mb-2">URL YouTube Saat Ini:</h4>
+								<p className="text-red-700 text-sm">{material.youtube_url}</p>
+							</div>
+						)}
+
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label>Chapter *</Label>
@@ -80,10 +134,17 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 										<SelectValue placeholder="Pilih chapter" />
 									</SelectTrigger>
 									<SelectContent>
-										{chapters.map((ch) => (
-											<SelectItem key={ch.id} value={ch.id.toString()}>
-												{ch.title} — {ch.course.title}
-											</SelectItem>
+										{Object.values(courseGroups).map(({ course, chapters: courseChapters }) => (
+											<div key={course.id}>
+												<div className="px-2 py-1 text-sm font-semibold text-gray-700 bg-gray-100">
+													{course.title}
+												</div>
+												{courseChapters.map((ch) => (
+													<SelectItem key={ch.id} value={ch.id.toString()} className="pl-6">
+														{ch.title}
+													</SelectItem>
+												))}
+											</div>
 										))}
 									</SelectContent>
 								</Select>
@@ -109,28 +170,59 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 										<SelectValue placeholder="Pilih tipe" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="pdf">PDF</SelectItem>
-										<SelectItem value="image">Gambar</SelectItem>
-										<SelectItem value="video">Video</SelectItem>
+										<SelectItem value="pdf">
+											<div className="flex items-center gap-2">
+												<FileText className="h-4 w-4" />
+												PDF Document
+											</div>
+										</SelectItem>
+										<SelectItem value="image">
+											<div className="flex items-center gap-2">
+												<FileText className="h-4 w-4" />
+												Gambar/Image
+											</div>
+										</SelectItem>
+										<SelectItem value="video_local">
+											<div className="flex items-center gap-2">
+												<Video className="h-4 w-4" />
+												Video Lokal
+											</div>
+										</SelectItem>
+										<SelectItem value="video_youtube">
+											<div className="flex items-center gap-2">
+												<Video className="h-4 w-4" />
+												Video YouTube
+											</div>
+										</SelectItem>
 									</SelectContent>
 								</Select>
 								{errors.type && <p className="text-sm text-red-600">{errors.type}</p>}
 							</div>
 						</div>
 
-						{/* Conditional inputs */}
-						{(data.type === 'pdf' || data.type === 'image') && (
+						{/* Conditional inputs based on type */}
+						{(data.type === 'pdf' || data.type === 'image' || data.type === 'video_local') && (
 							<div className="space-y-2">
-								<Label>File (opsional)</Label>
-								<Input type="file" onChange={(e) => setData('file_path', e.target.files?.[0] || null)} />
+								<Label>File {material.file_path ? '(opsional - kosongkan jika tidak ingin mengganti)' : '(wajib)'}</Label>
+								<Input 
+									type="file" 
+									accept={getFileAccept()}
+									onChange={(e) => setData('file_path', e.target.files?.[0] || null)} 
+								/>
+								<p className="text-sm text-gray-500">{getFileHelperText()}</p>
 								{errors.file_path && <p className="text-sm text-red-600">{errors.file_path}</p>}
 							</div>
 						)}
 
-						{data.type === 'video' && (
+						{data.type === 'video_youtube' && (
 							<div className="space-y-2">
 								<Label>URL YouTube *</Label>
-								<Input value={data.youtube_url} onChange={(e) => setData('youtube_url', e.target.value)} placeholder="https://youtu.be/..." />
+								<Input 
+									value={data.youtube_url} 
+									onChange={(e) => setData('youtube_url', e.target.value)} 
+									placeholder="https://youtu.be/... atau https://www.youtube.com/watch?v=..." 
+								/>
+								<p className="text-sm text-gray-500">Masukkan URL YouTube yang valid</p>
 								{errors.youtube_url && <p className="text-sm text-red-600">{errors.youtube_url}</p>}
 							</div>
 						)}

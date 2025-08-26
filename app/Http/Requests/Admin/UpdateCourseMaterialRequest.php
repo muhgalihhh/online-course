@@ -21,15 +21,26 @@ class UpdateCourseMaterialRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'chapter_id' => 'required|exists:chapters,id',
             'title' => 'required|string|max:255',
             'order' => 'required|integer|min:0',
-            'type' => 'required|in:pdf,image,video',
-            'file_path' => 'nullable|file|mimes:pdf,jpeg,png,jpg,gif|max:10240',
-            'youtube_url' => 'required_if:type,video|url|regex:/^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/',
+            'type' => 'required|in:pdf,image,video_local,video_youtube',
             'is_preview' => 'boolean',
         ];
+
+        // Dynamic validation based on type for update (nullable for existing files)
+        if ($this->input('type') === 'pdf') {
+            $rules['file_path'] = 'nullable|file|mimes:pdf|max:10240';
+        } elseif ($this->input('type') === 'image') {
+            $rules['file_path'] = 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:5120';
+        } elseif ($this->input('type') === 'video_local') {
+            $rules['file_path'] = 'nullable|file|mimes:mp4,mov,avi,mkv,wmv,flv,webm|max:102400'; // 100MB
+        } elseif ($this->input('type') === 'video_youtube') {
+            $rules['youtube_url'] = 'required|url|regex:/^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/';
+        }
+
+        return $rules;
     }
 
     /**
@@ -45,6 +56,19 @@ class UpdateCourseMaterialRequest extends FormRequest
             'file_path' => 'file materi',
             'youtube_url' => 'URL YouTube',
             'is_preview' => 'status preview',
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'type.in' => 'Tipe materi harus berupa PDF, Gambar, Video Lokal, atau Video YouTube.',
+            'file_path.mimes' => 'Format file tidak didukung untuk tipe yang dipilih.',
+            'youtube_url.required' => 'URL YouTube wajib diisi untuk tipe Video YouTube.',
+            'youtube_url.regex' => 'URL YouTube tidak valid. Gunakan format yang benar.',
         ];
     }
 }

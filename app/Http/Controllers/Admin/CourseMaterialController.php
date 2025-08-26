@@ -42,8 +42,35 @@ class CourseMaterialController extends Controller
             })
             ->latest();
 
+        // Get materials with proper grouping
+        $materials = $query->paginate(10)->withQueryString();
+        
+        // Group materials by course and chapter for better display
+        $groupedMaterials = [];
+        foreach ($materials->items() as $material) {
+            $courseId = $material->chapter->course->id;
+            $chapterId = $material->chapter->id;
+            
+            if (!isset($groupedMaterials[$courseId])) {
+                $groupedMaterials[$courseId] = [
+                    'course' => $material->chapter->course,
+                    'chapters' => []
+                ];
+            }
+            
+            if (!isset($groupedMaterials[$courseId]['chapters'][$chapterId])) {
+                $groupedMaterials[$courseId]['chapters'][$chapterId] = [
+                    'chapter' => $material->chapter,
+                    'materials' => []
+                ];
+            }
+            
+            $groupedMaterials[$courseId]['chapters'][$chapterId]['materials'][] = $material;
+        }
+
         return Inertia::render('admin/materials/index', [
-            'materials' => $query->paginate(10)->withQueryString(),
+            'materials' => $materials,
+            'groupedMaterials' => $groupedMaterials,
             'chapters' => Chapter::with(['course'])->get(),
             'courses' => Course::all(),
             'filters' => [
@@ -72,19 +99,19 @@ class CourseMaterialController extends Controller
     {
         $data = $request->validated();
         
-        // Handle file upload untuk type pdf dan image
-        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image'])) {
+        // Handle file upload untuk type pdf, image, dan video_local
+        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image', 'video_local'])) {
             $filePath = $request->file('file_path')->store('materials', 'public');
             $data['file_path'] = $filePath;
         }
         
-        // Pastikan youtube_url kosong jika type bukan video
-        if ($data['type'] !== 'video') {
+        // Pastikan youtube_url kosong jika type bukan video_youtube
+        if ($data['type'] !== 'video_youtube') {
             $data['youtube_url'] = null;
         }
         
-        // Pastikan file_path kosong jika type adalah video
-        if ($data['type'] === 'video') {
+        // Pastikan file_path kosong jika type adalah video_youtube
+        if ($data['type'] === 'video_youtube') {
             $data['file_path'] = null;
         }
 
@@ -115,14 +142,14 @@ class CourseMaterialController extends Controller
         
         // Jika type berubah, hapus file lama yang tidak relevan
         if ($oldType !== $data['type']) {
-            if ($oldType !== 'video' && $material->file_path) {
+            if ($oldType !== 'video_youtube' && $material->file_path) {
                 Storage::disk('public')->delete($material->file_path);
                 $material->file_path = null;
             }
         }
         
-        // Handle file upload untuk type pdf dan image
-        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image'])) {
+        // Handle file upload untuk type pdf, image, dan video_local
+        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image', 'video_local'])) {
             // Hapus file lama jika ada
             if ($material->file_path) {
                 Storage::disk('public')->delete($material->file_path);
@@ -133,13 +160,13 @@ class CourseMaterialController extends Controller
             $data['file_path'] = $filePath;
         }
         
-        // Pastikan youtube_url kosong jika type bukan video
-        if ($data['type'] !== 'video') {
+        // Pastikan youtube_url kosong jika type bukan video_youtube
+        if ($data['type'] !== 'video_youtube') {
             $data['youtube_url'] = null;
         }
         
-        // Pastikan file_path kosong jika type adalah video
-        if ($data['type'] === 'video') {
+        // Pastikan file_path kosong jika type adalah video_youtube
+        if ($data['type'] === 'video_youtube') {
             $data['file_path'] = null;
         }
 
@@ -192,7 +219,7 @@ class CourseMaterialController extends Controller
     public function uploadFile(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi|max:10240', // 10MB max
+            'file' => 'required|file|mimes:pdf,jpeg,png,jpg,gif,webp,mp4,mov,avi,mkv,wmv,flv,webm|max:102400', // 100MB max for videos
         ]);
 
         $file = $request->file('file');
@@ -201,6 +228,8 @@ class CourseMaterialController extends Controller
         return response()->json([
             'file_path' => $path,
             'filename' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
         ]);
     }
 }
