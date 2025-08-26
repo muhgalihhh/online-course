@@ -11,48 +11,59 @@ use Inertia\Response;
 
 class InstitutionController extends Controller
 {
-    /**
-     * Tampilkan form untuk mengedit profil institusi.
-     */
-    public function edit(): Response
-    {
-        // Ambil data institusi atau buat baris baru jika kosong
-        $institution = Institution::firstOrCreate([]);
-        
-        return Inertia::render('admin/institutions/edit', [
-            'institution' => $institution,
-        ]);
-    }
+	/**
+	 * Tampilkan ringkasan profil institusi.
+	 */
+	public function index(): Response
+	{
+		$institution = Institution::withCount('courses')->first();
+		return Inertia::render('admin/institutions/index', [
+			'institution' => $institution,
+		]);
+	}
 
-    /**
-     * Update data profil institusi di database.
-     */
-    public function update(UpdateInstitutionRequest $request)
-    {
-        $institution = Institution::first();
-        
-        // Handle file upload untuk photo_path
-        $data = $request->validated();
-        
-        if ($request->hasFile('photo_path')) {
-            // Hapus foto lama jika ada
-            if ($institution && $institution->photo_path) {
-                Storage::disk('public')->delete($institution->photo_path);
-            }
-            
-            // Simpan foto baru
-            $photoPath = $request->file('photo_path')->store('institutions', 'public');
-            $data['photo_path'] = $photoPath;
-        }
-        
-        // Update atau buat institusi
-        if ($institution) {
-            $institution->update($data);
-        } else {
-            $institution = Institution::create($data);
-        }
+	/**
+	 * Tampilkan form untuk mengedit profil institusi.
+	 */
+	public function edit(): Response
+	{
+		// Ambil data institusi atau buat baris baru jika kosong
+		$institution = Institution::firstOrCreate([]);
+		
+		return Inertia::render('admin/institutions/edit', [
+			'institution' => $institution,
+		]);
+	}
 
-        return redirect()->route('admin.institution.edit')
-            ->with('success', 'Profil institusi berhasil diperbarui.');
-    }
+	/**
+	 * Update data profil institusi di database.
+	 */
+	public function update(UpdateInstitutionRequest $request)
+	{
+		$institution = Institution::first();
+		
+		// Handle file upload untuk photo_path
+		$data = $request->validated();
+		
+		if ($request->hasFile('photo_path')) {
+			// Hapus foto lama jika ada
+			if ($institution && $institution->photo_path) {
+				Storage::disk('public')->delete($institution->photo_path);
+			}
+			
+			// Simpan foto baru
+			$photoPath = $request->file('photo_path')->store('institutions', 'public');
+			$data['photo_path'] = $photoPath;
+		}
+		
+		// Update atau buat institusi
+		if ($institution) {
+			$institution->update($data);
+		} else {
+			$institution = Institution::create($data);
+		}
+
+		return redirect()->route('admin.institutions.edit')
+			->with('success', 'Profil institusi berhasil diperbarui.');
+	}
 }

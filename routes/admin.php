@@ -26,8 +26,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Category Management
     Route::resource('categories', AdminCategoryController::class);
 
-    // Institution Management
-    Route::resource('institutions', AdminInstitutionController::class);
+    // Institution Management (single profile: only index, edit, update)
+    Route::get('/institutions', [AdminInstitutionController::class, 'index'])->name('institutions.index');
+    Route::get('/institutions/edit', [AdminInstitutionController::class, 'edit'])->name('institutions.edit');
+    Route::patch('/institutions', [AdminInstitutionController::class, 'update'])->name('institutions.update');
 
     // Transaction Management
     Route::resource('transactions', AdminTransactionController::class)->except(['create', 'store', 'edit', 'update']);

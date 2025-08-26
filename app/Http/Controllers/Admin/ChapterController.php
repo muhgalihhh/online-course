@@ -19,9 +19,11 @@ class ChapterController extends Controller
     {
         return Inertia::render('admin/chapters/index', [
             'chapters' => Chapter::with(['course'])
+                ->withCount('courseMaterials')
                 ->latest()
                 ->paginate(10)
                 ->withQueryString(),
+            'courses' => Course::all(),
         ]);
     }
 

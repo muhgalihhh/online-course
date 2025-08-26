@@ -37,13 +37,11 @@ interface Chapter {
 interface Material {
     id: number;
     title: string;
-    description: string;
-    type: 'video' | 'document' | 'quiz' | 'assignment';
-    file_path: string;
-    file_size: number;
-    duration: number; // in minutes
+    type: 'pdf' | 'image' | 'video';
+    file_path: string | null;
+    youtube_url: string | null;
     order: number;
-    is_free: boolean;
+    is_preview: boolean;
     created_at: string;
     chapter: Chapter;
 }
@@ -102,12 +100,10 @@ export default function Materials({ materials, chapters }: MaterialsProps) {
         switch (type) {
             case 'video':
                 return <Video className="h-4 w-4" />;
-            case 'document':
+            case 'pdf':
+                return <FileText className="h-4 w-4" />;
+            case 'image':
                 return <File className="h-4 w-4" />;
-            case 'quiz':
-                return <FileText className="h-4 w-4" />;
-            case 'assignment':
-                return <FileText className="h-4 w-4" />;
             default:
                 return <FileText className="h-4 w-4" />;
         }
@@ -117,12 +113,10 @@ export default function Materials({ materials, chapters }: MaterialsProps) {
         switch (type) {
             case 'video':
                 return 'Video';
-            case 'document':
-                return 'Dokumen';
-            case 'quiz':
-                return 'Quiz';
-            case 'assignment':
-                return 'Tugas';
+            case 'pdf':
+                return 'PDF';
+            case 'image':
+                return 'Gambar';
             default:
                 return type;
         }
@@ -132,12 +126,10 @@ export default function Materials({ materials, chapters }: MaterialsProps) {
         switch (type) {
             case 'video':
                 return 'default';
-            case 'document':
+            case 'pdf':
                 return 'secondary';
-            case 'quiz':
+            case 'image':
                 return 'outline';
-            case 'assignment':
-                return 'destructive';
             default:
                 return 'secondary';
         }
@@ -294,20 +286,20 @@ export default function Materials({ materials, chapters }: MaterialsProps) {
                                         <div className="flex items-center gap-1">
                                             {material.type === 'video' ? (
                                                 <>
-                                                    <Clock className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-sm">{formatDuration(material.duration)}</span>
+                                                    <Video className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm">{material.youtube_url ? 'YouTube' : '-'}</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <File className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-sm">{formatFileSize(material.file_size)}</span>
+                                                    <span className="text-sm">{material.file_path ? 'File Tersedia' : '-'}</span>
                                                 </>
                                             )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={material.is_free ? 'default' : 'secondary'}>
-                                            {material.is_free ? 'Gratis' : 'Premium'}
+                                        <Badge variant={material.is_preview ? 'default' : 'secondary'}>
+                                            {material.is_preview ? 'Preview' : 'Full'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
