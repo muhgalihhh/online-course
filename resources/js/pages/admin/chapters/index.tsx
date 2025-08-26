@@ -1,17 +1,17 @@
 // resources/js/pages/admin/chapters/index.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pagination } from '@/components/pagination';
-import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Eye, BookOpen, Search, Filter, Play, Clock, FileText } from 'lucide-react';
+import { BookOpen, Clock, Edit, Eye, FileText, Filter, Play, Plus, PlusSquare, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -91,9 +91,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Kelola Chapters</h1>
-                    <p className="text-muted-foreground">
-                        Kelola bab-bab dalam kursus dan materi pembelajaran
-                    </p>
+                    <p className="text-muted-foreground">Kelola bab-bab dalam kursus dan materi pembelajaran</p>
                 </div>
                 <Link href={route('admin.chapters.create')}>
                     <Button>
@@ -116,7 +114,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Cari Chapter</label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Cari berdasarkan judul..."
                                     value={searchTerm}
@@ -194,9 +192,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                         <div>
                                             <div className="font-medium">{chapter.title}</div>
                                             {chapter.description && (
-                                                <div className="text-sm text-muted-foreground line-clamp-1">
-                                                    {chapter.description}
-                                                </div>
+                                                <div className="line-clamp-1 text-sm text-muted-foreground">{chapter.description}</div>
                                             )}
                                         </div>
                                     </TableCell>
@@ -209,9 +205,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                     <TableCell>
                                         <div className="flex items-center gap-1">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">
-                                                {chapter.duration ? formatDuration(chapter.duration) : '-'}
-                                            </span>
+                                            <span className="text-sm">{chapter.duration ? formatDuration(chapter.duration) : '-'}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -223,19 +217,24 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={chapter.is_free ? 'default' : 'secondary'}>
-                                            {chapter.is_free ? 'Gratis' : 'Premium'}
-                                        </Badge>
+                                        <Badge variant={chapter.is_free ? 'default' : 'secondary'}>{chapter.is_free ? 'Gratis' : 'Premium'}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         {new Date(chapter.created_at).toLocaleDateString('id-ID', {
                                             day: 'numeric',
                                             month: 'short',
-                                            year: 'numeric'
+                                            year: 'numeric',
                                         })}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
+                                            {/* Add Materials */}
+                                            <Link href={route('admin.materials.index')}>
+                                                <Button variant="outline" size="sm">
+                                                    <PlusSquare className="h-4 w-4" />
+                                                    <span className="text-md ml-1">Materi Course</span>
+                                                </Button>
+                                            </Link>
                                             <Link href={route('admin.chapters.show', chapter.id)}>
                                                 <Button variant="outline" size="sm">
                                                     <Eye className="h-4 w-4" />
@@ -246,11 +245,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                             </Link>
-                                            <Button 
-                                                variant="destructive" 
-                                                size="sm"
-                                                onClick={() => handleDelete(chapter.id, chapter.title)}
-                                            >
+                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(chapter.id, chapter.title)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -292,9 +287,7 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         <div className="text-2xl font-bold">
                             {formatDuration(chapters.data.reduce((acc, chapter) => acc + (chapter.duration || 0), 0))}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Total durasi semua chapter
-                        </p>
+                        <p className="text-xs text-muted-foreground">Total durasi semua chapter</p>
                     </CardContent>
                 </Card>
 
@@ -304,12 +297,8 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         <Play className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {chapters.data.filter(chapter => chapter.is_free).length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Chapter yang dapat diakses gratis
-                        </p>
+                        <div className="text-2xl font-bold">{chapters.data.filter((chapter) => chapter.is_free).length}</div>
+                        <p className="text-xs text-muted-foreground">Chapter yang dapat diakses gratis</p>
                     </CardContent>
                 </Card>
 
@@ -319,12 +308,8 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {chapters.data.filter(chapter => !chapter.is_free).length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Chapter premium berbayar
-                        </p>
+                        <div className="text-2xl font-bold">{chapters.data.filter((chapter) => !chapter.is_free).length}</div>
+                        <p className="text-xs text-muted-foreground">Chapter premium berbayar</p>
                     </CardContent>
                 </Card>
             </div>
