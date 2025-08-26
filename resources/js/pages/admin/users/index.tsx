@@ -169,7 +169,7 @@ export default function Index({ users, filters }: IndexPageProps) {
                                                     <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem 
-                                                    className="text-red-600"
+                                                    variant="destructive"
                                                     onClick={() => setDeleteDialog({
                                                         isOpen: true,
                                                         userId: user.id,
