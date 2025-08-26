@@ -90,6 +90,18 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
         materialTitle: '',
     });
 
+    // Filter chapters berdasarkan course yang dipilih
+    const filteredChapters = chapters.filter(chapter => 
+        courseFilter === 'all' || chapter.course.id.toString() === courseFilter
+    );
+
+    // Handle perubahan course filter
+    const handleCourseChange = (value: string) => {
+        setCourseFilter(value);
+        // Reset chapter filter ketika course berubah
+        setChapterFilter('all');
+    };
+
     const handleDelete = (materialId: number, materialTitle: string) => {
         setDeleteDialog({
             isOpen: true,
@@ -222,7 +234,7 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Course</label>
-                            <Select value={courseFilter} onValueChange={setCourseFilter}>
+                            <Select value={courseFilter} onValueChange={handleCourseChange}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -239,17 +251,23 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Chapter</label>
-                            <Select value={chapterFilter} onValueChange={setChapterFilter}>
+                            <Select 
+                                value={chapterFilter} 
+                                onValueChange={setChapterFilter}
+                                disabled={courseFilter === 'all'}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder={
+                                        courseFilter === 'all' 
+                                            ? "Pilih course terlebih dahulu" 
+                                            : "Pilih chapter"
+                                    } />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Chapter</SelectItem>
-                                    {chapters
-                                        .filter(chapter => courseFilter === 'all' || chapter.course.id.toString() === courseFilter)
-                                        .map((chapter) => (
+                                    {filteredChapters.map((chapter) => (
                                         <SelectItem key={chapter.id} value={chapter.id.toString()}>
-                                            {chapter.title} — {chapter.course.title}
+                                            {chapter.title}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
