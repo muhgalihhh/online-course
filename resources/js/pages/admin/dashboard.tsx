@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/stat-card';
 import { ActivityItem } from '@/components/activity-item';
 import { ChartCard, LineChartComponent, BarChartComponent, PieChartComponent } from '@/components/ui/charts';
-import { DashboardFilters } from '@/components/dashboard-filters';
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { StatsSummary } from '@/components/stats-summary';
 import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
@@ -31,11 +31,67 @@ interface Stats {
 interface DashboardProps extends PageProps {
     stats: Stats;
     recentUsers: User[];
+    filters?: Record<string, any>;
 }
 
-export default function Dashboard({ stats, recentUsers }: DashboardProps) {
+export default function Dashboard({ stats, recentUsers, filters = {} }: DashboardProps) {
     const [chartPeriod, setChartPeriod] = useState('30d');
     const { showSuccess, showError, showWarning, showInfo } = useFormToast();
+
+    // Filter configuration for dashboard
+    const filterConfig: FilterConfig = {
+        search: {
+            placeholder: "Search users, courses, transactions...",
+            enabled: true,
+        },
+        select: {
+            period: {
+                label: "Time Period",
+                options: [
+                    { value: "7d", label: "7 Hari Terakhir" },
+                    { value: "30d", label: "30 Hari Terakhir" },
+                    { value: "90d", label: "90 Hari Terakhir" },
+                    { value: "1y", label: "1 Tahun Terakhir" },
+                    { value: "all", label: "Semua Waktu" },
+                ],
+                placeholder: "Select time period"
+            },
+            metric: {
+                label: "Metric Type",
+                options: [
+                    { value: "users", label: "Users" },
+                    { value: "courses", label: "Courses" },
+                    { value: "revenue", label: "Revenue" },
+                    { value: "transactions", label: "Transactions" },
+                ],
+                placeholder: "Select metric"
+            },
+            userType: {
+                label: "User Type",
+                options: [
+                    { value: "regular", label: "Regular Users" },
+                    { value: "premium", label: "Premium Users" },
+                    { value: "enterprise", label: "Enterprise Users" },
+                ],
+                placeholder: "Select user type"
+            }
+        },
+        dateRange: {
+            enabled: true,
+            label: "Date Range"
+        },
+        sort: {
+            enabled: true,
+            options: [
+                { value: "created_at", label: "Date Created" },
+                { value: "updated_at", label: "Last Updated" },
+                { value: "user_count", label: "User Count" },
+                { value: "revenue", label: "Revenue" },
+            ],
+            defaultSort: "created_at",
+            defaultOrder: "desc"
+        }
+    };
 
     const handleRefreshData = () => {
         showInfo('Memperbarui data dashboard...');
@@ -179,11 +235,14 @@ export default function Dashboard({ stats, recentUsers }: DashboardProps) {
             </div>
 
             {/* Dashboard Filters */}
-            <DashboardFilters
-                period={chartPeriod}
-                onPeriodChange={setChartPeriod}
-                onExport={handleExportData}
-                showExport={true}
+            <AdminFilter
+                config={filterConfig}
+                filters={filters}
+                route="admin.dashboard"
+                onFiltersChange={(newFilters) => {
+                    console.log('Filters changed:', newFilters);
+                    // You can update the filters state here if needed
+                }}
             />
 
             {/* Stats Cards */}
