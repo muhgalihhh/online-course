@@ -23,6 +23,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import qs from 'qs';
 
 type IndexPageProps = {
     users: {
