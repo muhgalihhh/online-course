@@ -101,7 +101,7 @@ export function AdminFilter({
     const updateFilter = (key: string, value: any) => {
         setLocalFilters(prev => ({
             ...prev,
-            [key]: value || ''
+            [key]: value === 'all' ? '' : (value || '')
         }));
     };
 
@@ -184,15 +184,15 @@ export function AdminFilter({
                                 <div key={key} className="space-y-2">
                                     <Label htmlFor={key}>{selectConfig.label}</Label>
                                     <Select 
-                                        value={localFilters[key] || ''} 
+                                        value={localFilters[key] || 'all'} 
                                         onValueChange={(value) => updateFilter(key, value)}
                                     >
                                         <SelectTrigger id={key}>
                                             <SelectValue placeholder={selectConfig.placeholder || `Select ${selectConfig.label}`} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All {selectConfig.label}</SelectItem>
-                                            {selectConfig.options.map((option) => (
+                                            <SelectItem value="all">All {selectConfig.label}</SelectItem>
+                                            {selectConfig.options.filter(option => option.value && option.value.toString().trim() !== '').map((option) => (
                                                 <SelectItem key={option.value} value={option.value}>
                                                     {option.label}
                                                 </SelectItem>
