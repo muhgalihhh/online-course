@@ -14,285 +14,538 @@ use App\Models\Review;
 use App\Models\CourseReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Builder;
 
 class SearchController extends Controller
 {
+    /**
+     * Perform global search across all admin resources
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function search(Request $request)
     {
-        $request->validate([
-            'query' => 'required|string|min:1|max:255'
-        ]);
+        try {
+            // Validate the search query
+            $request->validate([
+                'query' => 'required|string|min:1|max:255'
+            ]);
 
-        $query = trim($request->input('query'));
-        $searchTerms = explode(' ', $query);
+            $query = trim($request->input('query'));
+            
+            // Handle empty query
+            if (empty($query)) {
+                return response()->json([
+                    'users' => [],
+                    'courses' => [],
+                    'course_materials' => [],
+                    'transactions' => [],
+                    'categories' => [],
+                    'chapters' => [],
+                    'institutions' => [],
+                    'reviews' => []
+                ]);
+            }
+
+            // Split query into search terms for better matching
+            $searchTerms = array_filter(explode(' ', $query));
+            
+            // Initialize results array
+            $results = [
+                'users' => $this->searchUsers($searchTerms),
+                'courses' => $this->searchCourses($searchTerms),
+                'course_materials' => $this->searchMaterials($searchTerms),
+                'transactions' => $this->searchTransactions($searchTerms),
+                'categories' => $this->searchCategories($searchTerms),
+                'chapters' => $this->searchChapters($searchTerms),
+                'institutions' => $this->searchInstitutions($searchTerms),
+                'reviews' => $this->searchReviews($searchTerms)
+            ];
+
+            return response()->json($results);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Invalid search query',
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Search error: ' . $e->getMessage(), [
+                'query' => $request->input('query'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Search failed',
+                'message' => 'An error occurred while searching. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Search users with comprehensive field coverage
+     */
+    private function searchUsers($searchTerms)
+    {
+        $query = User::query();
         
-        $results = [
-            'users' => [],
-            'courses' => [],
-            'course_materials' => [],
-            'transactions' => [],
-            'categories' => [],
-            'chapters' => [],
-            'institutions' => [],
-            'reviews' => []
-        ];
-
-        // Search users - berdasarkan field yang ada di model
-        $usersQuery = User::query();
         foreach ($searchTerms as $term) {
-            $usersQuery->where(function($q) use ($term) {
+            $query->where(function(Builder $q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                   ->orWhere('email', 'like', "%{$term}%")
-                  ->orWhere('role', 'like', "%{$term}%");
+                  ->orWhere('role', 'like', "%{$term}%")
+                  ->orWhere('phone', 'like', "%{$term}%");
+                
+                // Search by ID if numeric
+                if (is_numeric($term)) {
+                    $q->orWhere('id', $term);
+                }
             });
         }
-        $users = $usersQuery->limit(10)->get(['id', 'name', 'email', 'role']);
         
-        $results['users'] = $users->map(function ($user) {
+        $users = $query->limit(15)->get(['id', 'name', 'email', 'role', 'phone']);
+        
+        return $users->map(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => ucfirst($user->role)
+                'role' => ucfirst($user->role),
+                'phone' => $user->phone
             ];
         });
+    }
 
-        // Search courses - berdasarkan field yang ada di model
-        $coursesQuery = Course::query();
+    /**
+     * Search courses with all related fields
+     */
+    private function searchCourses($searchTerms)
+    {
+        $query = Course::query();
+        
         foreach ($searchTerms as $term) {
-            $coursesQuery->where(function($q) use ($term) {
+            $query->where(function(Builder $q) use ($term) {
                 $q->where('title', 'like', "%{$term}%")
                   ->orWhere('description', 'like', "%{$term}%")
-                  ->orWhereHas('category', function($cq) use ($term) {
-                      $cq->where('name', 'like', "%{$term}%");
-                  })
-                  ->orWhereHas('institution', function($iq) use ($term) {
-                      $iq->where('name', 'like', "%{$term}%");
-                  });
+                  ->orWhere('level', 'like', "%{$term}%")
+                  ->orWhere('status', 'like', "%{$term}%");
                 
-                // Check if search term is a number for price search
+                // Search by related entities
+                $q->orWhereHas('category', function(Builder $cq) use ($term) {
+                    $cq->where('name', 'like', "%{$term}%");
+                });
+                
+                $q->orWhereHas('institution', function(Builder $iq) use ($term) {
+                    $iq->where('name', 'like', "%{$term}%");
+                });
+                
+                // Search by price if numeric
                 if (is_numeric($term)) {
-                    $q->orWhere('price', 'like', "%{$term}%");
+                    $q->orWhere('price', 'like', "%{$term}%")
+                      ->orWhere('id', $term);
                 }
                 
-                // Check for "pro" keyword
-                if (strtolower($term) == 'pro' || strtolower($term) == 'premium') {
+                // Check for pro/premium keywords
+                $termLower = strtolower($term);
+                if (in_array($termLower, ['pro', 'premium', 'berbayar'])) {
                     $q->orWhere('is_pro', true);
+                } elseif (in_array($termLower, ['free', 'gratis'])) {
+                    $q->orWhere('is_pro', false);
+                }
+                
+                // Check for status keywords
+                if (in_array($termLower, ['draft', 'published', 'archived'])) {
+                    $q->orWhere('status', $termLower);
                 }
             });
         }
-        $courses = $coursesQuery->withCount('users')->limit(10)->get(['id', 'title', 'description', 'price', 'is_pro']);
         
-        $results['courses'] = $courses->map(function ($course) {
+        $courses = $query->withCount(['users', 'chapters', 'reviews'])
+                         ->with(['category:id,name', 'institution:id,name'])
+                         ->limit(15)
+                         ->get(['id', 'title', 'description', 'price', 'is_pro', 'level', 'status', 'category_id', 'institution_id']);
+        
+        return $courses->map(function ($course) {
             return [
                 'id' => $course->id,
                 'title' => $course->title,
-                'description' => \Str::limit($course->description, 100),
+                'description' => \Str::limit($course->description, 150),
                 'students_count' => $course->users_count,
+                'chapters_count' => $course->chapters_count,
+                'reviews_count' => $course->reviews_count,
                 'price' => $course->price,
-                'is_pro' => $course->is_pro
+                'is_pro' => $course->is_pro,
+                'level' => $course->level,
+                'status' => $course->status,
+                'category' => $course->category?->name,
+                'institution' => $course->institution?->name
             ];
         });
+    }
 
-        // Search categories - berdasarkan field yang ada di model
-        $categoriesQuery = Category::query();
+    /**
+     * Search categories with course count
+     */
+    private function searchCategories($searchTerms)
+    {
+        $query = Category::query();
+        
         foreach ($searchTerms as $term) {
-            $categoriesQuery->where(function($q) use ($term) {
+            $query->where(function(Builder $q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%");
+                  ->orWhere('description', 'like', "%{$term}%")
+                  ->orWhere('slug', 'like', "%{$term}%");
+                
+                if (is_numeric($term)) {
+                    $q->orWhere('id', $term);
+                }
             });
         }
-        $categories = $categoriesQuery->withCount('courses')->limit(10)->get(['id', 'name', 'description']);
         
-        $results['categories'] = $categories->map(function ($category) {
+        $categories = $query->withCount('courses')
+                            ->limit(15)
+                            ->get(['id', 'name', 'description', 'slug']);
+        
+        return $categories->map(function ($category) {
             return [
                 'id' => $category->id,
                 'name' => $category->name,
-                'description' => \Str::limit($category->description ?? '', 100),
+                'description' => \Str::limit($category->description ?? '', 150),
+                'slug' => $category->slug,
                 'courses_count' => $category->courses_count
             ];
         });
+    }
 
-        // Search chapters - berdasarkan field yang ada di model
-        $chaptersQuery = Chapter::query();
+    /**
+     * Search chapters with course information
+     */
+    private function searchChapters($searchTerms)
+    {
+        $query = Chapter::query();
+        
         foreach ($searchTerms as $term) {
-            $chaptersQuery->where(function($q) use ($term) {
+            $query->where(function(Builder $q) use ($term) {
                 $q->where('title', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%")
-                  ->orWhereHas('course', function($cq) use ($term) {
-                      $cq->where('title', 'like', "%{$term}%");
-                  });
+                  ->orWhere('description', 'like', "%{$term}%");
                 
-                // Check for duration if numeric
+                // Search in related course
+                $q->orWhereHas('course', function(Builder $cq) use ($term) {
+                    $cq->where('title', 'like', "%{$term}%");
+                });
+                
+                // Search by numeric fields
                 if (is_numeric($term)) {
-                    $q->orWhere('duration', 'like', "%{$term}%");
+                    $q->orWhere('duration', 'like', "%{$term}%")
+                      ->orWhere('order', $term)
+                      ->orWhere('id', $term);
                 }
                 
-                // Check for "free" keyword
-                if (strtolower($term) == 'free' || strtolower($term) == 'gratis') {
+                // Check for free keyword
+                $termLower = strtolower($term);
+                if (in_array($termLower, ['free', 'gratis'])) {
                     $q->orWhere('is_free', true);
+                } elseif (in_array($termLower, ['locked', 'berbayar', 'premium'])) {
+                    $q->orWhere('is_free', false);
                 }
             });
         }
-        $chapters = $chaptersQuery->with('course:id,title')->limit(10)->get(['id', 'title', 'description', 'course_id', 'duration', 'is_free']);
         
-        $results['chapters'] = $chapters->map(function ($chapter) {
+        $chapters = $query->with('course:id,title')
+                          ->withCount('materials')
+                          ->limit(15)
+                          ->get(['id', 'title', 'description', 'course_id', 'duration', 'is_free', 'order']);
+        
+        return $chapters->map(function ($chapter) {
             return [
                 'id' => $chapter->id,
                 'title' => $chapter->title,
-                'description' => \Str::limit($chapter->description ?? '', 100),
-                'course_title' => $chapter->course->title ?? 'Unknown',
-                'course_id' => $chapter->course_id
+                'description' => \Str::limit($chapter->description ?? '', 150),
+                'course_title' => $chapter->course?->title ?? 'Unknown',
+                'course_id' => $chapter->course_id,
+                'duration' => $chapter->duration,
+                'is_free' => $chapter->is_free,
+                'order' => $chapter->order,
+                'materials_count' => $chapter->materials_count
             ];
         });
+    }
 
-        // Search institutions - berdasarkan field yang ada di model
-        $institutionsQuery = Institution::query();
+    /**
+     * Search institutions
+     */
+    private function searchInstitutions($searchTerms)
+    {
+        $query = Institution::query();
+        
         foreach ($searchTerms as $term) {
-            $institutionsQuery->where(function($q) use ($term) {
+            $query->where(function(Builder $q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                   ->orWhere('description', 'like', "%{$term}%")
                   ->orWhere('address', 'like', "%{$term}%")
                   ->orWhere('phone', 'like', "%{$term}%")
                   ->orWhere('email', 'like', "%{$term}%")
                   ->orWhere('website', 'like', "%{$term}%");
-            });
-        }
-        $institutions = $institutionsQuery->limit(10)->get(['id', 'name', 'description', 'address', 'phone', 'email']);
-        
-        $results['institutions'] = $institutions->map(function ($institution) {
-            return [
-                'id' => $institution->id,
-                'name' => $institution->name,
-                'description' => \Str::limit($institution->description ?? '', 100),
-                'address' => \Str::limit($institution->address ?? '', 50)
-            ];
-        });
-
-        // Search course materials - berdasarkan field yang ada di model (TANPA description karena tidak ada)
-        $materialsQuery = CourseMaterial::query();
-        foreach ($searchTerms as $term) {
-            $materialsQuery->where(function($q) use ($term) {
-                $q->where('title', 'like', "%{$term}%")
-                  ->orWhere('type', 'like', "%{$term}%")
-                  ->orWhere('file_path', 'like', "%{$term}%")
-                  ->orWhere('youtube_url', 'like', "%{$term}%")
-                  ->orWhereHas('chapter', function($cq) use ($term) {
-                      $cq->where('title', 'like', "%{$term}%");
-                  });
                 
-                // Check for preview keyword
-                if (strtolower($term) == 'preview' || strtolower($term) == 'pratinjau') {
-                    $q->orWhere('is_preview', true);
+                if (is_numeric($term)) {
+                    $q->orWhere('id', $term);
                 }
             });
         }
-        $materials = $materialsQuery->with('chapter:id,title')->limit(10)->get(['id', 'title', 'type', 'chapter_id', 'file_path', 'youtube_url']);
         
-        $results['course_materials'] = $materials->map(function ($material) {
+        $institutions = $query->withCount('courses')
+                              ->limit(15)
+                              ->get(['id', 'name', 'description', 'address', 'phone', 'email', 'website']);
+        
+        return $institutions->map(function ($institution) {
+            return [
+                'id' => $institution->id,
+                'name' => $institution->name,
+                'description' => \Str::limit($institution->description ?? '', 150),
+                'address' => $institution->address,
+                'phone' => $institution->phone,
+                'email' => $institution->email,
+                'website' => $institution->website,
+                'courses_count' => $institution->courses_count
+            ];
+        });
+    }
+
+    /**
+     * Search course materials
+     */
+    private function searchMaterials($searchTerms)
+    {
+        $query = CourseMaterial::query();
+        
+        foreach ($searchTerms as $term) {
+            $query->where(function(Builder $q) use ($term) {
+                $q->where('title', 'like', "%{$term}%")
+                  ->orWhere('type', 'like', "%{$term}%")
+                  ->orWhere('file_path', 'like', "%{$term}%")
+                  ->orWhere('youtube_url', 'like', "%{$term}%");
+                
+                // Search in related chapter and course
+                $q->orWhereHas('chapter', function(Builder $cq) use ($term) {
+                    $cq->where('title', 'like', "%{$term}%")
+                       ->orWhereHas('course', function(Builder $ccq) use ($term) {
+                           $ccq->where('title', 'like', "%{$term}%");
+                       });
+                });
+                
+                if (is_numeric($term)) {
+                    $q->orWhere('id', $term)
+                      ->orWhere('order', $term);
+                }
+                
+                // Check for preview keyword
+                $termLower = strtolower($term);
+                if (in_array($termLower, ['preview', 'pratinjau'])) {
+                    $q->orWhere('is_preview', true);
+                }
+                
+                // Check for type keywords
+                if (in_array($termLower, ['video', 'document', 'pdf', 'youtube'])) {
+                    $q->orWhere('type', $termLower);
+                }
+            });
+        }
+        
+        $materials = $query->with(['chapter:id,title,course_id', 'chapter.course:id,title'])
+                           ->limit(15)
+                           ->get(['id', 'title', 'type', 'chapter_id', 'file_path', 'youtube_url', 'is_preview', 'order']);
+        
+        return $materials->map(function ($material) {
             return [
                 'id' => $material->id,
                 'title' => $material->title,
                 'type' => ucfirst($material->type ?? 'document'),
-                'chapter_title' => $material->chapter->title ?? null
+                'chapter_title' => $material->chapter?->title,
+                'course_title' => $material->chapter?->course?->title,
+                'is_preview' => $material->is_preview,
+                'order' => $material->order
             ];
         });
+    }
 
-        // Search reviews (both Review and CourseReview)
-        $reviewsQuery = Review::query();
+    /**
+     * Search reviews (both Institution Reviews and Course Reviews)
+     */
+    private function searchReviews($searchTerms)
+    {
+        $allReviews = collect();
+        
+        // Search in Institution Review model
+        $reviewQuery = Review::query();
+        
         foreach ($searchTerms as $term) {
-            $reviewsQuery->where(function($q) use ($term) {
-                $q->where('comment', 'like', "%{$term}%")
-                  ->orWhereHas('user', function ($uq) use ($term) {
-                      $uq->where('name', 'like', "%{$term}%")
-                         ->orWhere('email', 'like', "%{$term}%");
-                  })
-                  ->orWhereHas('course', function ($cq) use ($term) {
-                      $cq->where('title', 'like', "%{$term}%");
-                  });
+            $reviewQuery->where(function(Builder $q) use ($term) {
+                $q->where('comment', 'like', "%{$term}%");
                 
-                // Check if search term is a number for rating search
+                // Search in related user
+                $q->orWhereHas('user', function (Builder $uq) use ($term) {
+                    $uq->where('name', 'like', "%{$term}%")
+                       ->orWhere('email', 'like', "%{$term}%");
+                });
+                
+                // Search in related institution
+                $q->orWhereHas('institution', function (Builder $iq) use ($term) {
+                    $iq->where('name', 'like', "%{$term}%");
+                });
+                
+                // Search by rating if numeric
                 if (is_numeric($term)) {
-                    $q->orWhere('rating', $term);
+                    $q->orWhere('rating', $term)
+                      ->orWhere('id', $term);
+                }
+                
+                // Check for status keywords if the field exists
+                $termLower = strtolower($term);
+                if (in_array($termLower, ['pending', 'approved', 'rejected'])) {
+                    $q->orWhere('status', $termLower);
                 }
             });
         }
-        $reviews = $reviewsQuery->with(['user:id,name', 'course:id,title'])->limit(5)->get(['id', 'user_id', 'course_id', 'rating', 'comment']);
         
-        // Also search CourseReviews
-        $courseReviewsQuery = CourseReview::query();
-        foreach ($searchTerms as $term) {
-            $courseReviewsQuery->where(function($q) use ($term) {
-                $q->where('comment', 'like', "%{$term}%")
-                  ->orWhereHas('user', function ($uq) use ($term) {
-                      $uq->where('name', 'like', "%{$term}%")
-                         ->orWhere('email', 'like', "%{$term}%");
-                  })
-                  ->orWhereHas('course', function ($cq) use ($term) {
-                      $cq->where('title', 'like', "%{$term}%");
-                  });
-                
-                if (is_numeric($term)) {
-                    $q->orWhere('rating', $term);
-                }
-                
-                // Check for status keyword
-                $statusTermLower = strtolower($term);
-                if (in_array($statusTermLower, ['pending', 'approved', 'rejected'])) {
-                    $q->orWhere('status', $statusTermLower);
-                }
-            });
-        }
-        $courseReviews = $courseReviewsQuery->with(['user:id,name', 'course:id,title'])->limit(5)->get(['id', 'user_id', 'course_id', 'rating', 'comment', 'status']);
+        $institutionReviews = $reviewQuery->with(['user:id,name', 'institution:id,name'])
+                                          ->limit(10)
+                                          ->get(['id', 'user_id', 'institution_id', 'rating', 'comment', 'status', 'created_at']);
         
-        // Combine both review types
-        $allReviews = $reviews->concat($courseReviews)->take(10);
-        
-        $results['reviews'] = $allReviews->map(function ($review) {
-            return [
+        // Add institution reviews to collection
+        foreach ($institutionReviews as $review) {
+            $allReviews->push([
                 'id' => $review->id,
-                'user_name' => $review->user->name ?? 'Unknown',
-                'course_title' => $review->course->title ?? 'Unknown',
+                'type' => 'institution',
+                'user_name' => $review->user?->name ?? 'Unknown',
+                'target_name' => $review->institution?->name ?? 'Unknown',
+                'target_type' => 'Institution',
                 'rating' => $review->rating,
-                'comment' => \Str::limit($review->comment ?? '', 100),
-                'status' => $review->status ?? 'pending'
-            ];
-        });
-
-        // Search transactions - berdasarkan field yang ada di model
-        $transactionsQuery = Transaction::query();
+                'comment' => \Str::limit($review->comment ?? '', 150),
+                'status' => $review->status ?? 'approved',
+                'created_at' => $review->created_at?->format('Y-m-d H:i:s')
+            ]);
+        }
+        
+        // Search in CourseReview model
+        $courseReviewQuery = CourseReview::query();
+        
         foreach ($searchTerms as $term) {
-            $transactionsQuery->where(function($q) use ($term) {
-                // Search by ID (if numeric)
+            $courseReviewQuery->where(function(Builder $q) use ($term) {
+                $q->where('comment', 'like', "%{$term}%");
+                
+                // Search in related user
+                $q->orWhereHas('user', function (Builder $uq) use ($term) {
+                    $uq->where('name', 'like', "%{$term}%")
+                       ->orWhere('email', 'like', "%{$term}%");
+                });
+                
+                // Search in related course
+                $q->orWhereHas('course', function (Builder $cq) use ($term) {
+                    $cq->where('title', 'like', "%{$term}%");
+                });
+                
                 if (is_numeric($term)) {
-                    $q->where('id', $term)
+                    $q->orWhere('rating', $term)
+                      ->orWhere('id', $term);
+                }
+                
+                // Check for status keywords
+                $termLower = strtolower($term);
+                if (in_array($termLower, ['pending', 'approved', 'rejected'])) {
+                    $q->orWhere('status', $termLower);
+                }
+            });
+        }
+        
+        $courseReviews = $courseReviewQuery->with(['user:id,name', 'course:id,title'])
+                                           ->limit(10)
+                                           ->get(['id', 'user_id', 'course_id', 'rating', 'comment', 'status', 'created_at']);
+        
+        // Add course reviews to collection
+        foreach ($courseReviews as $review) {
+            $allReviews->push([
+                'id' => $review->id,
+                'type' => 'course',
+                'user_name' => $review->user?->name ?? 'Unknown',
+                'target_name' => $review->course?->title ?? 'Unknown',
+                'target_type' => 'Course',
+                'course_title' => $review->course?->title ?? 'Unknown',
+                'rating' => $review->rating,
+                'comment' => \Str::limit($review->comment ?? '', 150),
+                'status' => $review->status ?? 'approved',
+                'created_at' => $review->created_at?->format('Y-m-d H:i:s')
+            ]);
+        }
+        
+        // Return combined reviews, limited to 20 total
+        return $allReviews->take(20);
+    }
+
+    /**
+     * Search transactions with comprehensive filtering
+     */
+    private function searchTransactions($searchTerms)
+    {
+        $query = Transaction::query();
+        
+        foreach ($searchTerms as $term) {
+            $query->where(function(Builder $q) use ($term) {
+                // Search by transaction fields
+                $q->where('status', 'like', "%{$term}%")
+                  ->orWhere('payment_method', 'like', "%{$term}%")
+                  ->orWhere('payment_code', 'like', "%{$term}%");
+                
+                // Search in related user
+                $q->orWhereHas('user', function (Builder $uq) use ($term) {
+                    $uq->where('name', 'like', "%{$term}%")
+                       ->orWhere('email', 'like', "%{$term}%");
+                });
+                
+                // Search in related course
+                $q->orWhereHas('course', function (Builder $cq) use ($term) {
+                    $cq->where('title', 'like', "%{$term}%");
+                });
+                
+                // Search by numeric fields
+                if (is_numeric($term)) {
+                    $q->orWhere('id', $term)
                       ->orWhere('amount', 'like', "%{$term}%");
                 }
                 
-                $q->orWhere('status', 'like', "%{$term}%")
-                  ->orWhere('payment_method', 'like', "%{$term}%")
-                  ->orWhereHas('user', function ($uq) use ($term) {
-                      $uq->where('name', 'like', "%{$term}%")
-                         ->orWhere('email', 'like', "%{$term}%");
-                  })
-                  ->orWhereHas('course', function ($cq) use ($term) {
-                      $cq->where('title', 'like', "%{$term}%");
-                  });
+                // Check for status keywords
+                $termLower = strtolower($term);
+                $statusKeywords = ['pending', 'success', 'failed', 'expired', 'cancelled'];
+                if (in_array($termLower, $statusKeywords)) {
+                    $q->orWhere('status', $termLower);
+                }
+                
+                // Check for payment method keywords
+                $paymentKeywords = ['bank', 'transfer', 'bca', 'mandiri', 'bni', 'bri', 'gopay', 'ovo', 'dana'];
+                if (in_array($termLower, $paymentKeywords)) {
+                    $q->orWhere('payment_method', 'like', "%{$termLower}%");
+                }
             });
         }
-        $transactions = $transactionsQuery->with(['user:id,name', 'course:id,title'])->limit(10)->get(['id', 'user_id', 'course_id', 'status', 'amount', 'payment_method']);
         
-        $results['transactions'] = $transactions->map(function ($transaction) {
+        $transactions = $query->with(['user:id,name,email', 'course:id,title'])
+                              ->orderBy('created_at', 'desc')
+                              ->limit(15)
+                              ->get(['id', 'user_id', 'course_id', 'status', 'amount', 'payment_method', 'payment_code', 'created_at']);
+        
+        return $transactions->map(function ($transaction) {
             return [
                 'id' => $transaction->id,
-                'user_name' => $transaction->user->name ?? 'Unknown',
-                'course_title' => $transaction->course->title ?? 'Unknown',
+                'user_name' => $transaction->user?->name ?? 'Unknown',
+                'user_email' => $transaction->user?->email,
+                'course_title' => $transaction->course?->title ?? 'Unknown',
                 'status' => ucfirst($transaction->status),
                 'amount' => $transaction->amount ?? 0,
-                'payment_method' => $transaction->payment_method ?? 'unknown'
+                'payment_method' => $transaction->payment_method ?? 'unknown',
+                'payment_code' => $transaction->payment_code,
+                'created_at' => $transaction->created_at?->format('Y-m-d H:i:s')
             ];
         });
-
-        return response()->json($results);
     }
 }

@@ -116,4 +116,20 @@ class User extends Authenticatable
         $color = $colors[array_rand($colors)];
         return "https://ui-avatars.com/api/?name={$name}&color=FFFFFF&background={$color}&size=200&bold=true";
     }
+
+    /**
+     * Get search display name with role
+     */
+    public function getSearchDisplayAttribute()
+    {
+        return "{$this->name} ({$this->role})";
+    }
+
+    /**
+     * Get formatted role name
+     */
+    public function getFormattedRoleAttribute()
+    {
+        return ucfirst($this->role);
+    }
 }
