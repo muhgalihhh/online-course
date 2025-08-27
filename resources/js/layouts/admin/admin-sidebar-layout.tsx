@@ -51,28 +51,7 @@ export default function AdminSidebarLayout({ children, header }: AdminSidebarLay
 
                 <div className="flex flex-col">
                     {/* Header */}
-                    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-                        {/* Tombol Sidebar untuk Mobile */}
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                                    <Menu className="h-5 w-5" />
-                                    <span className="sr-only">Toggle navigation menu</span>
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="flex flex-col">
-                                <nav className="grid gap-2 text-lg font-medium">
-                                    <a href={route('admin.dashboard')} className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                                        <Package2 className="h-6 w-6" />
-                                        <span>Admin Panel</span>
-                                    </a>
-                                    <AdminSidebar isExpanded={true} />
-                                </nav>
-                            </SheetContent>
-                        </Sheet>
-                        <div className="w-full flex-1">{/* ... Konten Header lainnya seperti Breadcrumbs atau Search Bar */}</div>
-                        <AdminHeader onToggleSidebar={toggleSidebar} />
-                    </header>
+                    <AdminHeader onToggleSidebar={toggleSidebar} />
 
                     {/* Konten Utama */}
                     <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
