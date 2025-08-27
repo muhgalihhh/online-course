@@ -1,14 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Image } from 'lucide-react';
+import { Head, useForm, Link } from '@inertiajs/react';
+import { ArrowLeft, Image, Upload, X, AlertCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface Category {
@@ -79,16 +80,24 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
             <Head title="Edit Course" />
 
             <div className="">
-                <div className="flex items-center mb-6">
-                    <Button variant="ghost" size="sm" className="mr-2">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <h1 className="text-2xl font-bold">Edit Kursus</h1>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <Link href={route('admin.courses.index')}>
+                            <Button variant="ghost" size="sm">
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Kembali
+                            </Button>
+                        </Link>
+                        <h1 className="text-2xl font-bold">Edit Kursus</h1>
+                    </div>
                 </div>
 
-                <Card className="max-w-2xl">
+                <Card className="max-w-4xl">
                     <CardHeader>
                         <CardTitle>Informasi Kursus</CardTitle>
+                        <CardDescription>
+                            Perbarui informasi kursus di bawah ini
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -163,33 +172,72 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
 
                             <div className="space-y-2">
                                 <Label htmlFor="thumbnail_path">Thumbnail Kursus</Label>
-                                <div className="flex items-center space-x-4">
-                                    {(preview || course.thumbnail_path) && (
-                                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
-                                            <img
-                                                src={preview || `/storage/${course.thumbnail_path}`}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover"
-                                            />
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="relative group">
+                                            {(preview || course.thumbnail_path) ? (
+                                                <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                                                    <img
+                                                        src={preview || `/storage/${course.thumbnail_path}`}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    {preview && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="icon"
+                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={() => setData('thumbnail_path', null)}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <label
+                                                    htmlFor="thumbnail_path"
+                                                    className="relative aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 hover:bg-muted/70 transition-colors cursor-pointer flex flex-col items-center justify-center group"
+                                                >
+                                                    <Upload className="h-10 w-10 text-muted-foreground mb-3 group-hover:scale-110 transition-transform" />
+                                                    <p className="text-sm font-medium text-muted-foreground">Klik untuk upload</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">atau drag & drop gambar di sini</p>
+                                                </label>
+                                            )}
                                         </div>
-                                    )}
-                                    {!preview && !course.thumbnail_path && (
-                                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                                            <Image className="h-8 w-8 text-gray-400" />
-                                        </div>
-                                    )}
-                                    <div className="flex-1">
                                         <Input
                                             id="thumbnail_path"
                                             type="file"
                                             accept="image/*"
                                             onChange={(e) => setData('thumbnail_path', e.target.files ? e.target.files[0] : null)}
-                                            className={errors.thumbnail_path ? 'border-red-500' : ''}
+                                            className="hidden"
                                         />
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            Upload gambar JPG, PNG, atau WebP (maksimal 2MB) untuk mengganti thumbnail
-                                        </p>
-                                        {errors.thumbnail_path && <p className="text-sm text-red-600">{errors.thumbnail_path}</p>}
+                                        {!preview && course.thumbnail_path && (
+                                            <p className="text-sm text-muted-foreground mt-2 text-center">
+                                                Upload gambar baru untuk mengganti thumbnail yang ada
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Alert>
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertDescription>
+                                                <strong>Tips untuk thumbnail yang baik:</strong>
+                                                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                                                    <li>Gunakan gambar dengan resolusi minimal 1280x720 px</li>
+                                                    <li>Format yang didukung: JPG, PNG, WebP</li>
+                                                    <li>Ukuran maksimal file: 2MB</li>
+                                                    <li>Gunakan gambar yang menarik dan relevan dengan kursus</li>
+                                                    <li>Hindari teks berlebihan pada gambar</li>
+                                                </ul>
+                                            </AlertDescription>
+                                        </Alert>
+                                        {errors.thumbnail_path && (
+                                            <Alert variant="destructive">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>{errors.thumbnail_path}</AlertDescription>
+                                            </Alert>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -217,10 +265,12 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                 </div>
                             </div>
 
-                            <div className="flex justify-end space-x-2">
-                                <Button type="button" variant="outline">
-                                    Batal
-                                </Button>
+                            <div className="flex justify-end space-x-2 pt-4 border-t">
+                                <Link href={route('admin.courses.index')}>
+                                    <Button type="button" variant="outline">
+                                        Batal
+                                    </Button>
+                                </Link>
                                 <Button type="submit" disabled={processing}>
                                     {processing ? 'Menyimpan...' : 'Update Kursus'}
                                 </Button>

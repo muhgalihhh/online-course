@@ -70,6 +70,11 @@ class CourseController extends Controller
         $query->orderBy($sortBy, $sortOrder);
 
         $courses = $query->paginate(10)->withQueryString();
+        
+        // Ensure thumbnail URLs are included for each course
+        $courses->through(function ($course) {
+            return $course->append('thumbnail');
+        });
 
         return Inertia::render('admin/courses/index', [
             'courses' => $courses,
@@ -176,10 +181,15 @@ class CourseController extends Controller
      */
     public function show(Course $course): Response
     {
+        $courseData = $course->load(['institution', 'category', 'chapters' => function($query) {
+            $query->withCount('courseMaterials');
+        }, 'users']);
+        
+        // Ensure thumbnail URL is included
+        $courseData->append('thumbnail');
+        
         return Inertia::render('admin/courses/show', [
-            'course' => $course->load(['institution', 'category', 'chapters' => function($query) {
-                $query->withCount('courseMaterials');
-            }, 'users']),
+            'course' => $courseData,
         ]);
     }
 }
