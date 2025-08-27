@@ -75,7 +75,12 @@ interface MaterialsProps extends PageProps {
 export default function Materials({ materials, groupedMaterials, chapters, courses, filters }: MaterialsProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
-    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+    // Check if there's a selected_course in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedCourseFromUrl = urlParams.get('selected_course');
+    const [selectedCourse, setSelectedCourse] = useState<number | null>(
+        selectedCourseFromUrl ? parseInt(selectedCourseFromUrl) : null
+    );
     const [deleteDialog, setDeleteDialog] = useState<{
         isOpen: boolean;
         materialId: number | null;

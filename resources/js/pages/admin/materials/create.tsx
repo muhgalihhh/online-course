@@ -13,14 +13,16 @@ interface Chapter { id: number; title: string; course: { id: number; title: stri
 
 interface CreateMaterialProps extends PageProps {
 	chapters: Chapter[];
+	course_id?: number | null;
+	chapter_id?: number | null;
 }
 
-export default function CreateMaterial({ chapters }: CreateMaterialProps) {
+export default function CreateMaterial({ chapters, course_id, chapter_id }: CreateMaterialProps) {
 	const { data, setData, post, processing, errors } = useForm<{ 
 		course_id: string; chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video_local'|'video_youtube'|''; file_path: File | null; youtube_url: string; is_preview: boolean; 
 	}>({
-		course_id: '',
-		chapter_id: '',
+		course_id: course_id ? course_id.toString() : '',
+		chapter_id: chapter_id ? chapter_id.toString() : '',
 		title: '',
 		order: '0',
 		type: '',
@@ -87,7 +89,7 @@ export default function CreateMaterial({ chapters }: CreateMaterialProps) {
 
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<h1 className="text-3xl font-bold tracking-tight">Tambah Materi</h1>
-				<Link href={route('admin.materials.index')}>
+				<Link href={course_id ? route('admin.materials.index') + '?selected_course=' + course_id : route('admin.materials.index')}>
 					<Button variant="outline">
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Kembali
@@ -104,7 +106,11 @@ export default function CreateMaterial({ chapters }: CreateMaterialProps) {
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label>Course *</Label>
-								<Select value={data.course_id} onValueChange={(v) => { setData('course_id', v); setData('chapter_id', ''); }}>
+								<Select 
+									value={data.course_id} 
+									onValueChange={(v) => { setData('course_id', v); setData('chapter_id', ''); }}
+									disabled={!!course_id}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Pilih course" />
 									</SelectTrigger>
@@ -116,6 +122,11 @@ export default function CreateMaterial({ chapters }: CreateMaterialProps) {
 										))}
 									</SelectContent>
 								</Select>
+								{course_id && (
+									<p className="text-sm text-muted-foreground mt-1">
+										Course telah dipilih dan tidak dapat diubah
+									</p>
+								)}
 							</div>
 
 							<div className="space-y-2">
@@ -222,7 +233,7 @@ export default function CreateMaterial({ chapters }: CreateMaterialProps) {
 				</Card>
 
 				<div className="flex items-center justify-end gap-4">
-					<Link href={route('admin.materials.index')}>
+					<Link href={course_id ? route('admin.materials.index') + '?selected_course=' + course_id : route('admin.materials.index')}>
 						<Button variant="outline" type="button">Batal</Button>
 					</Link>
 					<Button type="submit" disabled={processing}>
