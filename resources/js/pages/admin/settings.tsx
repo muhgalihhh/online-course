@@ -11,6 +11,9 @@ import { Lock, Save, User, Trash2, Camera, Info } from 'lucide-react';
 import { useState, useRef, FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAppearance } from '@/hooks/use-appearance';
+import { Monitor, Moon, Sun, Palette } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -37,6 +40,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
     const { auth } = usePage<SharedData>().props;
     const [activeTab, setActiveTab] = useState('profile');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { appearance, updateAppearance } = useAppearance();
     
     // Profile form
     const profileForm = useForm({
@@ -132,6 +136,10 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                         <TabsTrigger value="security" className="flex items-center gap-2">
                             <Lock className="h-4 w-4" />
                             Security
+                        </TabsTrigger>
+                        <TabsTrigger value="appearance" className="flex items-center gap-2">
+                            <Palette className="h-4 w-4" />
+                            Appearance
                         </TabsTrigger>
                     </TabsList>
 
@@ -336,6 +344,97 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                         Delete Account
                                     </Button>
                                 </form>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* Appearance Tab */}
+                    <TabsContent value="appearance" className="space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Appearance Settings</CardTitle>
+                                <CardDescription>
+                                    Customize the appearance of your dashboard. Choose between light, dark, or system theme.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-4">
+                                    <Label>Theme</Label>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => updateAppearance('light')}
+                                            className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-4 hover:bg-accent ${
+                                                appearance === 'light' ? 'border-primary' : 'border-muted'
+                                            }`}
+                                        >
+                                            <Sun className="h-6 w-6 mb-2" />
+                                            <span className="text-sm font-medium">Light</span>
+                                            {appearance === 'light' && (
+                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateAppearance('dark')}
+                                            className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-4 hover:bg-accent ${
+                                                appearance === 'dark' ? 'border-primary' : 'border-muted'
+                                            }`}
+                                        >
+                                            <Moon className="h-6 w-6 mb-2" />
+                                            <span className="text-sm font-medium">Dark</span>
+                                            {appearance === 'dark' && (
+                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateAppearance('system')}
+                                            className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-4 hover:bg-accent ${
+                                                appearance === 'system' ? 'border-primary' : 'border-muted'
+                                            }`}
+                                        >
+                                            <Monitor className="h-6 w-6 mb-2" />
+                                            <span className="text-sm font-medium">System</span>
+                                            {appearance === 'system' && (
+                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+                                            )}
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        {appearance === 'system' 
+                                            ? 'Theme will automatically match your system preferences'
+                                            : `Currently using ${appearance} theme`}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Label>Theme Preview</Label>
+                                    <div className="rounded-lg border p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <div className="h-3 w-24 rounded bg-foreground/80" />
+                                                <div className="h-2 w-32 rounded bg-muted-foreground/50" />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <div className="h-8 w-8 rounded bg-primary" />
+                                                <div className="h-8 w-8 rounded bg-secondary" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="h-2 w-full rounded bg-muted" />
+                                            <div className="h-2 w-3/4 rounded bg-muted" />
+                                            <div className="h-2 w-1/2 rounded bg-muted" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertDescription>
+                                        Theme preference is saved locally and will persist across sessions.
+                                    </AlertDescription>
+                                </Alert>
                             </CardContent>
                         </Card>
                     </TabsContent>
