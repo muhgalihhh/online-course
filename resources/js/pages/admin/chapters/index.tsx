@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pagination } from '@/components/pagination';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { BookOpen, ChevronRight, Clock, FileText, Filter, GraduationCap, Play, Plus, Search, Users } from 'lucide-react';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { BookOpen, ChevronRight, Filter, GraduationCap, Plus, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -60,6 +61,8 @@ export default function Chapters({ courses, categories, institutions }: Chapters
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [institutionFilter, setInstitutionFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
 
     const formatDuration = (minutes: number) => {
         if (!minutes) return '0m';
@@ -98,6 +101,45 @@ export default function Chapters({ courses, categories, institutions }: Chapters
         
         return matchesSearch && matchesCategory && matchesInstitution && matchesType;
     });
+
+    // Pagination
+    const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+    const paginatedCourses = filteredCourses.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, categoryFilter, institutionFilter, typeFilter]);
+
+    // Generate pagination links
+    const paginationLinks = [];
+    paginationLinks.push({
+        url: currentPage > 1 ? '#' : null,
+        label: 'Previous',
+        active: false
+    });
+    for (let i = 1; i <= totalPages; i++) {
+        paginationLinks.push({
+            url: '#',
+            label: i.toString(),
+            active: i === currentPage
+        });
+    }
+    paginationLinks.push({
+        url: currentPage < totalPages ? '#' : null,
+        label: 'Next',
+        active: false
+    });
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -186,122 +228,122 @@ export default function Chapters({ courses, categories, institutions }: Chapters
             </Card>
 
             {/* Course Cards Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredCourses.map((course) => (
-                    <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                        {/* Course Thumbnail */}
-                        {course.thumbnail && (
-                            <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 relative">
-                                <img 
-                                    src={course.thumbnail} 
-                                    alt={course.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-2 right-2">
-                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>
-                                        {course.is_pro ? 'PRO' : 'FREE'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        )}
-                        {!course.thumbnail && (
-                            <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center relative">
-                                <GraduationCap className="h-16 w-16 text-primary/20" />
-                                <div className="absolute top-2 right-2">
-                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>
-                                        {course.is_pro ? 'PRO' : 'FREE'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        )}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {paginatedCourses.map((course) => (
+                    <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        {/* Simplified Card without thumbnail */}
+                        <div className="h-2 bg-gradient-to-r from-primary/20 to-primary/10" />
 
-                        <CardHeader>
+                        <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-2">
-                                <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                                <CardTitle className="text-base line-clamp-1">{course.title}</CardTitle>
+                                <Badge variant={course.is_pro ? 'default' : 'secondary'} className="text-xs">
+                                    {course.is_pro ? 'PRO' : 'FREE'}
+                                </Badge>
                             </div>
                             {course.description && (
-                                <CardDescription className="line-clamp-2">
+                                <CardDescription className="line-clamp-1 text-xs mt-1">
                                     {course.description}
                                 </CardDescription>
                             )}
                         </CardHeader>
 
-                        <CardContent className="space-y-4">
-                            {/* Course Meta Info */}
-                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                        <CardContent className="py-2">
+                            {/* Simplified Meta Info */}
+                            <div className="flex flex-wrap gap-1 text-xs">
                                 {course.category && (
-                                    <Badge variant="outline">{course.category.name}</Badge>
+                                    <Badge variant="outline" className="text-xs py-0">{course.category.name}</Badge>
                                 )}
                                 {course.institution && (
-                                    <Badge variant="outline">{course.institution.name}</Badge>
+                                    <Badge variant="outline" className="text-xs py-0">{course.institution.name}</Badge>
                                 )}
                             </div>
 
-                            {/* Course Statistics */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <BookOpen className="h-4 w-4" />
-                                        <span className="text-sm">Chapters</span>
-                                    </div>
-                                    <p className="text-2xl font-semibold">{course.chapters_count || 0}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <FileText className="h-4 w-4" />
-                                        <span className="text-sm">Materi</span>
-                                    </div>
-                                    <p className="text-2xl font-semibold">{course.course_materials_count || 0}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Clock className="h-4 w-4" />
-                                        <span className="text-sm">Durasi</span>
-                                    </div>
-                                    <p className="text-lg font-semibold">{formatDuration(course.total_duration)}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Play className="h-4 w-4" />
-                                        <span className="text-sm">Gratis</span>
-                                    </div>
-                                    <p className="text-lg font-semibold">{course.free_chapters_count || 0}</p>
-                                </div>
-                            </div>
-
-                            {/* Additional Info */}
-                            <div className="flex items-center justify-between pt-2 border-t">
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Users className="h-4 w-4" />
-                                    <span>{course.enrollments_count || 0} siswa</span>
-                                </div>
+                            {/* Minimal Statistics */}
+                            <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
+                                <span>{course.chapters_count || 0} chapters</span>
                                 {course.is_pro && (
-                                    <div className="text-sm font-semibold">
-                                        {formatPrice(course.price)}
-                                    </div>
+                                    <span className="font-medium">{formatPrice(course.price)}</span>
                                 )}
                             </div>
                         </CardContent>
 
-                        <CardFooter className="gap-2">
+                        <CardFooter className="pt-2 pb-3">
                             <Link 
                                 href={route('admin.chapters.by-course', course.id)}
                                 className="flex-1"
                             >
-                                <Button className="w-full" variant="default">
-                                    <BookOpen className="mr-2 h-4 w-4" />
+                                <Button className="w-full h-8 text-sm" variant="default">
+                                    <BookOpen className="mr-1 h-3 w-3" />
                                     Kelola Chapters
                                 </Button>
                             </Link>
-                            <Link href={route('admin.courses.show', course.id)}>
-                                <Button variant="outline" size="icon">
-                                    <ChevronRight className="h-4 w-4" />
+                            <Link href={route('admin.courses.show', course.id)} className="ml-2">
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                    <ChevronRight className="h-3 w-3" />
                                 </Button>
                             </Link>
                         </CardFooter>
                     </Card>
                 ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <Card>
+                    <CardContent className="py-3">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredCourses.length)} dari {filteredCourses.length} kursus
+                            </p>
+                            <div className="flex items-center space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                    // Show only certain page numbers
+                                    if (
+                                        page === 1 || 
+                                        page === totalPages || 
+                                        (page >= currentPage - 1 && page <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <Button
+                                                key={page}
+                                                variant={page === currentPage ? 'default' : 'outline'}
+                                                size="sm"
+                                                className="w-8 h-8 p-0"
+                                                onClick={() => handlePageChange(page)}
+                                            >
+                                                {page}
+                                            </Button>
+                                        );
+                                    } else if (
+                                        page === currentPage - 2 || 
+                                        page === currentPage + 2
+                                    ) {
+                                        return <span key={page} className="px-1">...</span>;
+                                    }
+                                    return null;
+                                })}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Empty State */}
             {filteredCourses.length === 0 && (
@@ -322,60 +364,7 @@ export default function Chapters({ courses, categories, institutions }: Chapters
                 </Card>
             )}
 
-            {/* Overall Statistics */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Kursus</CardTitle>
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{courses.data.length}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Kursus yang tersedia
-                        </p>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Chapters</CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {courses.data.reduce((acc, course) => acc + (course.chapters_count || 0), 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Chapter di semua kursus</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Materi</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {courses.data.reduce((acc, course) => acc + (course.course_materials_count || 0), 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Materi pembelajaran</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Durasi</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {formatDuration(courses.data.reduce((acc, course) => acc + (course.total_duration || 0), 0))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Total durasi pembelajaran</p>
-                    </CardContent>
-                </Card>
-            </div>
         </AdminLayout>
     );
 }

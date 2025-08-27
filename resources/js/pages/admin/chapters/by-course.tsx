@@ -12,7 +12,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, BookOpen, Clock, Edit, Eye, FileText, Filter, GraduationCap, Play, Plus, PlusSquare, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface Category {
     id: number;
@@ -62,6 +62,8 @@ interface ChaptersByCourseProps extends PageProps {
 export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [deleteDialog, setDeleteDialog] = useState<{
         isOpen: boolean;
         chapterId: number | null;
@@ -137,11 +139,24 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
         return matchesSearch && matchesStatus;
     });
 
-    // Calculate statistics
-    const totalDuration = chapters.reduce((acc, chapter) => acc + (chapter.duration || 0), 0);
-    const totalMaterials = chapters.reduce((acc, chapter) => acc + (chapter.course_materials?.length || 0), 0);
-    const freeChapters = chapters.filter(chapter => chapter.is_free).length;
-    const premiumChapters = chapters.filter(chapter => !chapter.is_free).length;
+    // Pagination
+    const totalPages = Math.ceil(filteredChapters.length / itemsPerPage);
+    const paginatedChapters = filteredChapters.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset to first page when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -167,14 +182,14 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                     </Link>
                 </div>
 
-                {/* Course Info Card */}
+                {/* Simplified Course Info Card */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-start justify-between">
-                            <div className="space-y-1">
-                                <CardTitle>{course.title}</CardTitle>
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-lg">{course.title}</CardTitle>
                                 {course.description && (
-                                    <CardDescription>{course.description}</CardDescription>
+                                    <CardDescription className="text-sm mt-1">{course.description}</CardDescription>
                                 )}
                             </div>
                             <div className="flex gap-2">
@@ -187,26 +202,15 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Total Chapters</p>
-                                <p className="text-2xl font-semibold">{chapters.length}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Total Materi</p>
-                                <p className="text-2xl font-semibold">{totalMaterials}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Total Durasi</p>
-                                <p className="text-2xl font-semibold">{formatDuration(totalDuration)}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Harga</p>
-                                <p className="text-2xl font-semibold">
-                                    {course.is_pro ? formatPrice(course.price) : 'Gratis'}
-                                </p>
-                            </div>
+                    <CardContent className="pt-0">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>{chapters.length} chapters</span>
+                            {course.is_pro && (
+                                <span>•</span>
+                            )}
+                            {course.is_pro && (
+                                <span className="font-medium">{formatPrice(course.price)}</span>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -260,14 +264,10 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                             <BookOpen className="h-5 w-5" />
                             Daftar Chapters ({filteredChapters.length})
                         </div>
-                        <div className="flex gap-2">
-                            <Badge variant="default">{freeChapters} Gratis</Badge>
-                            <Badge variant="secondary">{premiumChapters} Premium</Badge>
-                        </div>
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {filteredChapters.length > 0 ? (
+                    {paginatedChapters.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -282,7 +282,7 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredChapters.map((chapter) => (
+                                {paginatedChapters.map((chapter) => (
                                     <TableRow key={chapter.id}>
                                         <TableCell>
                                             <Badge variant="outline" className="font-mono">
@@ -377,54 +377,62 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                 </CardContent>
             </Card>
 
-            {/* Chapter Statistics */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Pagination */}
+            {totalPages > 1 && (
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Chapters</CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{chapters.length}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Chapter dalam kursus ini
-                        </p>
+                    <CardContent className="py-3">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredChapters.length)} dari {filteredChapters.length} chapters
+                            </p>
+                            <div className="flex items-center space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                    // Show only certain page numbers
+                                    if (
+                                        page === 1 || 
+                                        page === totalPages || 
+                                        (page >= currentPage - 1 && page <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <Button
+                                                key={page}
+                                                variant={page === currentPage ? 'default' : 'outline'}
+                                                size="sm"
+                                                className="w-8 h-8 p-0"
+                                                onClick={() => handlePageChange(page)}
+                                            >
+                                                {page}
+                                            </Button>
+                                        );
+                                    } else if (
+                                        page === currentPage - 2 || 
+                                        page === currentPage + 2
+                                    ) {
+                                        return <span key={page} className="px-1">...</span>;
+                                    }
+                                    return null;
+                                })}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Duration</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatDuration(totalDuration)}</div>
-                        <p className="text-xs text-muted-foreground">Total durasi pembelajaran</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Free Chapters</CardTitle>
-                        <Play className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{freeChapters}</div>
-                        <p className="text-xs text-muted-foreground">Chapter yang dapat diakses gratis</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Materi</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalMaterials}</div>
-                        <p className="text-xs text-muted-foreground">Materi pembelajaran</p>
-                    </CardContent>
-                </Card>
-            </div>
+            )}
 
             <DeleteConfirmation
                 isOpen={deleteDialog.isOpen}
