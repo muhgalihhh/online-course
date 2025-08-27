@@ -329,7 +329,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                     results.push({
                         id: `material-${material.id}`,
                         title: material.title,
-                        description: material.description,
+                        description: material.chapter_title ? `Chapter: ${material.chapter_title}` : '',
                         type: 'material',
                         url: materialUrl,
                         icon: <FileText className="h-4 w-4" />,

@@ -37,7 +37,7 @@ class SearchController extends Controller
             'reviews' => []
         ];
 
-        // Search users - improved search with multiple fields
+        // Search users - berdasarkan field yang ada di model
         $usersQuery = User::query();
         foreach ($searchTerms as $term) {
             $usersQuery->where(function($q) use ($term) {
@@ -57,7 +57,7 @@ class SearchController extends Controller
             ];
         });
 
-        // Search courses - improved with price and is_pro fields
+        // Search courses - berdasarkan field yang ada di model
         $coursesQuery = Course::query();
         foreach ($searchTerms as $term) {
             $coursesQuery->where(function($q) use ($term) {
@@ -94,7 +94,7 @@ class SearchController extends Controller
             ];
         });
 
-        // Search categories - improved search
+        // Search categories - berdasarkan field yang ada di model
         $categoriesQuery = Category::query();
         foreach ($searchTerms as $term) {
             $categoriesQuery->where(function($q) use ($term) {
@@ -113,7 +113,7 @@ class SearchController extends Controller
             ];
         });
 
-        // Search chapters
+        // Search chapters - berdasarkan field yang ada di model
         $chaptersQuery = Chapter::query();
         foreach ($searchTerms as $term) {
             $chaptersQuery->where(function($q) use ($term) {
@@ -146,7 +146,7 @@ class SearchController extends Controller
             ];
         });
 
-        // Search institutions - improved search
+        // Search institutions - berdasarkan field yang ada di model
         $institutionsQuery = Institution::query();
         foreach ($searchTerms as $term) {
             $institutionsQuery->where(function($q) use ($term) {
@@ -169,26 +169,30 @@ class SearchController extends Controller
             ];
         });
 
-        // Search course materials - improved with file_path
+        // Search course materials - berdasarkan field yang ada di model (TANPA description karena tidak ada)
         $materialsQuery = CourseMaterial::query();
         foreach ($searchTerms as $term) {
             $materialsQuery->where(function($q) use ($term) {
                 $q->where('title', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%")
                   ->orWhere('type', 'like', "%{$term}%")
                   ->orWhere('file_path', 'like', "%{$term}%")
+                  ->orWhere('youtube_url', 'like', "%{$term}%")
                   ->orWhereHas('chapter', function($cq) use ($term) {
                       $cq->where('title', 'like', "%{$term}%");
                   });
+                
+                // Check for preview keyword
+                if (strtolower($term) == 'preview' || strtolower($term) == 'pratinjau') {
+                    $q->orWhere('is_preview', true);
+                }
             });
         }
-        $materials = $materialsQuery->with('chapter:id,title')->limit(10)->get(['id', 'title', 'description', 'type', 'chapter_id']);
+        $materials = $materialsQuery->with('chapter:id,title')->limit(10)->get(['id', 'title', 'type', 'chapter_id', 'file_path', 'youtube_url']);
         
         $results['course_materials'] = $materials->map(function ($material) {
             return [
                 'id' => $material->id,
                 'title' => $material->title,
-                'description' => \Str::limit($material->description ?? '', 100),
                 'type' => ucfirst($material->type ?? 'document'),
                 'chapter_title' => $material->chapter->title ?? null
             ];
@@ -213,7 +217,7 @@ class SearchController extends Controller
                 }
             });
         }
-        $reviews = $reviewsQuery->with(['user:id,name', 'course:id,title'])->limit(5)->get(['id', 'user_id', 'course_id', 'rating', 'comment', 'status']);
+        $reviews = $reviewsQuery->with(['user:id,name', 'course:id,title'])->limit(5)->get(['id', 'user_id', 'course_id', 'rating', 'comment']);
         
         // Also search CourseReviews
         $courseReviewsQuery = CourseReview::query();
@@ -230,6 +234,12 @@ class SearchController extends Controller
                 
                 if (is_numeric($term)) {
                     $q->orWhere('rating', $term);
+                }
+                
+                // Check for status keyword
+                $statusTermLower = strtolower($term);
+                if (in_array($statusTermLower, ['pending', 'approved', 'rejected'])) {
+                    $q->orWhere('status', $statusTermLower);
                 }
             });
         }
@@ -249,7 +259,7 @@ class SearchController extends Controller
             ];
         });
 
-        // Search transactions - improved with payment_method and amount
+        // Search transactions - berdasarkan field yang ada di model
         $transactionsQuery = Transaction::query();
         foreach ($searchTerms as $term) {
             $transactionsQuery->where(function($q) use ($term) {
