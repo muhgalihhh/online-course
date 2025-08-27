@@ -3,8 +3,6 @@ import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
 } from '@/components/ui/dialog';
 import {
     Command,
@@ -56,7 +54,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
     // Use controlled state if provided
     const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : open;
@@ -234,9 +232,13 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             clearTimeout(searchTimeout.current);
         }
 
-        searchTimeout.current = setTimeout(() => {
-            performSearch(searchQuery);
-        }, 300);
+        if (searchQuery.trim()) {
+            searchTimeout.current = setTimeout(() => {
+                performSearch(searchQuery);
+            }, 300);
+        } else {
+            setSearchResults([]);
+        }
 
         return () => {
             if (searchTimeout.current) {
@@ -251,10 +253,19 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setRecentSearches(newRecent);
         localStorage.setItem('recentSearches', JSON.stringify(newRecent));
 
+        // Clear search and close dialog
+        setSearchQuery('');
+        setSearchResults([]);
+        
         // Navigate to the result
         router.visit(result.url);
-        handleOpen?.();
-        setSearchQuery('');
+        
+        // Close dialog
+        if (controlledIsOpen !== undefined && onClose) {
+            onClose();
+        } else {
+            setOpen(false);
+        }
     };
 
     const getTypeColor = (type: string) => {
@@ -294,8 +305,8 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             )}
 
             <Dialog open={isOpen} onOpenChange={handleOpen}>
-                <DialogContent className="max-w-2xl p-0">
-                    <Command className="rounded-lg border-0">
+                <DialogContent className="max-w-2xl p-0 overflow-hidden">
+                    <Command className="rounded-lg border-0" shouldFilter={false}>
                         <CommandInput 
                             placeholder="Search users, courses, transactions..."
                             value={searchQuery}
@@ -317,7 +328,6 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                             key={result.id}
                                             className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                             onSelect={() => handleSelect(result)}
-                                            onClick={() => handleSelect(result)}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                 {result.icon}
@@ -349,7 +359,6 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                         key={result.id}
                                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                                         onSelect={() => handleSelect(result)}
-                                                        onClick={() => handleSelect(result)}
                                                     >
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                             <Clock className="h-4 w-4" />
@@ -374,7 +383,6 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                 key={item.id}
                                                 className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                                 onSelect={() => handleSelect(item)}
-                                                onClick={() => handleSelect(item)}
                                             >
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                     {item.icon}
