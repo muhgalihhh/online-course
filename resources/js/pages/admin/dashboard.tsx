@@ -164,10 +164,6 @@ export default function Dashboard({ stats, recentUsers, userStats = [], courseSt
                 config={filterConfig}
                 filters={filters}
                 route="admin.dashboard"
-                onFiltersChange={(newFilters) => {
-                    console.log('Filters changed:', newFilters);
-                    // You can update the filters state here if needed
-                }}
             />
 
             {/* Stats Cards */}
