@@ -1,4 +1,3 @@
-import { GlobalSearch } from '@/components/admin/global-search';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,8 +14,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Menu, Search, Settings, Shield, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BarChart3, Bell, HelpCircle, LogOut, Menu, Settings, Shield, User } from 'lucide-react';
 
 interface AdminHeaderProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -28,7 +26,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
     const { auth } = page.props;
     const getInitials = useInitials();
     const { toggleSidebar } = useSidebar();
-    const [searchOpen, setSearchOpen] = useState(false);
+    
 
     const handleLogout = () => {
         router.post(route('logout'));
@@ -36,44 +34,23 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
 
     const handleToggleSidebar = onToggleSidebar ?? toggleSidebar;
 
-    // Global keyboard shortcut for mobile search (Cmd/Ctrl + K)
-    useEffect(() => {
-        const down = (e: KeyboardEvent) => {
-            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-                // Check if we're on mobile and the desktop search is not visible
-                const isDesktopSearchVisible = window.innerWidth >= 640; // sm breakpoint
-
-                if (!isDesktopSearchVisible) {
-                    e.preventDefault();
-                    setSearchOpen(true);
-                }
-            }
-        };
-
-        document.addEventListener('keydown', down);
-        return () => document.removeEventListener('keydown', down);
-    }, []);
+    
 
     return (
         <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-4">
-                {/* Left side - Toggle Sidebar and Search */}
+                {/* Left side - Toggle Sidebar */}
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="sm" onClick={handleToggleSidebar} className="h-9 w-9 p-0">
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
-                    <div className="hidden sm:block sm:w-64 lg:w-80">
-                        <GlobalSearch />
-                    </div>
+                    
                 </div>
 
                 {/* Right side - Notifications and Profile */}
                 <div className="flex items-center gap-2">
-                    {/* Mobile Search Button */}
-                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden" onClick={() => setSearchOpen(true)}>
-                        <Search className="h-5 w-5" />
-                    </Button>
+                    
 
                     {/* Notifications */}
                     <DropdownMenu>
@@ -181,8 +158,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                 </div>
             </div>
 
-            {/* Mobile Search Dialog */}
-            <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+            
         </header>
     );
 }
