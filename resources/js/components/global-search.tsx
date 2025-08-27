@@ -377,18 +377,32 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 });
             }
 
-            // Process reviews
+            // Process reviews (both institution and course reviews)
             if (data.reviews) {
                 data.reviews.forEach((review: any) => {
-                    // Reviews page with potential anchor to specific review
+                    // Determine the appropriate URL based on review type
                     let reviewUrl;
+                    const reviewType = review.type || 'course'; // Default to course if type not specified
+                    
                     try {
-                        reviewUrl = route('admin.reviews');
-                        // Add query parameter to highlight specific review
-                        reviewUrl += `?highlight=${review.id}`;
+                        if (reviewType === 'institution') {
+                            reviewUrl = route('admin.institutions.index');
+                            reviewUrl += `?highlight_review=${review.id}`;
+                        } else {
+                            // Course reviews
+                            reviewUrl = route('admin.reviews');
+                            reviewUrl += `?highlight=${review.id}`;
+                        }
                     } catch (e) {
-                        reviewUrl = `/admin/reviews?highlight=${review.id}`;
+                        if (reviewType === 'institution') {
+                            reviewUrl = `/admin/institutions?highlight_review=${review.id}`;
+                        } else {
+                            reviewUrl = `/admin/reviews?highlight=${review.id}`;
+                        }
                     }
+                    
+                    const targetInfo = review.target_name || review.course_title || 'Unknown';
+                    const targetType = review.target_type || 'Course';
                     
                     results.push({
                         id: `review-${review.id}`,
@@ -397,7 +411,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                         type: 'review',
                         url: reviewUrl,
                         icon: <Star className="h-4 w-4" />,
-                        meta: `${review.rating}/5 - ${review.course_title}${review.status ? ` (${review.status})` : ''}`,
+                        meta: `${review.rating}/5 - ${targetType}: ${targetInfo}${review.status ? ` (${review.status})` : ''}`,
                     });
                 });
             }
