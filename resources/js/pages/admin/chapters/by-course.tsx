@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Clock, Edit, Eye, FileText, Filter, GraduationCap, Play, Plus, PlusSquare, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, Edit, Eye, FileText, Filter, GraduationCap, Play, Plus, PlusSquare, Search, Trash2, Image as ImageIcon } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface Category {
@@ -31,6 +31,7 @@ interface Course {
     price: number;
     is_pro: boolean;
     thumbnail?: string;
+    thumbnail_path?: string;
     created_at: string;
     category?: Category;
     institution?: Institution;
@@ -182,37 +183,66 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                     </Link>
                 </div>
 
-                {/* Simplified Course Info Card */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg">{course.title}</CardTitle>
-                                {course.description && (
-                                    <CardDescription className="text-sm mt-1">{course.description}</CardDescription>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <Badge variant={course.is_pro ? 'default' : 'secondary'}>
-                                    {course.is_pro ? 'PRO' : 'FREE'}
-                                </Badge>
-                                {course.category && (
-                                    <Badge variant="outline">{course.category.name}</Badge>
-                                )}
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{chapters.length} chapters</span>
-                            {course.is_pro && (
-                                <span>•</span>
-                            )}
-                            {course.is_pro && (
-                                <span className="font-medium">{formatPrice(course.price)}</span>
+                {/* Enhanced Course Info Card with Thumbnail */}
+                <Card className="overflow-hidden">
+                    <div className="flex flex-col md:flex-row">
+                        {/* Thumbnail Section */}
+                        <div className="md:w-48 h-48 md:h-auto relative bg-gradient-to-br from-primary/10 to-primary/5">
+                            {course.thumbnail || course.thumbnail_path ? (
+                                <img
+                                    src={course.thumbnail || `/storage/${course.thumbnail_path}`}
+                                    alt={course.title}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <div className="text-center">
+                                        <ImageIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-2" />
+                                        <p className="text-xs text-muted-foreground">No Thumbnail</p>
+                                    </div>
+                                </div>
                             )}
                         </div>
-                    </CardContent>
+                        
+                        {/* Course Info Section */}
+                        <div className="flex-1">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="text-lg">{course.title}</CardTitle>
+                                        {course.description && (
+                                            <CardDescription className="text-sm mt-1 line-clamp-2">{course.description}</CardDescription>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Badge variant={course.is_pro ? 'default' : 'secondary'}>
+                                            {course.is_pro ? 'PRO' : 'FREE'}
+                                        </Badge>
+                                        {course.category && (
+                                            <Badge variant="outline">{course.category.name}</Badge>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span>{chapters.length} chapters</span>
+                                    {course.is_pro && (
+                                        <span>•</span>
+                                    )}
+                                    {course.is_pro && (
+                                        <span className="font-medium">{formatPrice(course.price)}</span>
+                                    )}
+                                    {course.institution && (
+                                        <>
+                                            <span>•</span>
+                                            <span>{course.institution.name}</span>
+                                        </>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </div>
+                    </div>
                 </Card>
             </div>
 

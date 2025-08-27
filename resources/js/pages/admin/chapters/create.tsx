@@ -13,20 +13,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save, BookOpen } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Admin',
-        href: route('admin.dashboard'),
-    },
-    {
-        title: 'Chapters',
-        href: route('admin.chapters.index'),
-    },
-    {
-        title: 'Create',
-        href: route('admin.chapters.create'),
-    },
-];
+// Dynamic breadcrumbs will be created inside the component
 
 interface Course {
     id: number;
@@ -48,10 +35,54 @@ export default function CreateChapter({ courses, selected_course_id }: CreateCha
         is_free: false,
     });
 
+    // Check if we're creating a chapter for a specific course
+    const isFromSpecificCourse = !!selected_course_id;
+    const selectedCourse = courses.find(c => c.id === selected_course_id);
+
+    // Dynamic breadcrumbs based on context
+    const breadcrumbs: BreadcrumbItem[] = isFromSpecificCourse && selectedCourse
+        ? [
+            {
+                title: 'Admin',
+                href: route('admin.dashboard'),
+            },
+            {
+                title: 'Chapters',
+                href: route('admin.chapters.index'),
+            },
+            {
+                title: selectedCourse.title,
+                href: route('admin.chapters.by-course', selectedCourse.id),
+            },
+            {
+                title: 'Tambah Chapter',
+                href: route('admin.chapters.create', { course_id: selected_course_id }),
+            },
+        ]
+        : [
+            {
+                title: 'Admin',
+                href: route('admin.dashboard'),
+            },
+            {
+                title: 'Chapters',
+                href: route('admin.chapters.index'),
+            },
+            {
+                title: 'Create',
+                href: route('admin.chapters.create'),
+            },
+        ];
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('admin.chapters.store'));
     };
+
+    // Determine back button destination
+    const backUrl = isFromSpecificCourse && selectedCourse
+        ? route('admin.chapters.by-course', selectedCourse.id)
+        : route('admin.chapters.index');
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -62,10 +93,12 @@ export default function CreateChapter({ courses, selected_course_id }: CreateCha
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Tambah Chapter Baru</h1>
                     <p className="text-muted-foreground">
-                        Buat chapter baru untuk kursus yang dipilih
+                        {isFromSpecificCourse && selectedCourse 
+                            ? `Buat chapter baru untuk kursus: ${selectedCourse.title}`
+                            : 'Buat chapter baru untuk kursus yang dipilih'}
                     </p>
                 </div>
-                <Link href={route('admin.chapters.index')}>
+                <Link href={backUrl}>
                     <Button variant="outline">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Kembali
@@ -86,21 +119,42 @@ export default function CreateChapter({ courses, selected_course_id }: CreateCha
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="course_id">Kursus *</Label>
-                                <Select 
-                                    value={data.course_id} 
-                                    onValueChange={(value) => setData('course_id', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih kursus" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {courses.map((course) => (
-                                            <SelectItem key={course.id} value={course.id.toString()}>
-                                                {course.title}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                {isFromSpecificCourse ? (
+                                    // Show read-only input when coming from specific course
+                                    <div className="relative">
+                                        <Input
+                                            id="course_id_display"
+                                            value={selectedCourse?.title || ''}
+                                            disabled
+                                            className="bg-muted cursor-not-allowed"
+                                        />
+                                        <input
+                                            type="hidden"
+                                            name="course_id"
+                                            value={data.course_id}
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Kursus telah dipilih secara otomatis
+                                        </p>
+                                    </div>
+                                ) : (
+                                    // Show dropdown when creating from general chapters page
+                                    <Select 
+                                        value={data.course_id} 
+                                        onValueChange={(value) => setData('course_id', value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih kursus" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {courses.map((course) => (
+                                                <SelectItem key={course.id} value={course.id.toString()}>
+                                                    {course.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
                                 {errors.course_id && (
                                     <p className="text-sm text-red-600">{errors.course_id}</p>
                                 )}
@@ -232,7 +286,7 @@ export default function CreateChapter({ courses, selected_course_id }: CreateCha
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-end gap-4">
-                    <Link href={route('admin.chapters.index')}>
+                    <Link href={backUrl}>
                         <Button variant="outline" type="button">
                             Batal
                         </Button>
