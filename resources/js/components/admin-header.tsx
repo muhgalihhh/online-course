@@ -142,7 +142,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href="#" className="flex items-center">
+                                    <Link href={route('admin.help-support')} className="flex items-center">
                                         <HelpCircle className="mr-2 h-4 w-4" />
                                         <span>Help & Support</span>
                                     </Link>

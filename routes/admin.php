@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CourseMaterialController as AdminCourseMaterialCo
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\HelpSupportController as AdminHelpSupportController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,4 +61,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/settings/profile', [AdminSettingController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [AdminSettingController::class, 'updatePassword'])->name('settings.password');
     Route::delete('/settings/account', [AdminSettingController::class, 'deleteAccount'])->name('settings.account');
+
+    // Help & Support
+    Route::get('/help-support', [AdminHelpSupportController::class, 'index'])->name('help-support');
+    Route::post('/help-support/ticket', [AdminHelpSupportController::class, 'submitTicket'])->name('help-support.ticket');
 });
