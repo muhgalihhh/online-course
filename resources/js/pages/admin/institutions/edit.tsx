@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Building2 } from 'lucide-react';
+import { ArrowLeft, Building2, Image } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface Institution {
     id: number;
@@ -16,6 +17,7 @@ interface Institution {
     phone: string;
     email: string;
     website: string;
+    photo_path?: string;
 }
 
 interface InstitutionEditProps extends PageProps {
@@ -23,18 +25,31 @@ interface InstitutionEditProps extends PageProps {
 }
 
 export default function InstitutionEdit({ institution }: InstitutionEditProps) {
-    const { data, setData, put, processing, errors } = useForm({
+    const [preview, setPreview] = useState<string | null>(null);
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'PATCH',
         name: institution.name,
         description: institution.description || '',
         address: institution.address || '',
         phone: institution.phone || '',
         email: institution.email || '',
         website: institution.website || '',
+        photo_path: null as File | null,
     });
+
+    useEffect(() => {
+        if (data.photo_path) {
+            const objectUrl = URL.createObjectURL(data.photo_path);
+            setPreview(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        } else {
+            setPreview(null);
+        }
+    }, [data.photo_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('admin.institutions.update'));
+        post(route('admin.institutions.update'));
     };
 
     return (
@@ -69,6 +84,39 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="photo_path">Foto Institusi</Label>
+                                <div className="flex items-center space-x-4">
+                                    {(preview || institution.photo_path) && (
+                                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                                            <img
+                                                src={preview || `/storage/${institution.photo_path}`}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    {!preview && !institution.photo_path && (
+                                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                            <Building2 className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <Input
+                                            id="photo_path"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setData('photo_path', e.target.files ? e.target.files[0] : null)}
+                                            className={errors.photo_path ? 'border-red-500' : ''}
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Upload gambar JPG, PNG, atau WebP (maksimal 2MB)
+                                        </p>
+                                        {errors.photo_path && <p className="text-sm text-red-600">{errors.photo_path}</p>}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="name">Nama Institusi</Label>
                                 <Input

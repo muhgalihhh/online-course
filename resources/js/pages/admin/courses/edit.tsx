@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface Category {
     id: number;
@@ -30,6 +31,7 @@ interface Course {
     category_id: number;
     institution: Institution;
     category: Category;
+    thumbnail_path?: string;
 }
 
 interface CourseEditProps extends PageProps {
@@ -39,18 +41,31 @@ interface CourseEditProps extends PageProps {
 }
 
 export default function CourseEdit({ course, categories, institutions }: CourseEditProps) {
-    const { data, setData, put, processing, errors } = useForm({
+    const [preview, setPreview] = useState<string | null>(null);
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'PUT',
         institution_id: course.institution_id.toString(),
         category_id: course.category_id.toString(),
         title: course.title,
         description: course.description,
         price: course.price.toString(),
         is_pro: course.is_pro,
+        thumbnail_path: null as File | null,
     });
+
+    useEffect(() => {
+        if (data.thumbnail_path) {
+            const objectUrl = URL.createObjectURL(data.thumbnail_path);
+            setPreview(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        } else {
+            setPreview(null);
+        }
+    }, [data.thumbnail_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('admin.courses.update', course.id));
+        post(route('admin.courses.update', course.id));
     };
 
     return (
@@ -144,6 +159,39 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                     rows={4}
                                 />
                                 {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="thumbnail_path">Thumbnail Kursus</Label>
+                                <div className="flex items-center space-x-4">
+                                    {(preview || course.thumbnail_path) && (
+                                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                                            <img
+                                                src={preview || `/storage/${course.thumbnail_path}`}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    {!preview && !course.thumbnail_path && (
+                                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                            <Image className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <Input
+                                            id="thumbnail_path"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setData('thumbnail_path', e.target.files ? e.target.files[0] : null)}
+                                            className={errors.thumbnail_path ? 'border-red-500' : ''}
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Upload gambar JPG, PNG, atau WebP (maksimal 2MB) untuk mengganti thumbnail
+                                        </p>
+                                        {errors.thumbnail_path && <p className="text-sm text-red-600">{errors.thumbnail_path}</p>}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

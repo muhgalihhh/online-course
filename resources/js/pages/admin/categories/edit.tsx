@@ -11,6 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 interface Category {
     id: number;
     name: string;
+    slug: string;
     description: string;
 }
 
@@ -21,6 +22,7 @@ interface CategoryEditProps extends PageProps {
 export default function CategoryEdit({ category }: CategoryEditProps) {
     const { data, setData, put, processing, errors } = useForm({
         name: category.name,
+        slug: category.slug || '',
         description: category.description || '',
     });
 
@@ -58,10 +60,36 @@ export default function CategoryEdit({ category }: CategoryEditProps) {
                                 <Input
                                     id="name"
                                     value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('name', e.target.value);
+                                        // Auto-generate slug from name if slug is empty
+                                        if (!category.slug || data.slug === '') {
+                                            const slug = e.target.value
+                                                .toLowerCase()
+                                                .replace(/[^\w\s-]/g, '')
+                                                .replace(/\s+/g, '-')
+                                                .replace(/--+/g, '-')
+                                                .trim();
+                                            setData('slug', slug);
+                                        }
+                                    }}
                                     placeholder="Masukkan nama kategori"
                                 />
                                 {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="slug">Slug (URL)</Label>
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(e) => setData('slug', e.target.value)}
+                                    placeholder="slug-kategori"
+                                />
+                                <p className="text-sm text-gray-500">
+                                    Slug akan digunakan untuk URL. Biarkan kosong untuk menggunakan slug otomatis.
+                                </p>
+                                {errors.slug && <p className="text-sm text-red-600">{errors.slug}</p>}
                             </div>
 
                             <div className="space-y-2">
