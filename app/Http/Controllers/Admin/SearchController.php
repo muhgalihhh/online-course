@@ -81,14 +81,14 @@ class SearchController extends Controller
                 }
             });
         }
-        $courses = $coursesQuery->withCount('students')->limit(10)->get(['id', 'title', 'description', 'price', 'is_pro']);
+        $courses = $coursesQuery->withCount('users')->limit(10)->get(['id', 'title', 'description', 'price', 'is_pro']);
         
         $results['courses'] = $courses->map(function ($course) {
             return [
                 'id' => $course->id,
                 'title' => $course->title,
                 'description' => \Str::limit($course->description, 100),
-                'students_count' => $course->students_count,
+                'students_count' => $course->users_count,
                 'price' => $course->price,
                 'is_pro' => $course->is_pro
             ];
