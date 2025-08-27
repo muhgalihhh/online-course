@@ -30,10 +30,12 @@ class SearchController extends Controller
         try {
             // Validate the search query
             $request->validate([
-                'query' => 'required|string|min:1|max:255'
+                'query' => 'required|string|min:1|max:255',
+                'filter' => 'nullable|string|in:all,users,courses,transactions,materials,chapters,categories,institutions,reviews'
             ]);
 
             $query = trim($request->input('query'));
+            $filter = $request->input('filter', 'all');
             
             // Handle empty query
             if (empty($query)) {
@@ -52,17 +54,49 @@ class SearchController extends Controller
             // Split query into search terms for better matching
             $searchTerms = array_filter(explode(' ', $query));
             
-            // Initialize results array
-            $results = [
-                'users' => $this->searchUsers($searchTerms),
-                'courses' => $this->searchCourses($searchTerms),
-                'course_materials' => $this->searchMaterials($searchTerms),
-                'transactions' => $this->searchTransactions($searchTerms),
-                'categories' => $this->searchCategories($searchTerms),
-                'chapters' => $this->searchChapters($searchTerms),
-                'institutions' => $this->searchInstitutions($searchTerms),
-                'reviews' => $this->searchReviews($searchTerms)
-            ];
+            // Initialize results array based on filter
+            $results = [];
+            
+            // Search based on filter
+            if ($filter === 'all' || $filter === 'users') {
+                $results['users'] = $this->searchUsers($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'courses') {
+                $results['courses'] = $this->searchCourses($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'materials') {
+                $results['course_materials'] = $this->searchMaterials($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'transactions') {
+                $results['transactions'] = $this->searchTransactions($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'categories') {
+                $results['categories'] = $this->searchCategories($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'chapters') {
+                $results['chapters'] = $this->searchChapters($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'institutions') {
+                $results['institutions'] = $this->searchInstitutions($searchTerms);
+            }
+            
+            if ($filter === 'all' || $filter === 'reviews') {
+                $results['reviews'] = $this->searchReviews($searchTerms);
+            }
+            
+            // Fill empty keys with empty arrays
+            $allKeys = ['users', 'courses', 'course_materials', 'transactions', 'categories', 'chapters', 'institutions', 'reviews'];
+            foreach ($allKeys as $key) {
+                if (!isset($results[$key])) {
+                    $results[$key] = [];
+                }
+            }
 
             return response()->json($results);
             
@@ -95,8 +129,7 @@ class SearchController extends Controller
             $query->where(function(Builder $q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                   ->orWhere('email', 'like', "%{$term}%")
-                  ->orWhere('role', 'like', "%{$term}%")
-                  ->orWhere('phone', 'like', "%{$term}%");
+                  ->orWhere('role', 'like', "%{$term}%");
                 
                 // Search by ID if numeric
                 if (is_numeric($term)) {
@@ -105,15 +138,14 @@ class SearchController extends Controller
             });
         }
         
-        $users = $query->limit(15)->get(['id', 'name', 'email', 'role', 'phone']);
+        $users = $query->limit(15)->get(['id', 'name', 'email', 'role']);
         
         return $users->map(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => ucfirst($user->role),
-                'phone' => $user->phone
+                'role' => ucfirst($user->role)
             ];
         });
     }
