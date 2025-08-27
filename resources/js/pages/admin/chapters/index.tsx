@@ -1,17 +1,14 @@
 // resources/js/pages/admin/chapters/index.tsx
 
-import { DeleteConfirmation } from '@/components/delete-confirmation';
-import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { BookOpen, Clock, Edit, Eye, FileText, Filter, Play, Plus, PlusSquare, Search, Trash2 } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { BookOpen, ChevronRight, Clock, FileText, Filter, GraduationCap, Play, Plus, Search, Users } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -25,56 +22,47 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface Institution {
+    id: number;
+    name: string;
+}
+
 interface Course {
     id: number;
     title: string;
-}
-
-interface Chapter {
-    id: number;
-    title: string;
     description?: string;
-    order: number;
-    duration?: number; // in minutes
-    is_free?: boolean;
+    price: number;
+    is_pro: boolean;
+    thumbnail?: string;
     created_at: string;
-    course: Course;
+    category?: Category;
+    institution?: Institution;
+    chapters_count: number;
     course_materials_count: number;
+    total_duration: number; // in minutes
+    free_chapters_count: number;
+    enrollments_count?: number;
 }
 
 interface ChaptersProps extends PageProps {
-    chapters: PaginatedData<Chapter>;
-    courses: Course[];
+    courses: PaginatedData<Course>;
+    categories: Category[];
+    institutions: Institution[];
 }
 
-export default function Chapters({ chapters, courses }: ChaptersProps) {
+export default function Chapters({ courses, categories, institutions }: ChaptersProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [courseFilter, setCourseFilter] = useState('all');
-    const [deleteDialog, setDeleteDialog] = useState<{
-        isOpen: boolean;
-        chapterId: number | null;
-        chapterTitle: string;
-    }>({
-        isOpen: false,
-        chapterId: null,
-        chapterTitle: '',
-    });
-
-    const handleDelete = (chapterId: number, chapterTitle: string) => {
-        setDeleteDialog({
-            isOpen: true,
-            chapterId,
-            chapterTitle,
-        });
-    };
-
-    const confirmDelete = () => {
-        if (deleteDialog.chapterId) {
-            router.delete(route('admin.chapters.destroy', deleteDialog.chapterId));
-        }
-    };
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [institutionFilter, setInstitutionFilter] = useState('all');
+    const [typeFilter, setTypeFilter] = useState('all');
 
     const formatDuration = (minutes: number) => {
+        if (!minutes) return '0m';
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         if (hours > 0) {
@@ -83,22 +71,44 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
         return `${mins}m`;
     };
 
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(price);
+    };
+
+    // Filter courses based on search and filters
+    const filteredCourses = courses.data.filter((course) => {
+        const matchesSearch = searchTerm === '' || 
+            course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        const matchesCategory = categoryFilter === 'all' || 
+            (course.category && course.category.id.toString() === categoryFilter);
+        
+        const matchesInstitution = institutionFilter === 'all' || 
+            (course.institution && course.institution.id.toString() === institutionFilter);
+        
+        const matchesType = typeFilter === 'all' ||
+            (typeFilter === 'pro' && course.is_pro) ||
+            (typeFilter === 'free' && !course.is_pro);
+        
+        return matchesSearch && matchesCategory && matchesInstitution && matchesType;
+    });
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title="Manage Chapters" />
+            <Head title="Kelola Chapters" />
 
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Kelola Chapters</h1>
-                    <p className="text-muted-foreground">Kelola bab-bab dalam kursus dan materi pembelajaran</p>
+                    <p className="text-muted-foreground">Pilih kursus untuk mengelola chapter dan materi pembelajaran</p>
                 </div>
-                <Link href={route('admin.chapters.create')}>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Tambah Chapter
-                    </Button>
-                </Link>
             </div>
 
             {/* Filters */}
@@ -106,13 +116,13 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Filter className="h-5 w-5" />
-                        Filter & Pencarian
+                        Filter Kursus
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Cari Chapter</label>
+                            <label className="text-sm font-medium">Cari Kursus</label>
                             <div className="relative">
                                 <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
@@ -125,16 +135,16 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Kursus</label>
-                            <Select value={courseFilter} onValueChange={setCourseFilter}>
+                            <label className="text-sm font-medium">Kategori</label>
+                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Kursus</SelectItem>
-                                    {courses.map((course) => (
-                                        <SelectItem key={course.id} value={course.id.toString()}>
-                                            {course.title}
+                                    <SelectItem value="all">Semua Kategori</SelectItem>
+                                    {categories.map((category) => (
+                                        <SelectItem key={category.id} value={category.id.toString()}>
+                                            {category.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -142,15 +152,32 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Status</label>
-                            <Select>
+                            <label className="text-sm font-medium">Institusi</label>
+                            <Select value={institutionFilter} onValueChange={setInstitutionFilter}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Semua Status" />
+                                    <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Status</SelectItem>
+                                    <SelectItem value="all">Semua Institusi</SelectItem>
+                                    {institutions.map((institution) => (
+                                        <SelectItem key={institution.id} value={institution.id.toString()}>
+                                            {institution.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tipe Kursus</label>
+                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Tipe</SelectItem>
+                                    <SelectItem value="pro">Pro/Premium</SelectItem>
                                     <SelectItem value="free">Gratis</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -158,170 +185,197 @@ export default function Chapters({ chapters, courses }: ChaptersProps) {
                 </CardContent>
             </Card>
 
-            {/* Chapters Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5" />
-                        Daftar Chapters ({chapters.data.length})
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Order</TableHead>
-                                <TableHead>Judul</TableHead>
-                                <TableHead>Kursus</TableHead>
-                                <TableHead>Durasi</TableHead>
-                                <TableHead>Materi</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Tanggal Dibuat</TableHead>
-                                <TableHead>Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {chapters.data.map((chapter) => (
-                                <TableRow key={chapter.id}>
-                                    <TableCell>
-                                        <Badge variant="outline" className="font-mono">
-                                            {chapter.order}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{chapter.title}</div>
-                                            {chapter.description && (
-                                                <div className="line-clamp-1 text-sm text-muted-foreground">{chapter.description}</div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <BookOpen className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{chapter.course.title}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1">
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{chapter.duration ? formatDuration(chapter.duration) : '-'}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1">
-                                            <FileText className="h-4 w-4 text-muted-foreground" />
-                                            <Badge variant="secondary" className="text-xs">
-                                                {chapter.course_materials_count} materi
-                                            </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={chapter.is_free ? 'default' : 'secondary'}>{chapter.is_free ? 'Gratis' : 'Premium'}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        {new Date(chapter.created_at).toLocaleDateString('id-ID', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric',
-                                        })}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {/* Add Materials */}
-                                            <Link href={route('admin.materials.index')}>
-                                                <Button variant="outline" size="sm">
-                                                    <PlusSquare className="h-4 w-4" />
-                                                    <span className="text-md ml-1">Materi Course</span>
-                                                </Button>
-                                            </Link>
-                                            <Link href={route('admin.chapters.show', chapter.id)}>
-                                                <Button variant="outline" size="sm">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            </Link>
-                                            <Link href={route('admin.chapters.edit', chapter.id)}>
-                                                <Button variant="outline" size="sm">
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                            </Link>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(chapter.id, chapter.title)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+            {/* Course Cards Grid */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredCourses.map((course) => (
+                    <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        {/* Course Thumbnail */}
+                        {course.thumbnail && (
+                            <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 relative">
+                                <img 
+                                    src={course.thumbnail} 
+                                    alt={course.title}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute top-2 right-2">
+                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>
+                                        {course.is_pro ? 'PRO' : 'FREE'}
+                                    </Badge>
+                                </div>
+                            </div>
+                        )}
+                        {!course.thumbnail && (
+                            <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center relative">
+                                <GraduationCap className="h-16 w-16 text-primary/20" />
+                                <div className="absolute top-2 right-2">
+                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>
+                                        {course.is_pro ? 'PRO' : 'FREE'}
+                                    </Badge>
+                                </div>
+                            </div>
+                        )}
 
-                    {chapters.links && chapters.links.length > 0 && (
-                        <div className="mt-4">
-                            <Pagination links={chapters.links} />
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                        <CardHeader>
+                            <div className="flex items-start justify-between gap-2">
+                                <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                            </div>
+                            {course.description && (
+                                <CardDescription className="line-clamp-2">
+                                    {course.description}
+                                </CardDescription>
+                            )}
+                        </CardHeader>
 
-            {/* Chapter Statistics */}
+                        <CardContent className="space-y-4">
+                            {/* Course Meta Info */}
+                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                                {course.category && (
+                                    <Badge variant="outline">{course.category.name}</Badge>
+                                )}
+                                {course.institution && (
+                                    <Badge variant="outline">{course.institution.name}</Badge>
+                                )}
+                            </div>
+
+                            {/* Course Statistics */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                        <BookOpen className="h-4 w-4" />
+                                        <span className="text-sm">Chapters</span>
+                                    </div>
+                                    <p className="text-2xl font-semibold">{course.chapters_count || 0}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                        <FileText className="h-4 w-4" />
+                                        <span className="text-sm">Materi</span>
+                                    </div>
+                                    <p className="text-2xl font-semibold">{course.course_materials_count || 0}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Clock className="h-4 w-4" />
+                                        <span className="text-sm">Durasi</span>
+                                    </div>
+                                    <p className="text-lg font-semibold">{formatDuration(course.total_duration)}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Play className="h-4 w-4" />
+                                        <span className="text-sm">Gratis</span>
+                                    </div>
+                                    <p className="text-lg font-semibold">{course.free_chapters_count || 0}</p>
+                                </div>
+                            </div>
+
+                            {/* Additional Info */}
+                            <div className="flex items-center justify-between pt-2 border-t">
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <Users className="h-4 w-4" />
+                                    <span>{course.enrollments_count || 0} siswa</span>
+                                </div>
+                                {course.is_pro && (
+                                    <div className="text-sm font-semibold">
+                                        {formatPrice(course.price)}
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+
+                        <CardFooter className="gap-2">
+                            <Link 
+                                href={route('admin.chapters.by-course', course.id)}
+                                className="flex-1"
+                            >
+                                <Button className="w-full" variant="default">
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Kelola Chapters
+                                </Button>
+                            </Link>
+                            <Link href={route('admin.courses.show', course.id)}>
+                                <Button variant="outline" size="icon">
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Empty State */}
+            {filteredCourses.length === 0 && (
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Tidak ada kursus ditemukan</h3>
+                        <p className="text-sm text-muted-foreground text-center mb-4">
+                            Tidak ada kursus yang sesuai dengan filter yang Anda pilih.
+                        </p>
+                        <Link href={route('admin.courses.create')}>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Buat Kursus Baru
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Overall Statistics */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Chapters</CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Total Kursus</CardTitle>
+                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{chapters.data.length}</div>
+                        <div className="text-2xl font-bold">{courses.data.length}</div>
                         <p className="text-xs text-muted-foreground">
-                            <span className="text-green-600">+8%</span> from last month
+                            Kursus yang tersedia
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Duration</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Chapters</CardTitle>
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {courses.data.reduce((acc, course) => acc + (course.chapters_count || 0), 0)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Chapter di semua kursus</p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Materi</CardTitle>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {courses.data.reduce((acc, course) => acc + (course.course_materials_count || 0), 0)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Materi pembelajaran</p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Durasi</CardTitle>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {formatDuration(chapters.data.reduce((acc, chapter) => acc + (chapter.duration || 0), 0))}
+                            {formatDuration(courses.data.reduce((acc, course) => acc + (course.total_duration || 0), 0))}
                         </div>
-                        <p className="text-xs text-muted-foreground">Total durasi semua chapter</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Free Chapters</CardTitle>
-                        <Play className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{chapters.data.filter((chapter) => chapter.is_free).length}</div>
-                        <p className="text-xs text-muted-foreground">Chapter yang dapat diakses gratis</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Premium Chapters</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{chapters.data.filter((chapter) => !chapter.is_free).length}</div>
-                        <p className="text-xs text-muted-foreground">Chapter premium berbayar</p>
+                        <p className="text-xs text-muted-foreground">Total durasi pembelajaran</p>
                     </CardContent>
                 </Card>
             </div>
-
-            <DeleteConfirmation
-                isOpen={deleteDialog.isOpen}
-                onClose={() => setDeleteDialog({ isOpen: false, chapterId: null, chapterTitle: '' })}
-                onConfirm={confirmDelete}
-                title="Hapus Chapter"
-                description="Apakah Anda yakin ingin menghapus chapter"
-                itemName={deleteDialog.chapterTitle}
-            />
         </AdminLayout>
     );
 }
