@@ -10,7 +10,7 @@ import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { BookOpen, Users, DollarSign, ArrowRight, Calendar, Mail, Download, RefreshCw, Bell, CreditCard, MessageSquare, Layers, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useFormToast } from '@/hooks/use-form-toast';
@@ -156,7 +156,11 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setChartPeriod('1d')}
+                    >
                         <Calendar className="mr-2 h-4 w-4" />
                         Today
                     </Button>
@@ -203,7 +207,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
 
             {/* Quick Actions */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.users.index'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
@@ -218,7 +225,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.courses.index'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-100 rounded-lg">
@@ -233,7 +243,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.chapters.index'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-orange-100 rounded-lg">
@@ -248,7 +261,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.materials.index'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-indigo-100 rounded-lg">
@@ -263,7 +279,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.transactions.index'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-yellow-100 rounded-lg">
@@ -278,7 +297,10 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.visit(route('admin.reviews'))}
+                >
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-purple-100 rounded-lg">
