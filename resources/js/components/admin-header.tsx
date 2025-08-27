@@ -1,3 +1,4 @@
+import { GlobalSearch } from '@/components/global-search';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,13 +11,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GlobalSearch } from '@/components/global-search';
 import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Settings, Shield, User, Menu, Search } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { BarChart3, Bell, HelpCircle, LogOut, Menu, Search, Settings, Shield, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface AdminHeaderProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -42,7 +42,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
             if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                 // Check if we're on mobile and the desktop search is not visible
                 const isDesktopSearchVisible = window.innerWidth >= 640; // sm breakpoint
-                
+
                 if (!isDesktopSearchVisible) {
                     e.preventDefault();
                     setSearchOpen(true);
@@ -59,12 +59,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
             <div className="flex h-16 items-center justify-between px-4">
                 {/* Left side - Toggle Sidebar and Search */}
                 <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleToggleSidebar}
-                        className="h-9 w-9 p-0"
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleToggleSidebar} className="h-9 w-9 p-0">
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
@@ -76,15 +71,10 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                 {/* Right side - Notifications and Profile */}
                 <div className="flex items-center gap-2">
                     {/* Mobile Search Button */}
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 sm:hidden"
-                        onClick={() => setSearchOpen(true)}
-                    >
+                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden" onClick={() => setSearchOpen(true)}>
                         <Search className="h-5 w-5" />
                     </Button>
-                    
+
                     {/* Notifications */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -190,12 +180,9 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                     </DropdownMenu>
                 </div>
             </div>
-            
+
             {/* Mobile Search Dialog */}
-            <GlobalSearch 
-                isOpen={searchOpen} 
-                onClose={() => setSearchOpen(false)} 
-            />
+            <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </header>
     );
 }
