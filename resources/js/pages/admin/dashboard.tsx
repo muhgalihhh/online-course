@@ -28,16 +28,24 @@ interface Stats {
     totalRevenue?: number;
 }
 
+interface Activity {
+    type: string;
+    title: string;
+    time: string;
+    icon: string;
+}
+
 interface DashboardProps extends PageProps {
     stats: Stats;
     recentUsers: User[];
+    recentActivities?: Activity[];
     userStats: { year: number; month: number; user_count?: number; users?: number }[];
     courseStats: { year: number; month: number; course_count?: number }[];
     revenueStats: { year: number; month: number; revenue?: number; transactions_count?: number }[];
     filters?: Record<string, any>;
 }
 
-export default function Dashboard({ stats, recentUsers, userStats = [], courseStats = [], revenueStats = [], filters = {} }: DashboardProps) {
+export default function Dashboard({ stats, recentUsers, recentActivities = [], userStats = [], courseStats = [], revenueStats = [], filters = {} }: DashboardProps) {
     const [chartPeriod, setChartPeriod] = useState('30d');
     const { showSuccess, showError, showWarning, showInfo } = useFormToast();
 
@@ -344,44 +352,60 @@ export default function Dashboard({ stats, recentUsers, userStats = [], courseSt
                 />
             </ChartCard>
 
-            {/* Recent Activity (sample UI) and Recent Users */}
+            {/* Recent Activity and Recent Users */}
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg">Aktivitas Terbaru</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <ActivityItem
-                            title="User baru mendaftar"
-                            time="2 menit yang lalu"
-                            icon={Users}
-                            iconBgColor="bg-green-100"
-                            iconColor="text-green-600"
-                        />
-                        
-                        <ActivityItem
-                            title="Kursus baru ditambahkan"
-                            time="1 jam yang lalu"
-                            icon={BookOpen}
-                            iconBgColor="bg-blue-100"
-                            iconColor="text-blue-600"
-                        />
-                        
-                        <ActivityItem
-                            title="Transaksi berhasil"
-                            time="3 jam yang lalu"
-                            icon={DollarSign}
-                            iconBgColor="bg-yellow-100"
-                            iconColor="text-yellow-600"
-                        />
-                        
-                        <ActivityItem
-                            title="Laporan bulanan selesai"
-                            time="1 hari yang lalu"
-                            icon={BookOpen}
-                            iconBgColor="bg-purple-100"
-                            iconColor="text-purple-600"
-                        />
+                        {recentActivities.length > 0 ? (
+                            recentActivities.map((activity, index) => {
+                                // Map icon strings to actual icons
+                                const iconMap: Record<string, any> = {
+                                    'Users': Users,
+                                    'BookOpen': BookOpen,
+                                    'DollarSign': DollarSign,
+                                };
+                                const IconComponent = iconMap[activity.icon] || Users;
+                                
+                                // Map type to colors
+                                const colorMap: Record<string, { bg: string; text: string }> = {
+                                    'user_registered': { bg: 'bg-green-100', text: 'text-green-600' },
+                                    'course_added': { bg: 'bg-blue-100', text: 'text-blue-600' },
+                                    'transaction_completed': { bg: 'bg-yellow-100', text: 'text-yellow-600' },
+                                };
+                                const colors = colorMap[activity.type] || { bg: 'bg-gray-100', text: 'text-gray-600' };
+                                
+                                // Format time
+                                const formatTime = (time: string) => {
+                                    const date = new Date(time);
+                                    const now = new Date();
+                                    const diffMs = now.getTime() - date.getTime();
+                                    const diffMins = Math.floor(diffMs / 60000);
+                                    const diffHours = Math.floor(diffMs / 3600000);
+                                    const diffDays = Math.floor(diffMs / 86400000);
+                                    
+                                    if (diffMins < 60) return `${diffMins} menit yang lalu`;
+                                    if (diffHours < 24) return `${diffHours} jam yang lalu`;
+                                    if (diffDays < 7) return `${diffDays} hari yang lalu`;
+                                    return date.toLocaleDateString('id-ID');
+                                };
+                                
+                                return (
+                                    <ActivityItem
+                                        key={index}
+                                        title={activity.title}
+                                        time={formatTime(activity.time)}
+                                        icon={IconComponent}
+                                        iconBgColor={colors.bg}
+                                        iconColor={colors.text}
+                                    />
+                                );
+                            })
+                        ) : (
+                            <p className="text-sm text-muted-foreground">Belum ada aktivitas terbaru</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>

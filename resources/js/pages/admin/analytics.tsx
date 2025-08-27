@@ -28,11 +28,12 @@ interface AnalyticsProps extends PageProps {
     revenueStats: { year: number; month: number; revenue?: number; transactions_count?: number }[];
     topCourses: { id: number; title: string; enrollments_count?: number; avg_rating?: number }[];
     courseTypeDistribution: { name: string; value: number }[];
+    categoryPerformance?: { name: string; percentage: number; count: number }[];
     totals: { totalRevenue: number; totalUsers: number; totalCourses: number; totalTransactions: number };
     filters?: Record<string, any>;
 }
 
-export default function Analytics({ userStats = [], revenueStats = [], topCourses = [], courseTypeDistribution = [], totals, filters = {} }: AnalyticsProps) {
+export default function Analytics({ userStats = [], revenueStats = [], topCourses = [], courseTypeDistribution = [], categoryPerformance = [], totals, filters = {} }: AnalyticsProps) {
     const [chartPeriod, setChartPeriod] = useState((filters.period as string) || '30d');
 
     const monthLabel = (y: number, m: number) => {
@@ -153,8 +154,8 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                 <LineChartComponent
                     data={userGrowthData}
                     index="month"
-                    categories={["users", "newUsers", "activeUsers"]}
-                    colors={["#3b82f6", "#10b981", "#f59e0b"]}
+                    categories={["users"]}
+                    colors={["#3b82f6"]}
                 />
             </ChartCard>
 
@@ -212,81 +213,90 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
             </Card>
 
             {/* Additional Analytics Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Top Performing Categories</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Programming</span>
-                                <Badge variant="secondary">45%</Badge>
+            {categoryPerformance && categoryPerformance.length > 0 && (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Top Performing Categories</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                {categoryPerformance.map((category, index) => (
+                                    <div key={index} className="flex items-center justify-between">
+                                        <span className="text-sm">{category.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-muted-foreground">({category.count})</span>
+                                            <Badge variant="secondary">{category.percentage}%</Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                                {categoryPerformance.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">Tidak ada data kategori</p>
+                                )}
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Design</span>
-                                <Badge variant="secondary">28%</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Business</span>
-                                <Badge variant="secondary">18%</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Marketing</span>
-                                <Badge variant="secondary">9%</Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Device Usage</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Desktop</span>
-                                <Badge variant="secondary">58%</Badge>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Course Distribution</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                {courseTypeDistribution.map((type, index) => {
+                                    const total = courseTypeDistribution.reduce((sum, t) => sum + t.value, 0);
+                                    const percentage = total > 0 ? Math.round((type.value / total) * 100) : 0;
+                                    return (
+                                        <div key={index} className="flex items-center justify-between">
+                                            <span className="text-sm">{type.name} Courses</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground">({type.value})</span>
+                                                <Badge variant={type.name === 'Pro' ? 'default' : 'secondary'}>
+                                                    {percentage}%
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Mobile</span>
-                                <Badge variant="secondary">35%</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Tablet</span>
-                                <Badge variant="secondary">7%</Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Peak Hours</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Morning (8-12)</span>
-                                <Badge variant="secondary">25%</Badge>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Platform Summary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm">Avg Rating</span>
+                                    <Badge variant="secondary">
+                                        {topCourses.length > 0 
+                                            ? (topCourses.reduce((sum, c) => sum + (c.avg_rating || 0), 0) / topCourses.length).toFixed(1)
+                                            : '0.0'
+                                        } ⭐
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm">Total Enrollments</span>
+                                    <Badge variant="secondary">
+                                        {topCourses.reduce((sum, c) => sum + (c.enrollments_count || 0), 0)}
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm">Avg per Course</span>
+                                    <Badge variant="secondary">
+                                        {totals.totalCourses > 0 
+                                            ? Math.round(topCourses.reduce((sum, c) => sum + (c.enrollments_count || 0), 0) / totals.totalCourses)
+                                            : 0
+                                        }
+                                    </Badge>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Afternoon (12-17)</span>
-                                <Badge variant="secondary">40%</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Evening (17-22)</span>
-                                <Badge variant="secondary">30%</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm">Night (22-8)</span>
-                                <Badge variant="secondary">5%</Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </AdminLayout>
     );
 }
