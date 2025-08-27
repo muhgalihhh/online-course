@@ -13,79 +13,40 @@ use Inertia\Response;
 class ChapterController extends Controller
 {
     /**
-     * Menampilkan daftar semua bab dengan paginasi.
+     * Menampilkan daftar courses untuk memilih chapter yang akan dikelola.
      */
     public function index(Request $request): Response
     {
-        $query = Chapter::with(['course'])->withCount('courseMaterials');
+        // Get courses with chapter and material counts
+        $courses = Course::with(['category', 'institution'])
+            ->withCount(['chapters', 'courseMaterials'])
+            ->withSum('chapters as total_duration', 'duration')
+            ->withCount(['chapters as free_chapters_count' => function ($query) {
+                $query->where('is_free', true);
+            }])
+            ->withCount('enrollments')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
 
-        // Filter by search (title or description)
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter by course
-        if ($request->filled('course_id')) {
-            $query->where('course_id', $request->get('course_id'));
-        }
-
-        // Filter by material count range
-        if ($request->filled('material_count_min')) {
-            $query->has('courseMaterials', '>=', $request->get('material_count_min'));
-        }
-        
-        if ($request->filled('material_count_max')) {
-            $query->has('courseMaterials', '<=', $request->get('material_count_max'));
-        }
-
-        // Filter by duration range
-        if ($request->filled('duration_min')) {
-            $query->where('duration', '>=', $request->get('duration_min'));
-        }
-        
-        if ($request->filled('duration_max')) {
-            $query->where('duration', '<=', $request->get('duration_max'));
-        }
-
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->get('date_from'));
-        }
-        
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->get('date_to'));
-        }
-
-        // Sort by
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        
-        if ($sortBy === 'course_materials_count') {
-            $query->orderBy('course_materials_count', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
-
-        $chapters = $query->paginate(10)->withQueryString();
+        // Get categories and institutions for filtering
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $institutions = \App\Models\Institution::orderBy('name')->get();
 
         return Inertia::render('admin/chapters/index', [
-            'chapters' => $chapters,
-            'courses' => Course::all(),
-            'filters' => $request->only(['search', 'course_id', 'material_count_min', 'material_count_max', 'duration_min', 'duration_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
+            'courses' => $courses,
+            'categories' => $categories,
+            'institutions' => $institutions,
         ]);
     }
 
     /**
      * Tampilkan form untuk membuat bab baru.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('admin/chapters/create', [
             'courses' => Course::all(),
+            'selected_course_id' => $request->get('course_id'),
         ]);
     }
 
@@ -103,9 +64,10 @@ class ChapterController extends Controller
             'is_free' => 'boolean',
         ]);
 
-        Chapter::create($validated);
+        $chapter = Chapter::create($validated);
 
-        return redirect()->route('admin.chapters.index')
+        // Redirect to the course's chapter list
+        return redirect()->route('admin.chapters.by-course', $chapter->course_id)
             ->with('success', 'Bab berhasil dibuat.');
     }
 
@@ -136,7 +98,7 @@ class ChapterController extends Controller
 
         $chapter->update($validated);
 
-        return redirect()->route('admin.chapters.index')
+        return redirect()->route('admin.chapters.by-course', $chapter->course_id)
             ->with('success', 'Bab berhasil diperbarui.');
     }
 
@@ -145,6 +107,8 @@ class ChapterController extends Controller
      */
     public function destroy(Chapter $chapter)
     {
+        $courseId = $chapter->course_id;
+        
         // Hapus semua file materi yang terkait dengan bab
         foreach ($chapter->courseMaterials as $material) {
             if ($material->file_path) {
@@ -154,7 +118,7 @@ class ChapterController extends Controller
         
         $chapter->delete();
 
-        return redirect()->route('admin.chapters.index')
+        return redirect()->route('admin.chapters.by-course', $courseId)
             ->with('success', 'Bab berhasil dihapus.');
     }
     
@@ -175,9 +139,20 @@ class ChapterController extends Controller
      */
     public function byCourse(Course $course): Response
     {
+        // Load course with relationships
+        $course->load(['institution', 'category']);
+        
+        // Get chapters with materials for this course
+        $chapters = $course->chapters()
+            ->with(['courseMaterials' => function($query) {
+                $query->orderBy('order');
+            }])
+            ->orderBy('order')
+            ->get();
+
         return Inertia::render('admin/chapters/by-course', [
-            'course' => $course->load(['institution', 'category']),
-            'chapters' => $course->chapters()->with(['courseMaterials'])->orderBy('order')->get(),
+            'course' => $course,
+            'chapters' => $chapters,
         ]);
     }
 }

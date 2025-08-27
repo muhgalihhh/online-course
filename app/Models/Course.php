@@ -60,6 +60,22 @@ class Course extends Model
     }
 
     /**
+     * Enrollments for this course.
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Course materials through chapters.
+     */
+    public function courseMaterials(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(CourseMaterial::class, Chapter::class);
+    }
+
+    /**
      * Transaksi yang terkait dengan kursus ini.
      */
     public function transactions(): MorphMany

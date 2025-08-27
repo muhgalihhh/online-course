@@ -35,11 +35,12 @@ interface Course {
 
 interface CreateChapterProps extends PageProps {
     courses: Course[];
+    selected_course_id?: number;
 }
 
-export default function CreateChapter({ courses }: CreateChapterProps) {
+export default function CreateChapter({ courses, selected_course_id }: CreateChapterProps) {
     const { data, setData, post, processing, errors } = useForm({
-        course_id: '',
+        course_id: selected_course_id ? selected_course_id.toString() : '',
         title: '',
         description: '',
         order: '',
