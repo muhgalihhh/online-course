@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CourseMaterialController as AdminCourseMaterialCo
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [AdminController::class, 'export'])->name('dashboard.export');
+    
+    // Global Search
+    Route::post('/search', [SearchController::class, 'search'])->name('search');
 
     // User Management
     Route::resource('users', AdminUserController::class);
