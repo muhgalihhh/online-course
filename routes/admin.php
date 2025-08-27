@@ -19,8 +19,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [AdminController::class, 'export'])->name('dashboard.export');
     
-    // Global Search
-    Route::post('/search', [SearchController::class, 'search'])->name('search');
+    // Global Search (support both GET for query params and POST for legacy)
+    Route::match(['get', 'post'], '/search', [SearchController::class, 'search'])->name('search');
 
     // User Management
     Route::resource('users', AdminUserController::class);

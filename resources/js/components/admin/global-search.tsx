@@ -71,6 +71,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
     const searchTimeout = useRef<NodeJS.Timeout | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Use controlled state if provided
     const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : open;
@@ -249,7 +250,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         }
     }, [isOpen]);
 
-    // Search function with API call
+    // Search function with API call (GET + AbortController)
     const performSearch = useCallback(async (query: string, filter: string = 'all') => {
         if (!query.trim()) {
             setSearchResults([]);
@@ -261,24 +262,25 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setSearchError(null);
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (!csrfToken) {
-                throw new Error('CSRF token not found');
+            // Abort any in-flight request
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
             }
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
 
-            const response = await fetch('/admin/search', {
-                method: 'POST',
+            const params = new URLSearchParams();
+            params.set('q', query.trim());
+            if (filter !== 'all') params.set('filter', filter);
+            params.set('limit', '15');
+
+            const response = await fetch(`/admin/search?${params.toString()}`, {
+                method: 'GET',
                 credentials: 'same-origin',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    query: query.trim(),
-                    filter: filter !== 'all' ? filter : undefined 
-                }),
+                signal: controller.signal,
             });
 
             const contentType = response.headers.get('content-type');
@@ -453,6 +455,9 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
 
             setSearchResults(results);
         } catch (error: any) {
+            if (error?.name === 'AbortError') {
+                return; // silently ignore aborted requests
+            }
             console.error('Search error:', error);
             setSearchError(error.message || 'Pencarian gagal. Silakan coba lagi.');
             
@@ -467,7 +472,12 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 setSearchResults([]);
             }
         } finally {
-            setIsSearching(false);
+            if (abortControllerRef.current === undefined || abortControllerRef.current === null) {
+                setIsSearching(false);
+            } else {
+                // Only clear loading state if this is the latest request
+                setIsSearching(false);
+            }
         }
     }, [quickAccess]);
 
