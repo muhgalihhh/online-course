@@ -69,12 +69,18 @@ const ClickableCommandItem = forwardRef<HTMLDivElement, ClickableCommandItemProp
             onItemClick();
         };
 
+        const handleSelect = () => {
+            // onSelect receives a string value, not an event
+            // We just call our onItemClick directly
+            onItemClick();
+        };
+
         return (
             <CommandItem
                 ref={ref}
                 className={className}
                 value={value}
-                onSelect={onItemClick}
+                onSelect={handleSelect}
                 onClick={handleClick}
                 onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
                 style={{ cursor: 'pointer' }}
