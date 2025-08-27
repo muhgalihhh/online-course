@@ -100,10 +100,12 @@ class CourseMaterialController extends Controller
     /**
      * Tampilkan form untuk membuat materi baru.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('admin/materials/create', [
             'chapters' => Chapter::with(['course'])->get(),
+            'course_id' => $request->get('course_id'),
+            'chapter_id' => $request->get('chapter_id'),
         ]);
     }
 
@@ -130,9 +132,19 @@ class CourseMaterialController extends Controller
             $data['file_path'] = null;
         }
 
-        CourseMaterial::create($data);
+        $material = CourseMaterial::create($data);
+        
+        // Get the course_id from the created material's chapter
+        $chapter = Chapter::find($material->chapter_id);
+        $courseId = $chapter ? $chapter->course_id : null;
 
-        return redirect()->route('admin.materials.index')
+        // Redirect with selected_course parameter if available
+        $redirectUrl = route('admin.materials.index');
+        if ($courseId) {
+            $redirectUrl .= '?selected_course=' . $courseId;
+        }
+
+        return redirect($redirectUrl)
             ->with('success', 'Materi kursus berhasil dibuat.');
     }
 
@@ -186,8 +198,18 @@ class CourseMaterialController extends Controller
         }
 
         $material->update($data);
+        
+        // Get the course_id from the updated material's chapter
+        $chapter = Chapter::find($material->chapter_id);
+        $courseId = $chapter ? $chapter->course_id : null;
 
-        return redirect()->route('admin.materials.index')
+        // Redirect with selected_course parameter if available
+        $redirectUrl = route('admin.materials.index');
+        if ($courseId) {
+            $redirectUrl .= '?selected_course=' . $courseId;
+        }
+
+        return redirect($redirectUrl)
             ->with('success', 'Materi kursus berhasil diperbarui.');
     }
 
@@ -196,6 +218,10 @@ class CourseMaterialController extends Controller
      */
     public function destroy(CourseMaterial $material)
     {
+        // Get the course_id before deleting
+        $chapter = Chapter::find($material->chapter_id);
+        $courseId = $chapter ? $chapter->course_id : null;
+        
         // Hapus file terkait jika ada
         if ($material->file_path) {
             Storage::disk('public')->delete($material->file_path);
@@ -203,7 +229,13 @@ class CourseMaterialController extends Controller
         
         $material->delete();
 
-        return redirect()->route('admin.materials.index')
+        // Redirect with selected_course parameter if available
+        $redirectUrl = route('admin.materials.index');
+        if ($courseId) {
+            $redirectUrl .= '?selected_course=' . $courseId;
+        }
+
+        return redirect($redirectUrl)
             ->with('success', 'Materi kursus berhasil dihapus.');
     }
     

@@ -28,6 +28,9 @@ interface EditMaterialProps extends PageProps {
 }
 
 export default function EditMaterial({ material, chapters }: EditMaterialProps) {
+	// Find the course_id from the material's chapter
+	const materialChapter = chapters.find(ch => ch.id === material.chapter_id);
+	const materialCourseId = materialChapter ? materialChapter.course.id : null;
 	const { data, setData, post, processing, errors } = useForm<{ 
 		course_id: string; chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video_local'|'video_youtube'; file_path: File | null; youtube_url: string; is_preview: boolean; _method?: string;
 	}>({
@@ -104,7 +107,7 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<h1 className="text-3xl font-bold tracking-tight">Edit Materi</h1>
-				<Link href={route('admin.materials.index')}>
+				<Link href={materialCourseId ? route('admin.materials.index') + '?selected_course=' + materialCourseId : route('admin.materials.index')}>
 					<Button variant="outline">
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Kembali
@@ -254,7 +257,7 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 				</Card>
 
 				<div className="flex items-center justify-end gap-4">
-					<Link href={route('admin.materials.index')}>
+					<Link href={materialCourseId ? route('admin.materials.index') + '?selected_course=' + materialCourseId : route('admin.materials.index')}>
 						<Button variant="outline" type="button">Batal</Button>
 					</Link>
 					<Button type="submit" disabled={processing}>
