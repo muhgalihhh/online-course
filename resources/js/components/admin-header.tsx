@@ -10,12 +10,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import { GlobalSearch } from '@/components/global-search';
 import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Search, Settings, Shield, User, Menu } from 'lucide-react';
+import { BarChart3, Bell, HelpCircle, LogOut, Settings, Shield, User, Menu, Search } from 'lucide-react';
+import { useState } from 'react';
 
 interface AdminHeaderProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -27,6 +28,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
     const { auth } = page.props;
     const getInitials = useInitials();
     const { toggleSidebar } = useSidebar();
+    const [searchOpen, setSearchOpen] = useState(false);
 
     const handleLogout = () => {
         router.post(route('logout'));
@@ -48,14 +50,23 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
-                    <div className="relative hidden sm:block sm:w-64 lg:w-80">
-                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="Search users, courses, transactions..." className="pl-10" />
+                    <div className="hidden sm:block sm:w-64 lg:w-80">
+                        <GlobalSearch />
                     </div>
                 </div>
 
                 {/* Right side - Notifications and Profile */}
                 <div className="flex items-center gap-2">
+                    {/* Mobile Search Button */}
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 sm:hidden"
+                        onClick={() => setSearchOpen(true)}
+                    >
+                        <Search className="h-5 w-5" />
+                    </Button>
+                    
                     {/* Notifications */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -128,7 +139,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="flex items-center">
+                                    <Link href={route('admin.settings')} className="flex items-center">
                                         <User className="mr-2 h-4 w-4" />
                                         <span>Profile</span>
                                     </Link>
@@ -140,7 +151,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="flex items-center">
+                                    <Link href={route('admin.settings')} className="flex items-center">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </Link>
@@ -161,6 +172,12 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                     </DropdownMenu>
                 </div>
             </div>
+            
+            {/* Mobile Search Dialog */}
+            <GlobalSearch 
+                isOpen={searchOpen} 
+                onClose={() => setSearchOpen(false)} 
+            />
         </header>
     );
 }
