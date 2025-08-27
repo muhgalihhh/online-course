@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface Category {
     id: number;
@@ -26,6 +27,7 @@ interface CourseCreateProps extends PageProps {
 }
 
 export default function CourseCreate({ categories, institutions }: CourseCreateProps) {
+    const [preview, setPreview] = useState<string | null>(null);
     const { data, setData, post, processing, errors } = useForm({
         institution_id: '',
         category_id: '',
@@ -33,7 +35,18 @@ export default function CourseCreate({ categories, institutions }: CourseCreateP
         description: '',
         price: '',
         is_pro: false,
+        thumbnail_path: null as File | null,
     });
+
+    useEffect(() => {
+        if (data.thumbnail_path) {
+            const objectUrl = URL.createObjectURL(data.thumbnail_path);
+            setPreview(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        } else {
+            setPreview(null);
+        }
+    }, [data.thumbnail_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -131,6 +144,39 @@ export default function CourseCreate({ categories, institutions }: CourseCreateP
                                     rows={4}
                                 />
                                 {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="thumbnail_path">Thumbnail Kursus</Label>
+                                <div className="flex items-center space-x-4">
+                                    {preview && (
+                                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                                            <img
+                                                src={preview}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    {!preview && (
+                                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                            <Image className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <Input
+                                            id="thumbnail_path"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setData('thumbnail_path', e.target.files ? e.target.files[0] : null)}
+                                            className={errors.thumbnail_path ? 'border-red-500' : ''}
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Upload gambar JPG, PNG, atau WebP (maksimal 2MB)
+                                        </p>
+                                        {errors.thumbnail_path && <p className="text-sm text-red-600">{errors.thumbnail_path}</p>}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
