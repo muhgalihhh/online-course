@@ -5,29 +5,35 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { 
-    Book, 
+    ArrowRight,
+    Book,
+    CheckCircle2,
     Clock, 
-    Code, 
+    Database,
     FileText, 
-    HelpCircle, 
+    GraduationCap,
+    Layers,
     Mail, 
     MessageSquare, 
     Phone, 
     PlayCircle, 
-    Search, 
     Send, 
-    Star,
-    ExternalLink,
-    ChevronRight,
+    Settings,
+    UserPlus,
+    Users,
+    Building2,
     AlertCircle,
     CheckCircle,
-    Info
+    Info,
+    FileCheck,
+    FolderOpen,
+    Upload,
+    ClipboardList
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -43,21 +49,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface FAQ {
-    category: string;
-    questions: Array<{
-        question: string;
-        answer: string;
-    }>;
-}
-
-interface Resource {
-    title: string;
-    description: string;
-    icon: string;
-    link: string;
-}
-
 interface ContactInfo {
     email: string;
     phone: string;
@@ -66,14 +57,11 @@ interface ContactInfo {
 }
 
 interface HelpSupportProps extends PageProps {
-    faqs: FAQ[];
     contactInfo: ContactInfo;
-    resources: Resource[];
 }
 
-export default function HelpSupport({ faqs, contactInfo, resources }: HelpSupportProps) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('faq');
+export default function HelpSupport({ contactInfo }: HelpSupportProps) {
+    const [activeTab, setActiveTab] = useState('data-flow');
 
     const ticketForm = useForm({
         subject: '',
@@ -95,43 +83,104 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
         });
     };
 
-    const filteredFAQs = faqs.map(category => ({
-        ...category,
-        questions: category.questions.filter(
-            q => q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 q.answer.toLowerCase().includes(searchTerm.toLowerCase())
-        ),
-    })).filter(category => category.questions.length > 0);
-
-    const getIconComponent = (iconName: string) => {
-        switch (iconName) {
-            case 'book':
-                return <Book className="h-5 w-5" />;
-            case 'play-circle':
-                return <PlayCircle className="h-5 w-5" />;
-            case 'code':
-                return <Code className="h-5 w-5" />;
-            case 'star':
-                return <Star className="h-5 w-5" />;
-            default:
-                return <FileText className="h-5 w-5" />;
+    const dataFlowSteps = [
+        {
+            step: 1,
+            title: 'Setup Institusi',
+            icon: Building2,
+            description: 'Tambahkan data institusi/lembaga pendidikan',
+            details: [
+                'Masuk ke menu Institutions',
+                'Klik tombol "Add Institution"',
+                'Isi informasi institusi (nama, alamat, kontak)',
+                'Simpan data institusi'
+            ]
+        },
+        {
+            step: 2,
+            title: 'Tambah User',
+            icon: UserPlus,
+            description: 'Daftarkan pengguna (admin, instruktur, siswa)',
+            details: [
+                'Masuk ke menu Users',
+                'Klik tombol "Add User"',
+                'Pilih role pengguna (Admin/Instructor/Student)',
+                'Isi data pengguna dan assign ke institusi',
+                'Simpan data pengguna'
+            ]
+        },
+        {
+            step: 3,
+            title: 'Buat Kategori',
+            icon: FolderOpen,
+            description: 'Buat kategori untuk mengelompokkan kursus',
+            details: [
+                'Masuk ke menu Categories',
+                'Klik tombol "Add Category"',
+                'Isi nama dan deskripsi kategori',
+                'Upload icon kategori (opsional)',
+                'Simpan kategori'
+            ]
+        },
+        {
+            step: 4,
+            title: 'Buat Kursus',
+            icon: GraduationCap,
+            description: 'Tambahkan kursus/mata pelajaran baru',
+            details: [
+                'Masuk ke menu Courses',
+                'Klik tombol "Add Course"',
+                'Isi informasi kursus (judul, deskripsi, harga)',
+                'Pilih kategori dan instruktur',
+                'Upload thumbnail kursus',
+                'Set status kursus (draft/published)',
+                'Simpan kursus'
+            ]
+        },
+        {
+            step: 5,
+            title: 'Tambah Chapter',
+            icon: Layers,
+            description: 'Buat chapter/bab dalam kursus',
+            details: [
+                'Masuk ke detail kursus',
+                'Klik tab "Chapters"',
+                'Klik tombol "Add Chapter"',
+                'Isi judul dan deskripsi chapter',
+                'Atur urutan chapter',
+                'Simpan chapter'
+            ]
+        },
+        {
+            step: 6,
+            title: 'Upload Materi',
+            icon: Upload,
+            description: 'Tambahkan materi pembelajaran ke chapter',
+            details: [
+                'Masuk ke detail chapter',
+                'Klik tab "Materials"',
+                'Klik tombol "Add Material"',
+                'Pilih tipe materi (Video/Document/Quiz)',
+                'Upload file atau embed video',
+                'Atur urutan materi',
+                'Set durasi dan prerequisite',
+                'Simpan materi'
+            ]
+        },
+        {
+            step: 7,
+            title: 'Verifikasi & Publish',
+            icon: FileCheck,
+            description: 'Review dan publikasikan kursus',
+            details: [
+                'Review semua konten kursus',
+                'Cek kelengkapan materi',
+                'Verifikasi harga dan settings',
+                'Ubah status ke "Published"',
+                'Kursus siap diakses siswa'
+            ]
         }
-    };
-
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'urgent':
-                return 'destructive';
-            case 'high':
-                return 'warning';
-            case 'medium':
-                return 'default';
-            case 'low':
-                return 'secondary';
-            default:
-                return 'default';
-        }
-    };
+    ];
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
@@ -143,144 +192,135 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
                         <p className="text-muted-foreground mt-2">
-                            Find answers to your questions, access resources, and contact support
+                            Panduan alur input data dan bantuan sistem
                         </p>
                     </div>
                 </div>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('faq')}>
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('data-flow')}>
                         <CardHeader className="flex flex-row items-center space-x-2 pb-2">
-                            <HelpCircle className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-base">Browse FAQs</CardTitle>
+                            <Database className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-base">Alur Input Data</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-muted-foreground">Find quick answers to common questions</p>
+                            <p className="text-sm text-muted-foreground">Panduan langkah demi langkah input data</p>
                         </CardContent>
                     </Card>
 
                     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('ticket')}>
                         <CardHeader className="flex flex-row items-center space-x-2 pb-2">
                             <MessageSquare className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-base">Submit Ticket</CardTitle>
+                            <CardTitle className="text-base">Kirim Tiket</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-muted-foreground">Get help from our support team</p>
+                            <p className="text-sm text-muted-foreground">Dapatkan bantuan dari tim support</p>
                         </CardContent>
                     </Card>
 
                     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('contact')}>
                         <CardHeader className="flex flex-row items-center space-x-2 pb-2">
                             <Phone className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-base">Contact Info</CardTitle>
+                            <CardTitle className="text-base">Info Kontak</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-muted-foreground">Direct contact information</p>
+                            <p className="text-sm text-muted-foreground">Informasi kontak langsung</p>
                         </CardContent>
                     </Card>
                 </div>
 
                 {/* Main Content Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="faq">FAQs</TabsTrigger>
-                        <TabsTrigger value="resources">Resources</TabsTrigger>
-                        <TabsTrigger value="ticket">Submit Ticket</TabsTrigger>
-                        <TabsTrigger value="contact">Contact</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="data-flow">Alur Input Data</TabsTrigger>
+                        <TabsTrigger value="ticket">Kirim Tiket</TabsTrigger>
+                        <TabsTrigger value="contact">Kontak</TabsTrigger>
                     </TabsList>
 
-                    {/* FAQ Tab */}
-                    <TabsContent value="faq" className="space-y-4">
+                    {/* Data Flow Tab */}
+                    <TabsContent value="data-flow" className="space-y-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Frequently Asked Questions</CardTitle>
+                                <CardTitle>Alur Input Data Sistem</CardTitle>
                                 <CardDescription>
-                                    Search through our comprehensive FAQ database
+                                    Ikuti langkah-langkah berikut untuk menginput data dengan benar
                                 </CardDescription>
-                                <div className="relative mt-4">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search FAQs..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-10"
-                                    />
-                                </div>
                             </CardHeader>
                             <CardContent>
-                                {filteredFAQs.length > 0 ? (
-                                    <Accordion type="single" collapsible className="w-full">
-                                        {filteredFAQs.map((category, categoryIndex) => (
-                                            <div key={categoryIndex} className="mb-6">
-                                                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                                                    <Badge variant="outline">{category.category}</Badge>
-                                                </h3>
-                                                {category.questions.map((qa, qaIndex) => (
-                                                    <AccordionItem 
-                                                        key={`${categoryIndex}-${qaIndex}`} 
-                                                        value={`${categoryIndex}-${qaIndex}`}
-                                                    >
-                                                        <AccordionTrigger className="text-left hover:no-underline">
-                                                            <div className="flex items-start gap-2">
-                                                                <HelpCircle className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
-                                                                <span>{qa.question}</span>
-                                                            </div>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent>
-                                                            <div className="pl-6 text-muted-foreground">
-                                                                {qa.answer}
-                                                            </div>
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                ))}
-                                            </div>
-                                        ))}
-                                    </Accordion>
-                                ) : (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                        <p>No FAQs found matching your search.</p>
+                                {/* Visual Flow Diagram */}
+                                <div className="mb-8 p-6 bg-muted/30 rounded-lg">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                        <Badge variant="outline" className="text-xs">Institusi</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="outline" className="text-xs">Users</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="outline" className="text-xs">Kategori</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="outline" className="text-xs">Kursus</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="outline" className="text-xs">Chapter</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="outline" className="text-xs">Materi</Badge>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        <Badge variant="success" className="text-xs">Publish</Badge>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                                </div>
 
-                    {/* Resources Tab */}
-                    <TabsContent value="resources" className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Resources & Documentation</CardTitle>
-                                <CardDescription>
-                                    Access guides, tutorials, and documentation
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {resources.map((resource, index) => (
-                                        <Card 
-                                            key={index} 
-                                            className="hover:shadow-md transition-shadow cursor-pointer group"
-                                        >
-                                            <CardHeader>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                                                            {getIconComponent(resource.icon)}
+                                {/* Detailed Steps */}
+                                <div className="space-y-4">
+                                    {dataFlowSteps.map((flowStep, index) => {
+                                        const Icon = flowStep.icon;
+                                        return (
+                                            <Card key={index} className="overflow-hidden">
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="flex-shrink-0">
+                                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                <span className="text-sm font-bold text-primary">{flowStep.step}</span>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <CardTitle className="text-base">{resource.title}</CardTitle>
-                                                            <CardDescription className="text-sm mt-1">
-                                                                {resource.description}
-                                                            </CardDescription>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <Icon className="h-5 w-5 text-primary" />
+                                                                <CardTitle className="text-lg">{flowStep.title}</CardTitle>
+                                                            </div>
+                                                            <CardDescription>{flowStep.description}</CardDescription>
                                                         </div>
                                                     </div>
-                                                    <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </div>
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="pl-14">
+                                                        <ul className="space-y-2">
+                                                            {flowStep.details.map((detail, detailIndex) => (
+                                                                <li key={detailIndex} className="flex items-start gap-2">
+                                                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                                                    <span className="text-sm text-muted-foreground">{detail}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Important Notes */}
+                                <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+                                        <div>
+                                            <h4 className="font-medium text-yellow-900 dark:text-yellow-100 mb-2">Catatan Penting:</h4>
+                                            <ul className="space-y-1 text-sm text-yellow-800 dark:text-yellow-200">
+                                                <li>• Pastikan data institusi sudah lengkap sebelum menambah user</li>
+                                                <li>• Setiap user harus terhubung dengan institusi yang valid</li>
+                                                <li>• Kursus harus memiliki minimal 1 chapter untuk bisa dipublish</li>
+                                                <li>• Setiap chapter harus memiliki minimal 1 materi</li>
+                                                <li>• Review semua data sebelum mengubah status ke published</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -290,28 +330,28 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                     <TabsContent value="ticket" className="space-y-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Submit Support Ticket</CardTitle>
+                                <CardTitle>Kirim Tiket Support</CardTitle>
                                 <CardDescription>
-                                    Describe your issue and our team will respond within {contactInfo.response_time}
+                                    Jelaskan masalah Anda dan tim kami akan merespon dalam {contactInfo?.response_time || '24 jam'}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleTicketSubmit} className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="category">Category</Label>
+                                            <Label htmlFor="category">Kategori</Label>
                                             <Select
                                                 value={ticketForm.data.category}
                                                 onValueChange={(value) => ticketForm.setData('category', value)}
                                             >
                                                 <SelectTrigger id="category">
-                                                    <SelectValue placeholder="Select category" />
+                                                    <SelectValue placeholder="Pilih kategori" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="technical">Technical Issue</SelectItem>
-                                                    <SelectItem value="billing">Billing & Payments</SelectItem>
-                                                    <SelectItem value="general">General Inquiry</SelectItem>
-                                                    <SelectItem value="feature_request">Feature Request</SelectItem>
+                                                    <SelectItem value="technical">Masalah Teknis</SelectItem>
+                                                    <SelectItem value="data_input">Masalah Input Data</SelectItem>
+                                                    <SelectItem value="general">Pertanyaan Umum</SelectItem>
+                                                    <SelectItem value="feature_request">Permintaan Fitur</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             {ticketForm.errors.category && (
@@ -320,33 +360,33 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="priority">Priority</Label>
+                                            <Label htmlFor="priority">Prioritas</Label>
                                             <Select
                                                 value={ticketForm.data.priority}
                                                 onValueChange={(value) => ticketForm.setData('priority', value)}
                                             >
                                                 <SelectTrigger id="priority">
-                                                    <SelectValue placeholder="Select priority" />
+                                                    <SelectValue placeholder="Pilih prioritas" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="low">
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="secondary" className="h-5">Low</Badge>
+                                                            <Badge variant="secondary" className="h-5">Rendah</Badge>
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="medium">
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="default" className="h-5">Medium</Badge>
+                                                            <Badge variant="default" className="h-5">Sedang</Badge>
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="high">
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="warning" className="h-5">High</Badge>
+                                                            <Badge variant="warning" className="h-5">Tinggi</Badge>
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="urgent">
                                                         <div className="flex items-center gap-2">
-                                                            <Badge variant="destructive" className="h-5">Urgent</Badge>
+                                                            <Badge variant="destructive" className="h-5">Mendesak</Badge>
                                                         </div>
                                                     </SelectItem>
                                                 </SelectContent>
@@ -358,10 +398,10 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="subject">Subject</Label>
+                                        <Label htmlFor="subject">Subjek</Label>
                                         <Input
                                             id="subject"
-                                            placeholder="Brief description of your issue"
+                                            placeholder="Deskripsi singkat masalah Anda"
                                             value={ticketForm.data.subject}
                                             onChange={(e) => ticketForm.setData('subject', e.target.value)}
                                         />
@@ -371,10 +411,10 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="message">Message</Label>
+                                        <Label htmlFor="message">Pesan</Label>
                                         <Textarea
                                             id="message"
-                                            placeholder="Provide detailed information about your issue..."
+                                            placeholder="Berikan informasi detail tentang masalah Anda..."
                                             rows={6}
                                             value={ticketForm.data.message}
                                             onChange={(e) => ticketForm.setData('message', e.target.value)}
@@ -387,7 +427,7 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                                     <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
                                         <Info className="h-4 w-4 text-muted-foreground" />
                                         <p className="text-sm text-muted-foreground">
-                                            Expected response time: {contactInfo.response_time}
+                                            Waktu respon yang diharapkan: {contactInfo?.response_time || '24 jam'}
                                         </p>
                                     </div>
 
@@ -397,7 +437,7 @@ export default function HelpSupport({ faqs, contactInfo, resources }: HelpSuppor
                                         className="w-full md:w-auto"
                                     >
                                         <Send className="mr-2 h-4 w-4" />
-                                        {ticketForm.processing ? 'Submitting...' : 'Submit Ticket'}
+                                        {ticketForm.processing ? 'Mengirim...' : 'Kirim Tiket'}
                                     </Button>
                                 </form>
                             </CardContent>
