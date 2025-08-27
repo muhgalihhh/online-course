@@ -112,13 +112,27 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         const down = (e: KeyboardEvent) => {
             if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                setOpen((open) => !open);
+                
+                // Handle both controlled and uncontrolled state
+                if (controlledIsOpen !== undefined && onClose) {
+                    // For controlled state (mobile), only open if currently closed
+                    if (!controlledIsOpen) {
+                        // Since this is controlled, we can't directly set it open
+                        // The parent component should handle this shortcut
+                        console.log('Keyboard shortcut triggered, but this is controlled by parent');
+                    } else {
+                        onClose();
+                    }
+                } else {
+                    // For uncontrolled state (desktop)
+                    setOpen((open) => !open);
+                }
             }
         };
 
         document.addEventListener('keydown', down);
         return () => document.removeEventListener('keydown', down);
-    }, []);
+    }, [controlledIsOpen, onClose]);
 
     // Helper to build admin search URL with a safe fallback
     const getAdminSearchUrl = () => {
@@ -290,18 +304,31 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setRecentSearches(newRecent);
         localStorage.setItem('recentSearches', JSON.stringify(newRecent));
 
-        // Clear search and close dialog
+        // Clear search and close dialog immediately for better UX
         setSearchQuery('');
         setSearchResults([]);
         
-        // Navigate to the result
-        router.visit(result.url);
-        
-        // Close dialog
+        // Close dialog first for immediate feedback
         if (controlledIsOpen !== undefined && onClose) {
             onClose();
         } else {
             setOpen(false);
+        }
+        
+        // Navigate to the result with error handling
+        try {
+            router.visit(result.url, {
+                preserveState: false,
+                preserveScroll: false,
+                onError: (errors) => {
+                    console.error('Navigation error:', errors);
+                    // Optionally show user-friendly error message
+                }
+            });
+        } catch (error) {
+            console.error('Failed to navigate:', error);
+            // Fallback: try direct window navigation
+            window.location.href = result.url;
         }
     };
 
@@ -366,7 +393,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                     {searchResults.map((result) => (
                                         <CommandItem
                                             key={result.id}
-                                            className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
                                             value={result.title}
                                             onSelect={() => handleSelect(result)}
                                         >
@@ -398,7 +425,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                 {recentSearches.map((result) => (
                                                     <CommandItem
                                                         key={result.id}
-                                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
                                                         value={result.title}
                                                         onSelect={() => handleSelect(result)}
                                                     >
@@ -423,7 +450,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                         {quickAccess.map((item) => (
                                             <CommandItem
                                                 key={item.id}
-                                                className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
                                                 value={item.title}
                                                 onSelect={() => handleSelect(item)}
                                             >
