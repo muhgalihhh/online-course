@@ -180,7 +180,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                         title: user.name,
                         description: user.email,
                         type: 'user',
-                        url: route('admin.users.show', { user: user.id }),
+                        url: route('admin.users.edit', { user: user.id }),
                         icon: <Users className="h-4 w-4" />,
                         meta: user.role,
                     });
@@ -367,6 +367,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                         <CommandItem
                                             key={result.id}
                                             className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                            value={result.title}
                                             onSelect={() => handleSelect(result)}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
@@ -398,6 +399,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                     <CommandItem
                                                         key={result.id}
                                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                                        value={result.title}
                                                         onSelect={() => handleSelect(result)}
                                                     >
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
@@ -422,6 +424,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                             <CommandItem
                                                 key={item.id}
                                                 className="flex items-center gap-3 px-3 py-2 cursor-pointer"
+                                                value={item.title}
                                                 onSelect={() => handleSelect(item)}
                                             >
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
