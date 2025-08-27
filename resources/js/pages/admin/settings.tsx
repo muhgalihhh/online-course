@@ -11,6 +11,9 @@ import { Lock, Save, User, Trash2, Camera, Info } from 'lucide-react';
 import { useState, useRef, FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAppearance } from '@/hooks/use-appearance';
+import { Monitor, Moon, Sun, Palette } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
