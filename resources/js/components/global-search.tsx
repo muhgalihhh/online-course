@@ -299,6 +299,8 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     }, [searchQuery]);
 
     const handleSelect = (result: SearchResult) => {
+        console.log('handleSelect called with:', result);
+        
         // Save to recent searches
         const newRecent = [result, ...recentSearches.filter(r => r.id !== result.id)].slice(0, 5);
         setRecentSearches(newRecent);
@@ -317,12 +319,17 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         
         // Navigate to the result with error handling
         try {
+            console.log('Navigating to:', result.url);
             router.visit(result.url, {
                 preserveState: false,
                 preserveScroll: false,
                 onError: (errors) => {
                     console.error('Navigation error:', errors);
-                    // Optionally show user-friendly error message
+                    // Fallback: try direct window navigation
+                    window.location.href = result.url;
+                },
+                onSuccess: () => {
+                    console.log('Navigation successful');
                 }
             });
         } catch (error) {
@@ -393,9 +400,10 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                     {searchResults.map((result) => (
                                         <CommandItem
                                             key={result.id}
-                                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                             value={result.title}
                                             onSelect={() => handleSelect(result)}
+                                            onClick={() => handleSelect(result)}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                 {result.icon}
@@ -425,9 +433,10 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                 {recentSearches.map((result) => (
                                                     <CommandItem
                                                         key={result.id}
-                                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                                         value={result.title}
                                                         onSelect={() => handleSelect(result)}
+                                                        onClick={() => handleSelect(result)}
                                                     >
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                             <Clock className="h-4 w-4" />
@@ -450,9 +459,10 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                         {quickAccess.map((item) => (
                                             <CommandItem
                                                 key={item.id}
-                                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                                 value={item.title}
                                                 onSelect={() => handleSelect(item)}
+                                                onClick={() => handleSelect(item)}
                                             >
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                     {item.icon}
