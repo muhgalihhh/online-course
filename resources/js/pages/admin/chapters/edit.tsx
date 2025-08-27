@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
@@ -78,21 +78,22 @@ export default function EditChapter({ chapter, courses }: EditChapterProps) {
 						<CardContent className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="course_id">Kursus *</Label>
-								<Select 
-									value={data.course_id} 
-									onValueChange={(value) => setData('course_id', value)}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Pilih kursus" />
-									</SelectTrigger>
-									<SelectContent>
-										{courses.map((course) => (
-											<SelectItem key={course.id} value={course.id.toString()}>
-												{course.title}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<div className="relative">
+									<Input
+										id="course_id_display"
+										value={courses.find(c => c.id.toString() === data.course_id)?.title || ''}
+										disabled
+										className="bg-muted cursor-not-allowed"
+									/>
+									<input
+										type="hidden"
+										name="course_id"
+										value={data.course_id}
+									/>
+									<p className="text-xs text-muted-foreground mt-1">
+										Kursus tidak dapat diubah setelah chapter dibuat
+									</p>
+								</div>
 								{errors.course_id && (
 									<p className="text-sm text-red-600">{errors.course_id}</p>
 								)}
