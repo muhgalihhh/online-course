@@ -111,6 +111,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
+    const abortControllerRef = useRef<AbortController | null>(null);
     const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
     // Use controlled state if provided
@@ -270,7 +271,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         }
     };
 
-    // Search function with API call
+    // Search function with API call (GET + AbortController)
     const performSearch = useCallback(async (query: string, filter: string = 'all') => {
         if (!query.trim()) {
             setSearchResults([]);
@@ -282,24 +283,27 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setSearchError(null);
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (!csrfToken) {
-                throw new Error('CSRF token not found');
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
             }
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
 
-            const response = await fetch(getAdminSearchUrl(), {
-                method: 'POST',
+            const baseUrl = getAdminSearchUrl();
+            const params = new URLSearchParams();
+            params.set('q', query.trim());
+            if (filter !== 'all') params.set('filter', filter);
+            params.set('limit', '15');
+
+            const url = `${baseUrl}?${params.toString()}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
                 credentials: 'same-origin',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    query,
-                    filter: filter !== 'all' ? filter : undefined 
-                }),
+                signal: controller.signal,
             });
 
             if (!response.ok) {
@@ -521,7 +525,10 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             }
 
             setSearchResults(results);
-        } catch (error) {
+        } catch (error: any) {
+            if (error?.name === 'AbortError') {
+                return;
+            }
             console.error('Search error:', error);
             setSearchError('Pencarian gagal. Silakan coba lagi.');
             
