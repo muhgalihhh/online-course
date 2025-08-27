@@ -1,19 +1,16 @@
+import InputError from '@/components/input-error';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAppearance } from '@/hooks/use-appearance';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Lock, Save, User, Trash2, Camera, Info } from 'lucide-react';
-import { useState, useRef, FormEvent } from 'react';
-import InputError from '@/components/input-error';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAppearance } from '@/hooks/use-appearance';
-import { Monitor, Moon, Sun, Palette } from 'lucide-react';
+import { Camera, Lock, Monitor, Moon, Palette, Save, Sun, Trash2, User } from 'lucide-react';
+import { FormEvent, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,7 +38,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
     const [activeTab, setActiveTab] = useState('profile');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { appearance, updateAppearance } = useAppearance();
-    
+
     // Profile form
     const profileForm = useForm({
         name: profileData?.name || auth.user.name,
@@ -100,7 +97,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
     const getInitials = (name: string) => {
         return name
             .split(' ')
-            .map(word => word[0])
+            .map((word) => word[0])
             .join('')
             .toUpperCase()
             .slice(0, 2);
@@ -113,19 +110,8 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
             <div className="space-y-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                    <p className="text-muted-foreground">
-                        Manage your account settings and preferences
-                    </p>
+                    <p className="text-muted-foreground">Manage your account settings and preferences</p>
                 </div>
-
-                {/* Info Alert */}
-                <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                        Platform configuration settings are now managed through environment variables for better security and simplicity.
-                        Contact your system administrator to modify platform-wide settings.
-                    </AlertDescription>
-                </Alert>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                     <TabsList>
@@ -148,31 +134,21 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                         <Card>
                             <CardHeader>
                                 <CardTitle>Profile Information</CardTitle>
-                                <CardDescription>
-                                    Update your account's profile information and email address.
-                                </CardDescription>
+                                <CardDescription>Update your account's profile information and email address.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                                     {/* Profile Photo */}
                                     <div className="flex items-center gap-6">
                                         <Avatar className="h-20 w-20">
-                                            <AvatarImage 
-                                                src={profileData?.profile_photo_path ? `/storage/${profileData.profile_photo_path}` : undefined} 
-                                                alt={profileForm.data.name} 
+                                            <AvatarImage
+                                                src={profileData?.profile_photo_path ? `/storage/${profileData.profile_photo_path}` : undefined}
+                                                alt={profileForm.data.name}
                                             />
-                                            <AvatarFallback>
-                                                {getInitials(profileForm.data.name)}
-                                            </AvatarFallback>
+                                            <AvatarFallback>{getInitials(profileForm.data.name)}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={handlePhotoChange}
-                                            />
+                                            <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                                             <Button
                                                 type="button"
                                                 variant="outline"
@@ -232,11 +208,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                     )}
 
                                     <div className="flex justify-end">
-                                        <Button 
-                                            type="submit" 
-                                            disabled={profileForm.processing}
-                                            className="flex items-center gap-2"
-                                        >
+                                        <Button type="submit" disabled={profileForm.processing} className="flex items-center gap-2">
                                             <Save className="h-4 w-4" />
                                             Save Changes
                                         </Button>
@@ -252,9 +224,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                         <Card>
                             <CardHeader>
                                 <CardTitle>Update Password</CardTitle>
-                                <CardDescription>
-                                    Ensure your account is using a long, random password to stay secure.
-                                </CardDescription>
+                                <CardDescription>Ensure your account is using a long, random password to stay secure.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -295,11 +265,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                     </div>
 
                                     <div className="flex justify-end">
-                                        <Button 
-                                            type="submit" 
-                                            disabled={passwordForm.processing}
-                                            className="flex items-center gap-2"
-                                        >
+                                        <Button type="submit" disabled={passwordForm.processing} className="flex items-center gap-2">
                                             <Save className="h-4 w-4" />
                                             Update Password
                                         </Button>
@@ -313,16 +279,14 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                             <CardHeader>
                                 <CardTitle className="text-destructive">Delete Account</CardTitle>
                                 <CardDescription>
-                                    Once your account is deleted, all of its resources and data will be permanently deleted.
-                                    Before deleting your account, please download any data or information that you wish to retain.
+                                    Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your
+                                    account, please download any data or information that you wish to retain.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleDeleteAccount} className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="delete_password">
-                                            Enter your password to confirm account deletion
-                                        </Label>
+                                        <Label htmlFor="delete_password">Enter your password to confirm account deletion</Label>
                                         <Input
                                             id="delete_password"
                                             type="password"
@@ -334,12 +298,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                         <InputError message={deleteForm.errors.password} />
                                     </div>
 
-                                    <Button 
-                                        type="submit" 
-                                        variant="destructive"
-                                        disabled={deleteForm.processing}
-                                        className="flex items-center gap-2"
-                                    >
+                                    <Button type="submit" variant="destructive" disabled={deleteForm.processing} className="flex items-center gap-2">
                                         <Trash2 className="h-4 w-4" />
                                         Delete Account
                                     </Button>
@@ -368,11 +327,9 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                                 appearance === 'light' ? 'border-primary' : 'border-muted'
                                             }`}
                                         >
-                                            <Sun className="h-6 w-6 mb-2" />
+                                            <Sun className="mb-2 h-6 w-6" />
                                             <span className="text-sm font-medium">Light</span>
-                                            {appearance === 'light' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-                                            )}
+                                            {appearance === 'light' && <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />}
                                         </button>
                                         <button
                                             type="button"
@@ -381,11 +338,9 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                                 appearance === 'dark' ? 'border-primary' : 'border-muted'
                                             }`}
                                         >
-                                            <Moon className="h-6 w-6 mb-2" />
+                                            <Moon className="mb-2 h-6 w-6" />
                                             <span className="text-sm font-medium">Dark</span>
-                                            {appearance === 'dark' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-                                            )}
+                                            {appearance === 'dark' && <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />}
                                         </button>
                                         <button
                                             type="button"
@@ -394,15 +349,13 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                                 appearance === 'system' ? 'border-primary' : 'border-muted'
                                             }`}
                                         >
-                                            <Monitor className="h-6 w-6 mb-2" />
+                                            <Monitor className="mb-2 h-6 w-6" />
                                             <span className="text-sm font-medium">System</span>
-                                            {appearance === 'system' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-                                            )}
+                                            {appearance === 'system' && <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />}
                                         </button>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {appearance === 'system' 
+                                        {appearance === 'system'
                                             ? 'Theme will automatically match your system preferences'
                                             : `Currently using ${appearance} theme`}
                                     </p>
@@ -410,7 +363,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
 
                                 <div className="space-y-4">
                                     <Label>Theme Preview</Label>
-                                    <div className="rounded-lg border p-4 space-y-3">
+                                    <div className="space-y-3 rounded-lg border p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-1">
                                                 <div className="h-3 w-24 rounded bg-foreground/80" />
@@ -428,13 +381,6 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                         </div>
                                     </div>
                                 </div>
-
-                                <Alert>
-                                    <Info className="h-4 w-4" />
-                                    <AlertDescription>
-                                        Theme preference is saved locally and will persist across sessions.
-                                    </AlertDescription>
-                                </Alert>
                             </CardContent>
                         </Card>
                     </TabsContent>
