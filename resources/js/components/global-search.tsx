@@ -120,6 +120,17 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         return () => document.removeEventListener('keydown', down);
     }, []);
 
+    // Helper to build admin search URL with a safe fallback
+    const getAdminSearchUrl = () => {
+        try {
+            // Prefer Ziggy route if available
+            return route('admin.search');
+        } catch (e) {
+            // Fallback to hardcoded path if Ziggy route is missing
+            return '/admin/search';
+        }
+    };
+
     // Search function with API call
     const performSearch = async (query: string) => {
         if (!query.trim()) {
@@ -138,8 +149,9 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             }
 
             // Make API call to search endpoint
-            const response = await fetch(route('admin.search'), {
+            const response = await fetch(getAdminSearchUrl(), {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -230,7 +242,11 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             setSearchResults(results);
         } catch (error) {
             console.error('Search error:', error);
-            setSearchResults([]);
+            // Still show Quick Access matches even if API fails
+            const quickMatches = quickAccess.filter(item =>
+                item.title.toLowerCase().includes(query.toLowerCase())
+            );
+            setSearchResults(quickMatches);
             
             // Show user-friendly error message
             if (error instanceof Error) {
