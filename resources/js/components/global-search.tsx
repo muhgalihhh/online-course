@@ -122,7 +122,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         return () => document.removeEventListener('keydown', down);
     }, []);
 
-    // Mock search function - replace with actual API call
+    // Search function with API call
     const performSearch = async (query: string) => {
         if (!query.trim()) {
             setSearchResults([]);
@@ -131,60 +131,101 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
 
         setIsSearching(true);
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Mock search results - replace with actual API call
-        const mockResults: SearchResult[] = [];
-
-        // Search in users
-        if (query.toLowerCase().includes('user') || query.toLowerCase().includes('john')) {
-            mockResults.push({
-                id: 'user-1',
-                title: 'John Doe',
-                description: 'john@example.com',
-                type: 'user',
-                url: route('admin.users.show', { user: 1 }),
-                icon: <Users className="h-4 w-4" />,
-                meta: 'Admin',
+        try {
+            // Make API call to search endpoint
+            const response = await fetch(route('admin.search'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ query }),
             });
-        }
 
-        // Search in courses
-        if (query.toLowerCase().includes('course') || query.toLowerCase().includes('react')) {
-            mockResults.push({
-                id: 'course-1',
-                title: 'Advanced React Course',
-                description: 'Learn advanced React patterns and best practices',
-                type: 'course',
-                url: route('admin.courses.show', { course: 1 }),
-                icon: <BookOpen className="h-4 w-4" />,
-                meta: '120 students',
-            });
-        }
-
-        // Search in materials
-        if (query.toLowerCase().includes('material') || query.toLowerCase().includes('video')) {
-            mockResults.push({
-                id: 'material-1',
-                title: 'Introduction Video',
-                description: 'Course introduction and overview',
-                type: 'material',
-                url: route('admin.materials.show', { material: 1 }),
-                icon: <FileText className="h-4 w-4" />,
-                meta: 'Video • 10 min',
-            });
-        }
-
-        // Add quick access items that match
-        quickAccess.forEach(item => {
-            if (item.title.toLowerCase().includes(query.toLowerCase())) {
-                mockResults.push(item);
+            if (!response.ok) {
+                throw new Error('Search failed');
             }
-        });
 
-        setSearchResults(mockResults);
-        setIsSearching(false);
+            const data = await response.json();
+            
+            // Transform API results to SearchResult format
+            const results: SearchResult[] = [];
+
+            // Process users
+            if (data.users) {
+                data.users.forEach((user: any) => {
+                    results.push({
+                        id: `user-${user.id}`,
+                        title: user.name,
+                        description: user.email,
+                        type: 'user',
+                        url: route('admin.users.show', { user: user.id }),
+                        icon: <Users className="h-4 w-4" />,
+                        meta: user.role,
+                    });
+                });
+            }
+
+            // Process courses
+            if (data.courses) {
+                data.courses.forEach((course: any) => {
+                    results.push({
+                        id: `course-${course.id}`,
+                        title: course.title,
+                        description: course.description,
+                        type: 'course',
+                        url: route('admin.courses.show', { course: course.id }),
+                        icon: <BookOpen className="h-4 w-4" />,
+                        meta: `${course.students_count || 0} students`,
+                    });
+                });
+            }
+
+            // Process materials
+            if (data.materials) {
+                data.materials.forEach((material: any) => {
+                    results.push({
+                        id: `material-${material.id}`,
+                        title: material.title,
+                        description: material.description,
+                        type: 'material',
+                        url: route('admin.materials.show', { material: material.id }),
+                        icon: <FileText className="h-4 w-4" />,
+                        meta: material.type,
+                    });
+                });
+            }
+
+            // Process transactions
+            if (data.transactions) {
+                data.transactions.forEach((transaction: any) => {
+                    results.push({
+                        id: `transaction-${transaction.id}`,
+                        title: `Transaction #${transaction.id}`,
+                        description: `${transaction.user_name} - ${transaction.course_title}`,
+                        type: 'transaction',
+                        url: route('admin.transactions.show', { transaction: transaction.id }),
+                        icon: <ShoppingCart className="h-4 w-4" />,
+                        meta: transaction.status,
+                    });
+                });
+            }
+
+            // Add matching quick access items
+            quickAccess.forEach(item => {
+                if (item.title.toLowerCase().includes(query.toLowerCase())) {
+                    results.push(item);
+                }
+            });
+
+            setSearchResults(results);
+        } catch (error) {
+            console.error('Search error:', error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     // Debounced search
@@ -255,26 +296,11 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             <Dialog open={isOpen} onOpenChange={handleOpen}>
                 <DialogContent className="max-w-2xl p-0">
                     <Command className="rounded-lg border-0">
-                        <div className="flex items-center border-b px-3">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Search users, courses, transactions..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                autoFocus
-                            />
-                            {searchQuery && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            )}
-                        </div>
+                        <CommandInput 
+                            placeholder="Search users, courses, transactions..."
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                        />
                         <CommandList className="max-h-[400px] overflow-y-auto p-2">
                             {isSearching ? (
                                 <div className="py-6 text-center text-sm text-muted-foreground">
@@ -291,6 +317,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                             key={result.id}
                                             className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                             onSelect={() => handleSelect(result)}
+                                            onClick={() => handleSelect(result)}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                 {result.icon}
@@ -322,6 +349,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                         key={result.id}
                                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                                         onSelect={() => handleSelect(result)}
+                                                        onClick={() => handleSelect(result)}
                                                     >
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                             <Clock className="h-4 w-4" />
@@ -346,6 +374,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                 key={item.id}
                                                 className="flex items-center gap-3 px-3 py-2 cursor-pointer"
                                                 onSelect={() => handleSelect(item)}
+                                                onClick={() => handleSelect(item)}
                                             >
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                     {item.icon}
