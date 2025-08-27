@@ -3,15 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pagination } from '@/components/pagination';
 import { DeleteConfirmation } from '@/components/delete-confirmation';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Eye, FileText, Search, Filter, Video, File, Download, Clock, Youtube, Upload, Image, FileIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FileText, Search, Video, File, Youtube, Image, FileIcon } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -76,10 +74,8 @@ interface MaterialsProps extends PageProps {
 
 export default function Materials({ materials, groupedMaterials, chapters, courses, filters }: MaterialsProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [courseFilter, setCourseFilter] = useState(filters.course_id || 'all');
-    const [chapterFilter, setChapterFilter] = useState(filters.chapter_id || 'all');
     const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
-    const [viewMode, setViewMode] = useState<'grouped' | 'list'>('grouped');
+    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
     const [deleteDialog, setDeleteDialog] = useState<{
         isOpen: boolean;
         materialId: number | null;
@@ -89,18 +85,6 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
         materialId: null,
         materialTitle: '',
     });
-
-    // Filter chapters berdasarkan course yang dipilih
-    const filteredChapters = chapters.filter(chapter => 
-        courseFilter === 'all' || chapter.course.id.toString() === courseFilter
-    );
-
-    // Handle perubahan course filter
-    const handleCourseChange = (value: string) => {
-        setCourseFilter(value);
-        // Reset chapter filter ketika course berubah
-        setChapterFilter('all');
-    };
 
     const handleDelete = (materialId: number, materialTitle: string) => {
         setDeleteDialog({
@@ -116,31 +100,14 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
         }
     };
 
-    const handleFilter = () => {
-        const params = new URLSearchParams();
-        if (searchTerm) params.append('search', searchTerm);
-        if (courseFilter !== 'all') params.append('course_id', courseFilter);
-        if (chapterFilter !== 'all') params.append('chapter_id', chapterFilter);
-        if (typeFilter !== 'all') params.append('type', typeFilter);
-        
-        router.get(route('admin.materials.index'), Object.fromEntries(params.entries()));
-    };
-
-    const formatFileSize = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
-    const formatDuration = (minutes: number) => {
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        if (hours > 0) {
-            return `${hours}h ${mins}m`;
-        }
-        return `${mins}m`;
+    // Filter materials based on search and type
+    const filterMaterials = (materials: Material[]) => {
+        return materials.filter(material => {
+            const matchesSearch = searchTerm === '' || 
+                material.title.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesType = typeFilter === 'all' || material.type === typeFilter;
+            return matchesSearch && matchesType;
+        });
     };
 
     const getTypeIcon = (type: string) => {
@@ -208,77 +175,23 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
                 </Link>
             </div>
 
-            {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Filter className="h-5 w-5" />
-                        Filter & Pencarian
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Cari Materi</label>
-                            <div className="relative">
+            {/* Search Bar - Only show when a course is selected */}
+            {selectedCourse && (
+                <Card>
+                    <CardContent className="py-4">
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
-                                    placeholder="Cari berdasarkan judul..."
+                                    placeholder="Cari materi dalam course ini..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-10"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
                                 />
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Course</label>
-                            <Select value={courseFilter} onValueChange={handleCourseChange}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Course</SelectItem>
-                                    {courses.map((course) => (
-                                        <SelectItem key={course.id} value={course.id.toString()}>
-                                            {course.title}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Chapter</label>
-                            <Select 
-                                value={chapterFilter} 
-                                onValueChange={setChapterFilter}
-                                disabled={courseFilter === 'all'}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder={
-                                        courseFilter === 'all' 
-                                            ? "Pilih course terlebih dahulu" 
-                                            : "Pilih chapter"
-                                    } />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Chapter</SelectItem>
-                                    {filteredChapters.map((chapter) => (
-                                        <SelectItem key={chapter.id} value={chapter.id.toString()}>
-                                            {chapter.title}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Tipe Materi</label>
                             <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                <SelectTrigger>
-                                    <SelectValue />
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Filter Tipe" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Tipe</SelectItem>
@@ -289,281 +202,234 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Aksi</label>
-                            <div className="flex gap-2">
-                                <Button onClick={handleFilter} size="sm">
-                                    <Search className="h-4 w-4 mr-2" />
-                                    Filter
-                                </Button>
-                                <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'grouped' | 'list')}>
-                                    <SelectTrigger className="w-auto">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="grouped">Group View</SelectItem>
-                                        <SelectItem value="list">List View</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Materials Content */}
-            {viewMode === 'grouped' ? (
-                // Grouped View
-                <div className="space-y-6">
-                    {Object.entries(groupedMaterials).map(([courseId, courseData]) => (
-                        <Card key={courseId}>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5" />
-                                    {courseData.course.title}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {Object.entries(courseData.chapters).map(([chapterId, chapterData]) => (
-                                    <div key={chapterId} className="border rounded-lg p-4">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h4 className="font-semibold text-lg">{chapterData.chapter.title}</h4>
-                                            <Badge variant="outline">
-                                                {chapterData.materials.length} materi
-                                            </Badge>
-                                        </div>
-                                        
-                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                            {chapterData.materials.map((material) => (
-                                                <div key={material.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
-                                                            {getTypeIcon(material.type)}
-                                                            <Badge variant={getTypeBadgeVariant(material.type)} className="text-xs">
-                                                                {getTypeLabel(material.type)}
-                                                            </Badge>
-                                                        </div>
-                                                        <Badge variant="outline" className="text-xs font-mono">
-                                                            #{material.order}
-                                                        </Badge>
-                                                    </div>
-                                                    
-                                                    <h5 className="font-medium mb-2 line-clamp-2">{material.title}</h5>
-                                                    
-                                                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                                                        <span>
-                                                            {material.type === 'video_youtube' ? (
-                                                                material.youtube_url ? 'YouTube' : 'No URL'
-                                                            ) : (
-                                                                material.file_path ? 'File tersedia' : 'No file'
-                                                            )}
-                                                        </span>
-                                                        <Badge variant={material.is_preview ? 'default' : 'secondary'} className="text-xs">
-                                                            {material.is_preview ? 'Preview' : 'Full'}
-                                                        </Badge>
-                                                    </div>
-                                                    
-                                                    <div className="flex items-center gap-1">
-                                                        <Link href={route('admin.materials.show', material.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-3 w-3" />
-                                                            </Button>
-                                                        </Link>
-                                                        <Link href={route('admin.materials.edit', material.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-3 w-3" />
-                                                            </Button>
-                                                        </Link>
-                                                        <Button 
-                                                            variant="destructive" 
-                                                            size="sm"
-                                                            onClick={() => handleDelete(material.id, material.title)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                // List View
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
-                            Daftar Materi ({materials.data.length})
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Order</TableHead>
-                                    <TableHead>Judul</TableHead>
-                                    <TableHead>Course / Chapter</TableHead>
-                                    <TableHead>Tipe</TableHead>
-                                    <TableHead>File/URL</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Tanggal Dibuat</TableHead>
-                                    <TableHead>Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {materials.data.map((material) => (
-                                    <TableRow key={material.id}>
-                                        <TableCell>
-                                            <Badge variant="outline" className="font-mono">
-                                                {material.order}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">{material.title}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div>
-                                                <div className="text-sm font-medium">{material.chapter.course.title}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {material.chapter.title}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                {getTypeIcon(material.type)}
-                                                <Badge variant={getTypeBadgeVariant(material.type)}>
-                                                    {getTypeLabel(material.type)}
-                                                </Badge>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1">
-                                                {material.type === 'video_youtube' ? (
-                                                    <>
-                                                        <Youtube className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm">{material.youtube_url ? 'YouTube' : '-'}</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <File className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm">{material.file_path ? 'File Tersedia' : '-'}</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={material.is_preview ? 'default' : 'secondary'}>
-                                                {material.is_preview ? 'Preview' : 'Full'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(material.created_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                                year: 'numeric'
-                                            })}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Link href={route('admin.materials.show', material.id)}>
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Link href={route('admin.materials.edit', material.id)}>
-                                                    <Button variant="outline" size="sm">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Button 
-                                                    variant="destructive" 
-                                                    size="sm"
-                                                    onClick={() => handleDelete(material.id, material.title)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-
-                        {materials.links && materials.links.length > 0 && (
-                            <div className="mt-4">
-                                <Pagination links={materials.links} />
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
             )}
 
-            {/* Material Statistics */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Materi</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{materials.data.length}</div>
-                        <p className="text-xs text-muted-foreground">
-                            <span className="text-green-600">+12%</span> from last month
-                        </p>
-                    </CardContent>
-                </Card>
+            {/* Materials Content */}
+            {!selectedCourse ? (
+                // Course Selection View
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-xl">Pilih Course untuk Mengelola Materi</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                                Pilih course yang ingin Anda kelola materinya
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {courses.map((course) => {
+                                    const courseData = groupedMaterials[course.id];
+                                    const totalMaterials = courseData ? 
+                                        Object.values(courseData.chapters).reduce((acc, chapter) => 
+                                            acc + chapter.materials.length, 0) : 0;
+                                    const totalChapters = courseData ? 
+                                        Object.keys(courseData.chapters).length : 0;
+                                    
+                                    return (
+                                        <Card 
+                                            key={course.id} 
+                                            className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary"
+                                            onClick={() => setSelectedCourse(course.id)}
+                                        >
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-lg line-clamp-2">
+                                                    {course.title}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">Total Chapter:</span>
+                                                        <Badge variant="secondary">{totalChapters}</Badge>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">Total Materi:</span>
+                                                        <Badge variant="default">{totalMaterials}</Badge>
+                                                    </div>
+                                                    <div className="pt-3">
+                                                        <Button className="w-full" variant="outline">
+                                                            <Edit className="h-4 w-4 mr-2" />
+                                                            Kelola Materi
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
+                // Selected Course Materials View
+                <div className="space-y-6">
+                    {/* Course Header with Back Button */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => setSelectedCourse(null)}
+                                    >
+                                        ← Kembali ke Daftar Course
+                                    </Button>
+                                    <div>
+                                        <CardTitle className="text-xl">
+                                            {courses.find(c => c.id === selectedCourse)?.title}
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Kelola materi untuk course ini
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link href={route('admin.materials.create', { course_id: selectedCourse })}>
+                                    <Button>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Tambah Materi
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Video Materi</CardTitle>
-                        <Video className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {materials.data.filter(material => material.type === 'video_youtube').length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Materi video pembelajaran
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Dokumen</CardTitle>
-                        <File className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {materials.data.filter(material => material.type === 'pdf').length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Materi dokumen dan file
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Ukuran</CardTitle>
-                        <Download className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {formatFileSize(materials.data.reduce((acc, material) => acc + material.file_size, 0))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Total ukuran semua materi
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
+                    {/* Materials by Chapter */}
+                    {groupedMaterials[selectedCourse] ? (
+                        Object.entries(groupedMaterials[selectedCourse].chapters).map(([chapterId, chapterData]) => (
+                            <Card key={chapterId}>
+                                <CardHeader className="bg-muted/50">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <FileText className="h-5 w-5" />
+                                            Chapter: {chapterData.chapter.title}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline">
+                                                {chapterData.materials.length} materi
+                                            </Badge>
+                                            <Link href={route('admin.materials.create', { 
+                                                course_id: selectedCourse, 
+                                                chapter_id: chapterId 
+                                            })}>
+                                                <Button size="sm" variant="outline">
+                                                    <Plus className="h-4 w-4 mr-1" />
+                                                    Tambah
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                    {(() => {
+                                        const filteredMaterials = filterMaterials(chapterData.materials);
+                                        return filteredMaterials.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {filteredMaterials
+                                                    .sort((a, b) => a.order - b.order)
+                                                    .map((material) => (
+                                                <div key={material.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <Badge variant="outline" className="font-mono">
+                                                                    #{material.order}
+                                                                </Badge>
+                                                                <div className="flex items-center gap-2">
+                                                                    {getTypeIcon(material.type)}
+                                                                    <Badge variant={getTypeBadgeVariant(material.type)}>
+                                                                        {getTypeLabel(material.type)}
+                                                                    </Badge>
+                                                                </div>
+                                                                {material.is_preview && (
+                                                                    <Badge variant="default">Preview</Badge>
+                                                                )}
+                                                            </div>
+                                                            <h5 className="font-semibold text-base mb-2">{material.title}</h5>
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {material.type === 'video_youtube' ? (
+                                                                    <span className="flex items-center gap-1">
+                                                                        <Youtube className="h-3 w-3" />
+                                                                        {material.youtube_url ? 'Video YouTube tersedia' : 'URL tidak tersedia'}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="flex items-center gap-1">
+                                                                        <File className="h-3 w-3" />
+                                                                        {material.file_path ? 'File tersedia' : 'File tidak tersedia'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 ml-4">
+                                                            <Link href={route('admin.materials.show', material.id)}>
+                                                                <Button variant="outline" size="sm">
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </Link>
+                                                            <Link href={route('admin.materials.edit', material.id)}>
+                                                                <Button variant="outline" size="sm">
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </Link>
+                                                            <Button 
+                                                                variant="destructive" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(material.id, material.title)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                                <p>
+                                                    {searchTerm || typeFilter !== 'all' 
+                                                        ? 'Tidak ada materi yang sesuai dengan filter' 
+                                                        : 'Belum ada materi di chapter ini'}
+                                                </p>
+                                                {!searchTerm && typeFilter === 'all' && (
+                                                    <Link href={route('admin.materials.create', { 
+                                                        course_id: selectedCourse, 
+                                                        chapter_id: chapterId 
+                                                    })}>
+                                                        <Button className="mt-3" variant="outline">
+                                                            <Plus className="h-4 w-4 mr-2" />
+                                                            Tambah Materi Pertama
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card>
+                            <CardContent className="text-center py-12">
+                                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                                <h3 className="text-lg font-semibold mb-2">Belum ada materi</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    Course ini belum memiliki materi pembelajaran
+                                </p>
+                                <Link href={route('admin.materials.create', { course_id: selectedCourse })}>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Tambah Materi Pertama
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            )}
 
             <DeleteConfirmation
                 isOpen={deleteDialog.isOpen}
