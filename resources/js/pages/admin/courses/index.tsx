@@ -2,10 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Image as ImageIcon } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { DeleteConfirmation } from '@/components/delete-confirmation';
@@ -18,6 +19,8 @@ interface Course {
     price: number;
     is_pro: boolean;
     created_at: string;
+    thumbnail_path?: string;
+    thumbnail?: string;
     institution: {
         id: number;
         name: string;
@@ -136,6 +139,7 @@ export default function CourseIndex({ courses, categories, institutions, filters
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Thumbnail</TableHead>
                                     <TableHead>Judul</TableHead>
                                     <TableHead>Institusi</TableHead>
                                     <TableHead>Kategori</TableHead>
@@ -148,7 +152,24 @@ export default function CourseIndex({ courses, categories, institutions, filters
                             <TableBody>
                                 {courses.data.map((course) => (
                                     <TableRow key={course.id}>
-                                        <TableCell className="font-medium">{course.title}</TableCell>
+                                        <TableCell>
+                                            <Avatar className="h-12 w-12 rounded-lg">
+                                                <AvatarImage 
+                                                    src={course.thumbnail || (course.thumbnail_path ? `/storage/${course.thumbnail_path}` : '')} 
+                                                    alt={course.title}
+                                                    className="object-cover"
+                                                />
+                                                <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <p className="font-medium">{course.title}</p>
+                                                <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs">{course.description}</p>
+                                            </div>
+                                        </TableCell>
                                         <TableCell>{course.institution.name}</TableCell>
                                         <TableCell>{course.category.name}</TableCell>
                                         <TableCell>Rp {course.price.toLocaleString()}</TableCell>
