@@ -8,7 +8,7 @@ import { DashboardFilters } from '@/components/dashboard-filters';
 import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Users, DollarSign, Calendar, Download, Eye, Target } from 'lucide-react';
 import { useState } from 'react';
 
@@ -62,7 +62,11 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setChartPeriod('30d')}
+                    >
                         <Calendar className="mr-2 h-4 w-4" />
                         Last 30 Days
                     </Button>
@@ -202,7 +206,11 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => router.visit(route('admin.courses.show', { course: course.id }))}
+                                    >
                                         <Eye className="h-4 w-4" />
                                     </Button>
                                 </div>
