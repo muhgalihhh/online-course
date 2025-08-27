@@ -130,19 +130,29 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setIsSearching(true);
 
         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                throw new Error('CSRF token not found');
+            }
+
             // Make API call to search endpoint
             const response = await fetch(route('admin.search'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({ query }),
             });
 
             if (!response.ok) {
-                throw new Error('Search failed');
+                const errorData = await response.text();
+                console.error('Search API error:', errorData);
+                throw new Error(`Search failed: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
@@ -180,9 +190,9 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 });
             }
 
-            // Process materials
-            if (data.materials) {
-                data.materials.forEach((material: any) => {
+            // Process course materials
+            if (data.course_materials) {
+                data.course_materials.forEach((material: any) => {
                     results.push({
                         id: `material-${material.id}`,
                         title: material.title,
@@ -221,6 +231,17 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         } catch (error) {
             console.error('Search error:', error);
             setSearchResults([]);
+            
+            // Show user-friendly error message
+            if (error instanceof Error) {
+                if (error.message.includes('CSRF')) {
+                    console.error('CSRF token issue. Please refresh the page.');
+                } else if (error.message.includes('404')) {
+                    console.error('Search endpoint not found. Please check the route.');
+                } else {
+                    console.error('Search failed. Please try again.');
+                }
+            }
         } finally {
             setIsSearching(false);
         }
@@ -296,8 +317,8 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                     onClick={() => setOpen(true)}
                 >
                     <Search className="mr-2 h-4 w-4" />
-                    <span className="hidden lg:inline-flex">Search...</span>
-                    <span className="inline-flex lg:hidden">Search...</span>
+                    <span className="hidden lg:inline-flex">Cari...</span>
+                    <span className="inline-flex lg:hidden">Cari...</span>
                     <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                         <span className="text-xs">⌘</span>K
                     </kbd>
@@ -308,21 +329,22 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 <DialogContent className="max-w-2xl p-0 overflow-hidden">
                     <Command className="rounded-lg border-0" shouldFilter={false}>
                         <CommandInput 
-                            placeholder="Search users, courses, transactions..."
+                            placeholder="Cari pengguna, kursus, transaksi..."
                             value={searchQuery}
                             onValueChange={setSearchQuery}
+                            autoFocus
                         />
                         <CommandList className="max-h-[400px] overflow-y-auto p-2">
                             {isSearching ? (
                                 <div className="py-6 text-center text-sm text-muted-foreground">
-                                    Searching...
+                                    Mencari...
                                 </div>
                             ) : searchQuery && searchResults.length === 0 ? (
                                 <CommandEmpty className="py-6 text-center text-sm">
-                                    No results found for "{searchQuery}"
+                                    Tidak ada hasil untuk "{searchQuery}"
                                 </CommandEmpty>
                             ) : searchResults.length > 0 ? (
-                                <CommandGroup heading="Search Results">
+                                <CommandGroup heading="Hasil Pencarian">
                                     {searchResults.map((result) => (
                                         <CommandItem
                                             key={result.id}
@@ -353,7 +375,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                 <>
                                     {recentSearches.length > 0 && (
                                         <>
-                                            <CommandGroup heading="Recent">
+                                            <CommandGroup heading="Pencarian Terakhir">
                                                 {recentSearches.map((result) => (
                                                     <CommandItem
                                                         key={result.id}
@@ -377,7 +399,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                             <CommandSeparator />
                                         </>
                                     )}
-                                    <CommandGroup heading="Quick Access">
+                                    <CommandGroup heading="Akses Cepat">
                                         {quickAccess.map((item) => (
                                             <CommandItem
                                                 key={item.id}

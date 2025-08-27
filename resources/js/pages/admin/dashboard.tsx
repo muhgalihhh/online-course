@@ -53,7 +53,7 @@ export default function Dashboard({ stats, recentUsers, recentActivities = [], u
     const filterConfig: FilterConfig = {
         search: {
             placeholder: "Search users, courses, transactions...",
-            enabled: true,
+            enabled: false, // Disable search here to avoid duplicate with navbar search
         },
         select: {
             period: {

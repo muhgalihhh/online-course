@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Course;
-use App\Models\Material;
+use App\Models\CourseMaterial;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 
@@ -21,7 +21,7 @@ class SearchController extends Controller
         $results = [
             'users' => [],
             'courses' => [],
-            'materials' => [],
+            'course_materials' => [],
             'transactions' => []
         ];
 
@@ -56,18 +56,18 @@ class SearchController extends Controller
             ];
         });
 
-        // Search materials
-        $materials = Material::where('title', 'like', "%{$query}%")
+        // Search course materials
+        $materials = CourseMaterial::where('title', 'like', "%{$query}%")
             ->orWhere('description', 'like', "%{$query}%")
             ->limit(5)
             ->get(['id', 'title', 'description', 'type']);
         
-        $results['materials'] = $materials->map(function ($material) {
+        $results['course_materials'] = $materials->map(function ($material) {
             return [
                 'id' => $material->id,
                 'title' => $material->title,
-                'description' => \Str::limit($material->description, 100),
-                'type' => ucfirst($material->type)
+                'description' => \Str::limit($material->description ?? '', 100),
+                'type' => ucfirst($material->type ?? 'document')
             ];
         });
 
