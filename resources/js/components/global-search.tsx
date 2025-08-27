@@ -3,7 +3,10 @@ import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
+    DialogDescription,
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
     Command,
     CommandEmpty,
@@ -270,12 +273,21 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Process chapters
             if (data.chapters) {
                 data.chapters.forEach((chapter: any) => {
+                    // Build proper URL for chapter edit
+                    let chapterUrl;
+                    try {
+                        chapterUrl = route('admin.chapters.edit', { chapter: chapter.id });
+                    } catch (e) {
+                        // Fallback URL if route is not available
+                        chapterUrl = `/admin/chapters/${chapter.id}/edit`;
+                    }
+                    
                     results.push({
                         id: `chapter-${chapter.id}`,
                         title: chapter.title,
                         description: chapter.description,
                         type: 'chapter',
-                        url: route('admin.chapters.edit', { chapter: chapter.id }),
+                        url: chapterUrl,
                         icon: <BookOpenCheck className="h-4 w-4" />,
                         meta: chapter.course_title,
                     });
@@ -300,14 +312,28 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Process course materials
             if (data.course_materials) {
                 data.course_materials.forEach((material: any) => {
+                    // Build proper URL for material
+                    let materialUrl;
+                    try {
+                        materialUrl = route('admin.materials.show', { material: material.id });
+                    } catch (e) {
+                        try {
+                            // Try edit route as fallback
+                            materialUrl = route('admin.materials.edit', { material: material.id });
+                        } catch (e2) {
+                            // Final fallback
+                            materialUrl = `/admin/materials/${material.id}`;
+                        }
+                    }
+                    
                     results.push({
                         id: `material-${material.id}`,
                         title: material.title,
                         description: material.description,
                         type: 'material',
-                        url: route('admin.materials.show', { material: material.id }),
+                        url: materialUrl,
                         icon: <FileText className="h-4 w-4" />,
-                        meta: material.type,
+                        meta: `${material.type}${material.chapter_title ? ` - ${material.chapter_title}` : ''}`,
                     });
                 });
             }
@@ -315,14 +341,24 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Process reviews
             if (data.reviews) {
                 data.reviews.forEach((review: any) => {
+                    // Reviews page with potential anchor to specific review
+                    let reviewUrl;
+                    try {
+                        reviewUrl = route('admin.reviews');
+                        // Add query parameter to highlight specific review
+                        reviewUrl += `?highlight=${review.id}`;
+                    } catch (e) {
+                        reviewUrl = `/admin/reviews?highlight=${review.id}`;
+                    }
+                    
                     results.push({
                         id: `review-${review.id}`,
                         title: `Review by ${review.user_name}`,
                         description: review.comment,
                         type: 'review',
-                        url: route('admin.reviews'),
+                        url: reviewUrl,
                         icon: <Star className="h-4 w-4" />,
-                        meta: `${review.rating}/5 - ${review.course_title}`,
+                        meta: `${review.rating}/5 - ${review.course_title}${review.status ? ` (${review.status})` : ''}`,
                     });
                 });
             }
@@ -330,14 +366,31 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Process transactions
             if (data.transactions) {
                 data.transactions.forEach((transaction: any) => {
+                    // Build proper URL for transaction
+                    let transactionUrl;
+                    try {
+                        transactionUrl = route('admin.transactions.show', { transaction: transaction.id });
+                    } catch (e) {
+                        // Fallback to index with highlight
+                        try {
+                            transactionUrl = route('admin.transactions.index');
+                            transactionUrl += `?highlight=${transaction.id}`;
+                        } catch (e2) {
+                            transactionUrl = `/admin/transactions?highlight=${transaction.id}`;
+                        }
+                    }
+                    
+                    const amount = transaction.amount ? `Rp ${new Intl.NumberFormat('id-ID').format(transaction.amount)}` : '';
+                    const paymentMethod = transaction.payment_method ? ` - ${transaction.payment_method}` : '';
+                    
                     results.push({
                         id: `transaction-${transaction.id}`,
                         title: `Transaction #${transaction.id}`,
                         description: `${transaction.user_name} - ${transaction.course_title}`,
                         type: 'transaction',
-                        url: route('admin.transactions.show', { transaction: transaction.id }),
+                        url: transactionUrl,
                         icon: <ShoppingCart className="h-4 w-4" />,
-                        meta: transaction.status,
+                        meta: `${transaction.status}${amount}${paymentMethod}`,
                     });
                 });
             }
@@ -491,7 +544,13 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             )}
 
             <Dialog open={isOpen} onOpenChange={handleOpen}>
-                <DialogContent className="max-w-2xl p-0 overflow-hidden">
+                <DialogContent className="max-w-2xl p-0 overflow-hidden" aria-describedby="global-search-description">
+                    <VisuallyHidden>
+                        <DialogTitle>Pencarian Global</DialogTitle>
+                    </VisuallyHidden>
+                    <DialogDescription id="global-search-description" className="sr-only">
+                        Cari pengguna, kursus, kategori, bab, materi, ulasan, dan transaksi di seluruh sistem
+                    </DialogDescription>
                     <Command className="rounded-lg border-0" shouldFilter={false}>
                         <CommandInput 
                             placeholder="Cari pengguna, kursus, kategori, bab, materi, ulasan, transaksi..."
