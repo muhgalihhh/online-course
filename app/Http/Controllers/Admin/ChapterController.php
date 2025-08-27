@@ -150,6 +150,11 @@ class ChapterController extends Controller
             ->orderBy('order')
             ->get();
 
+        // Add the full URL for the thumbnail if it exists
+        if ($course->thumbnail_path) {
+            $course->thumbnail = asset('storage/' . $course->thumbnail_path);
+        }
+
         return Inertia::render('admin/chapters/by-course', [
             'course' => $course,
             'chapters' => $chapters,
