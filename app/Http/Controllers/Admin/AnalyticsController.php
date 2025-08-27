@@ -101,6 +101,26 @@ class AnalyticsController extends Controller
                 ->count(),
         ];
 
+        // Get top performing categories based on course enrollments
+        $topCategories = \App\Models\Category::withCount(['courses' => function ($query) use ($dateFrom, $manualDateFrom, $manualDateTo) {
+            $query->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
+                ->when($manualDateFrom, fn ($q) => $q->whereDate('created_at', '>=', $manualDateFrom))
+                ->when($manualDateTo, fn ($q) => $q->whereDate('created_at', '<=', $manualDateTo));
+        }])
+        ->orderByDesc('courses_count')
+        ->limit(4)
+        ->get(['id', 'name']);
+
+        // Calculate percentages for categories
+        $totalCategoryCount = $topCategories->sum('courses_count');
+        $categoryPerformance = $topCategories->map(function ($category) use ($totalCategoryCount) {
+            return [
+                'name' => $category->name,
+                'percentage' => $totalCategoryCount > 0 ? round(($category->courses_count / $totalCategoryCount) * 100) : 0,
+                'count' => $category->courses_count,
+            ];
+        });
+
         return Inertia::render('admin/analytics', [
             'userStats' => $userStats,
             'revenueStats' => $revenueStats,
@@ -109,6 +129,7 @@ class AnalyticsController extends Controller
                 ['name' => 'Pro', 'value' => (int) $proCourses],
                 ['name' => 'Free', 'value' => (int) $freeCourses],
             ],
+            'categoryPerformance' => $categoryPerformance,
             'totals' => $totals,
             'filters' => $request->only(['period', 'search', 'date_from', 'date_to']),
         ]);

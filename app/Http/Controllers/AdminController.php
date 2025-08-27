@@ -150,6 +150,59 @@ class AdminController extends Controller
             ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
             ->sum('amount');
 
+        // Get recent activities (real data from database)
+        $recentActivities = collect();
+        
+        // Recent users
+        $recentUsersForActivity = User::orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get(['id', 'name', 'created_at'])
+            ->map(function ($user) {
+                return [
+                    'type' => 'user_registered',
+                    'title' => "User baru: {$user->name}",
+                    'time' => $user->created_at,
+                    'icon' => 'Users',
+                ];
+            });
+        
+        // Recent courses
+        $recentCourses = Course::orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get(['id', 'title', 'created_at'])
+            ->map(function ($course) {
+                return [
+                    'type' => 'course_added',
+                    'title' => "Kursus baru: {$course->title}",
+                    'time' => $course->created_at,
+                    'icon' => 'BookOpen',
+                ];
+            });
+        
+        // Recent transactions
+        $recentTransactions = Transaction::whereIn('status', ['settlement', 'completed'])
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->with('user:id,name')
+            ->get(['id', 'user_id', 'amount', 'created_at'])
+            ->map(function ($transaction) {
+                return [
+                    'type' => 'transaction_completed',
+                    'title' => "Transaksi: Rp " . number_format($transaction->amount, 0, ',', '.'),
+                    'time' => $transaction->created_at,
+                    'icon' => 'DollarSign',
+                ];
+            });
+        
+        // Combine and sort by time
+        $recentActivities = $recentActivities
+            ->concat($recentUsersForActivity)
+            ->concat($recentCourses)
+            ->concat($recentTransactions)
+            ->sortByDesc('time')
+            ->take(5)
+            ->values();
+
         return Inertia::render('admin/dashboard', [
             'stats' => [
                 'totalUsers' => $totalUsers,
@@ -157,6 +210,7 @@ class AdminController extends Controller
                 'totalRevenue' => (int) $totalRevenue,
             ],
             'recentUsers' => $recentUsers,
+            'recentActivities' => $recentActivities,
             'userStats' => $userStats,
             'courseStats' => $courseStats,
             'revenueStats' => $revenueStats,
