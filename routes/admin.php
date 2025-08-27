@@ -57,4 +57,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Settings
     Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings');
     Route::patch('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings', [AdminSettingController::class, 'update'])->name('settings.update.post');
+    Route::delete('/settings/delete-account', [AdminSettingController::class, 'deleteAccount'])->name('settings.delete-account');
 });
