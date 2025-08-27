@@ -29,8 +29,9 @@ interface EditMaterialProps extends PageProps {
 
 export default function EditMaterial({ material, chapters }: EditMaterialProps) {
 	const { data, setData, post, processing, errors } = useForm<{ 
-		chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video_local'|'video_youtube'; file_path: File | null; youtube_url: string; is_preview: boolean; _method?: string;
+		course_id: string; chapter_id: string; title: string; order: string; type: 'pdf'|'image'|'video_local'|'video_youtube'; file_path: File | null; youtube_url: string; is_preview: boolean; _method?: string;
 	}>({
+		course_id: '',
 		chapter_id: material.chapter_id.toString(),
 		title: material.title,
 		order: material.order.toString(),
@@ -84,6 +85,12 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 		acc[courseId].chapters.push(chapter);
 		return acc;
 	}, {} as Record<number, { course: { id: number; title: string }; chapters: Chapter[] }>);
+	const courses = Object.values(courseGroups).map(({ course }) => course);
+	const effectiveCourseId = data.course_id || (() => {
+		const chapter = chapters.find(ch => ch.id.toString() === data.chapter_id);
+		return chapter ? chapter.course.id.toString() : '';
+	})();
+	const filteredChapters = effectiveCourseId ? (courseGroups[Number(effectiveCourseId)]?.chapters ?? []) : [];
 
 	return (
 		<AdminLayout
@@ -128,23 +135,32 @@ export default function EditMaterial({ material, chapters }: EditMaterialProps) 
 
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label>Chapter *</Label>
-								<Select value={data.chapter_id} onValueChange={(v) => setData('chapter_id', v)}>
+								<Label>Course *</Label>
+								<Select value={effectiveCourseId} onValueChange={(v) => { setData('course_id', v); setData('chapter_id', ''); }}>
 									<SelectTrigger>
-										<SelectValue placeholder="Pilih chapter" />
+										<SelectValue placeholder="Pilih course" />
 									</SelectTrigger>
 									<SelectContent>
-										{Object.values(courseGroups).map(({ course, chapters: courseChapters }) => (
-											<div key={course.id}>
-												<div className="px-2 py-1 text-sm font-semibold text-gray-700 bg-gray-100">
-													{course.title}
-												</div>
-												{courseChapters.map((ch) => (
-													<SelectItem key={ch.id} value={ch.id.toString()} className="pl-6">
-														{ch.title}
-													</SelectItem>
-												))}
-											</div>
+										{courses.map((course) => (
+											<SelectItem key={course.id} value={course.id.toString()}>
+												{course.title}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label>Chapter *</Label>
+								<Select value={data.chapter_id} onValueChange={(v) => setData('chapter_id', v)} disabled={!effectiveCourseId}>
+									<SelectTrigger>
+										<SelectValue placeholder={effectiveCourseId ? "Pilih chapter" : "Pilih course terlebih dahulu"} />
+									</SelectTrigger>
+									<SelectContent>
+										{filteredChapters.map((ch) => (
+											<SelectItem key={ch.id} value={ch.id.toString()}>
+												{ch.title}
+											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
