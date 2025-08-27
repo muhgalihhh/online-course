@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { Input } from '@/components/ui/input';
 import {
     Dialog,
@@ -47,6 +47,41 @@ interface GlobalSearchProps {
     onClose?: () => void;
     trigger?: React.ReactNode;
 }
+
+// Custom wrapper component to ensure proper click handling
+interface ClickableCommandItemProps {
+    children: React.ReactNode;
+    onItemClick: () => void;
+    className?: string;
+    value: string;
+}
+
+const ClickableCommandItem = forwardRef<HTMLDivElement, ClickableCommandItemProps>(
+    ({ children, onItemClick, className, value }, ref) => {
+        return (
+            <CommandItem
+                ref={ref}
+                className={className}
+                value={value}
+                onSelect={onItemClick}
+                // Use onPointerDown instead of onClick or onMouseDown for better compatibility
+                onPointerDown={(e) => {
+                    // Prevent default to avoid focus issues
+                    e.preventDefault();
+                    // Small delay to ensure the click is registered properly
+                    requestAnimationFrame(() => {
+                        onItemClick();
+                    });
+                }}
+                style={{ cursor: 'pointer' }}
+            >
+                {children}
+            </CommandItem>
+        );
+    }
+);
+
+ClickableCommandItem.displayName = 'ClickableCommandItem';
 
 export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: GlobalSearchProps) {
     const [open, setOpen] = useState(false);
@@ -301,6 +336,12 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     const handleSelect = (result: SearchResult) => {
         console.log('handleSelect called with:', result);
         
+        // Prevent multiple calls
+        if (!result || !result.url) {
+            console.error('Invalid result or URL:', result);
+            return;
+        }
+        
         // Save to recent searches
         const newRecent = [result, ...recentSearches.filter(r => r.id !== result.id)].slice(0, 5);
         setRecentSearches(newRecent);
@@ -310,28 +351,34 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setSearchQuery('');
         setSearchResults([]);
         
-        // Close dialog first for immediate feedback
-        if (controlledIsOpen !== undefined && onClose) {
-            onClose();
-        } else {
-            setOpen(false);
-        }
-        
-        // Navigate to the result with error handling
+        // Navigate first, then close dialog to ensure navigation happens
         try {
             console.log('Navigating to:', result.url);
-            router.visit(result.url, {
-                preserveState: false,
-                preserveScroll: false,
-                onError: (errors) => {
-                    console.error('Navigation error:', errors);
-                    // Fallback: try direct window navigation
-                    window.location.href = result.url;
-                },
-                onSuccess: () => {
-                    console.log('Navigation successful');
+            
+            // Use setTimeout to ensure the navigation happens after the event handling is complete
+            setTimeout(() => {
+                router.visit(result.url, {
+                    preserveState: false,
+                    preserveScroll: false,
+                    onError: (errors) => {
+                        console.error('Navigation error:', errors);
+                        // Fallback: try direct window navigation
+                        window.location.href = result.url;
+                    },
+                    onSuccess: () => {
+                        console.log('Navigation successful');
+                    }
+                });
+            }, 0);
+            
+            // Close dialog after triggering navigation
+            setTimeout(() => {
+                if (controlledIsOpen !== undefined && onClose) {
+                    onClose();
+                } else {
+                    setOpen(false);
                 }
-            });
+            }, 50);
         } catch (error) {
             console.error('Failed to navigate:', error);
             // Fallback: try direct window navigation
@@ -398,12 +445,11 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                             ) : searchResults.length > 0 ? (
                                 <CommandGroup heading="Hasil Pencarian">
                                     {searchResults.map((result) => (
-                                        <CommandItem
+                                        <ClickableCommandItem
                                             key={result.id}
                                             className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                             value={result.title}
-                                            onSelect={() => handleSelect(result)}
-                                            onClick={() => handleSelect(result)}
+                                            onItemClick={() => handleSelect(result)}
                                         >
                                             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                 {result.icon}
@@ -422,7 +468,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                     <p className="text-xs text-muted-foreground">{result.description}</p>
                                                 )}
                                             </div>
-                                        </CommandItem>
+                                        </ClickableCommandItem>
                                     ))}
                                 </CommandGroup>
                             ) : (
@@ -431,12 +477,11 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                         <>
                                             <CommandGroup heading="Pencarian Terakhir">
                                                 {recentSearches.map((result) => (
-                                                    <CommandItem
+                                                    <ClickableCommandItem
                                                         key={result.id}
                                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                                         value={result.title}
-                                                        onSelect={() => handleSelect(result)}
-                                                        onClick={() => handleSelect(result)}
+                                                        onItemClick={() => handleSelect(result)}
                                                     >
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                             <Clock className="h-4 w-4" />
@@ -449,7 +494,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                                                 </Badge>
                                                             </div>
                                                         </div>
-                                                    </CommandItem>
+                                                    </ClickableCommandItem>
                                                 ))}
                                             </CommandGroup>
                                             <CommandSeparator />
@@ -457,18 +502,17 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                                     )}
                                     <CommandGroup heading="Akses Cepat">
                                         {quickAccess.map((item) => (
-                                            <CommandItem
+                                            <ClickableCommandItem
                                                 key={item.id}
                                                 className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors data-[selected]:bg-accent data-[selected]:text-accent-foreground"
                                                 value={item.title}
-                                                onSelect={() => handleSelect(item)}
-                                                onClick={() => handleSelect(item)}
+                                                onItemClick={() => handleSelect(item)}
                                             >
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
                                                     {item.icon}
                                                 </div>
                                                 <span className="font-medium">{item.title}</span>
-                                            </CommandItem>
+                                            </ClickableCommandItem>
                                         ))}
                                     </CommandGroup>
                                 </>
