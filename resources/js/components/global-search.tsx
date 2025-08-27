@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import {
     Dialog,
@@ -28,6 +28,7 @@ import {
     Settings,
     BarChart3,
     GraduationCap,
+    Building,
     Building2,
     FolderOpen,
     Clock,
@@ -105,8 +106,8 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : open;
     const handleOpen = controlledIsOpen !== undefined ? onClose : () => setOpen(!open);
 
-    // Quick access pages
-    const quickAccess: SearchResult[] = [
+    // Quick access pages - memoized to prevent recreation
+    const quickAccess: SearchResult[] = useMemo(() => [
         {
             id: 'dashboard',
             title: 'Dashboard',
@@ -142,13 +143,45 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             url: route('admin.settings'),
             icon: <Settings className="h-4 w-4" />,
         },
-    ];
+    ], []);
+
+    // Helper function to get icon based on type
+    const getIconForType = (type: SearchResult['type']) => {
+        switch (type) {
+            case 'user':
+                return <Users className="h-4 w-4" />;
+            case 'course':
+                return <BookOpen className="h-4 w-4" />;
+            case 'transaction':
+                return <ShoppingCart className="h-4 w-4" />;
+            case 'material':
+                return <FileText className="h-4 w-4" />;
+            case 'chapter':
+                return <BookOpenCheck className="h-4 w-4" />;
+            case 'institution':
+                return <Building className="h-4 w-4" />;
+            case 'category':
+                return <FolderOpen className="h-4 w-4" />;
+            case 'review':
+                return <Star className="h-4 w-4" />;
+            case 'page':
+                return <BarChart3 className="h-4 w-4" />;
+            default:
+                return <Search className="h-4 w-4" />;
+        }
+    };
 
     // Load recent searches from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('recentSearches');
         if (saved) {
-            setRecentSearches(JSON.parse(saved));
+            const parsed = JSON.parse(saved);
+            // Restore icons for saved searches
+            const withIcons = parsed.map((item: any) => ({
+                ...item,
+                icon: getIconForType(item.type)
+            }));
+            setRecentSearches(withIcons);
         }
     }, []);
 
@@ -164,7 +197,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                     if (!controlledIsOpen) {
                         // Since this is controlled, we can't directly set it open
                         // The parent component should handle this shortcut
-                        console.log('Keyboard shortcut triggered, but this is controlled by parent');
+                        // Keyboard shortcut triggered, but this is controlled by parent
                     } else {
                         onClose();
                     }
@@ -191,7 +224,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
     };
 
     // Search function with API call
-    const performSearch = async (query: string) => {
+    const performSearch = useCallback(async (query: string) => {
         if (!query.trim()) {
             setSearchResults([]);
             return;
@@ -203,7 +236,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Get CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             if (!csrfToken) {
-                console.error('CSRF token not found');
+                // CSRF token not found
                 throw new Error('CSRF token not found');
             }
 
@@ -222,7 +255,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
 
             if (!response.ok) {
                 const errorData = await response.text();
-                console.error('Search API error:', errorData);
+                // Search API error
                 throw new Error(`Search failed: ${response.status} ${response.statusText}`);
             }
 
@@ -410,7 +443,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
 
             setSearchResults(results);
         } catch (error) {
-            console.error('Search error:', error);
+            // Search error
             // Still show Quick Access matches even if API fails
             const quickMatches = quickAccess.filter(item =>
                 item.title.toLowerCase().includes(query.toLowerCase())
@@ -420,17 +453,17 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
             // Show user-friendly error message
             if (error instanceof Error) {
                 if (error.message.includes('CSRF')) {
-                    console.error('CSRF token issue. Please refresh the page.');
+                    // CSRF token issue. Please refresh the page.
                 } else if (error.message.includes('404')) {
-                    console.error('Search endpoint not found. Please check the route.');
+                    // Search endpoint not found. Please check the route.
                 } else {
-                    console.error('Search failed. Please try again.');
+                    // Search failed. Please try again.
                 }
             }
         } finally {
             setIsSearching(false);
         }
-    };
+    }, [quickAccess]);
 
     // Debounced search
     useEffect(() => {
@@ -453,19 +486,36 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         };
     }, [searchQuery]);
 
-    const handleSelect = (result: SearchResult) => {
-        console.log('handleSelect called with:', result);
-        
+    const handleSelect = useCallback((result: SearchResult) => {
         // Prevent multiple calls
         if (!result || !result.url) {
-            console.error('Invalid result or URL:', result);
             return;
         }
         
-        // Save to recent searches
+        // Save to recent searches - create a clean version without React nodes
+        const cleanResult = {
+            id: result.id,
+            title: result.title,
+            description: result.description,
+            type: result.type,
+            url: result.url,
+            meta: result.meta
+            // Intentionally omitting icon as it contains React nodes that can't be serialized
+        };
+        
         const newRecent = [result, ...recentSearches.filter(r => r.id !== result.id)].slice(0, 5);
         setRecentSearches(newRecent);
-        localStorage.setItem('recentSearches', JSON.stringify(newRecent));
+        
+        // Store clean version in localStorage
+        const cleanRecentForStorage = newRecent.map(r => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            type: r.type,
+            url: r.url,
+            meta: r.meta
+        }));
+        localStorage.setItem('recentSearches', JSON.stringify(cleanRecentForStorage));
 
         // Clear search and close dialog immediately for better UX
         setSearchQuery('');
@@ -482,26 +532,20 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         // Small timeout to ensure dialog close animation doesn't interfere
         setTimeout(() => {
             try {
-                console.log('Navigating to:', result.url);
                 router.visit(result.url, {
                     preserveState: false,
                     preserveScroll: false,
-                    onError: (errors) => {
-                        console.error('Navigation error:', errors);
+                    onError: () => {
                         // Fallback: try direct window navigation
                         window.location.href = result.url;
-                    },
-                    onSuccess: () => {
-                        console.log('Navigation successful');
                     }
                 });
             } catch (error) {
-                console.error('Failed to navigate:', error);
                 // Fallback: try direct window navigation
                 window.location.href = result.url;
             }
         }, 100);
-    };
+    }, [controlledIsOpen, onClose, recentSearches]);
 
     const getTypeColor = (type: string) => {
         switch (type) {
