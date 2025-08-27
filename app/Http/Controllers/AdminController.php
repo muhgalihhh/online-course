@@ -78,6 +78,8 @@ class AdminController extends Controller
         // Apply time period filter for stats
         $period = $request->get('period', '30d');
         $dateFrom = null;
+        $manualDateFrom = $request->get('date_from');
+        $manualDateTo = $request->get('date_to');
         
         switch ($period) {
             case '7d':
@@ -119,6 +121,24 @@ class AdminController extends Controller
             $userStatsQuery->where('created_at', '>=', $dateFrom);
             $courseStatsQuery->where('created_at', '>=', $dateFrom);
             $revenueStatsQuery->where('created_at', '>=', $dateFrom);
+        }
+        if ($manualDateFrom) {
+            $userStatsQuery->whereDate('created_at', '>=', $manualDateFrom);
+            $courseStatsQuery->whereDate('created_at', '>=', $manualDateFrom);
+            $revenueStatsQuery->whereDate('created_at', '>=', $manualDateFrom);
+        }
+        if ($manualDateTo) {
+            $userStatsQuery->whereDate('created_at', '<=', $manualDateTo);
+            $courseStatsQuery->whereDate('created_at', '<=', $manualDateTo);
+            $revenueStatsQuery->whereDate('created_at', '<=', $manualDateTo);
+        }
+
+        // Respect userType in user stats
+        if ($request->filled('userType')) {
+            $userType = $request->get('userType');
+            if (in_array($userType, ['admin', 'user'], true)) {
+                $userStatsQuery->where('role', $userType);
+            }
         }
 
         $userStats = $userStatsQuery->get();
