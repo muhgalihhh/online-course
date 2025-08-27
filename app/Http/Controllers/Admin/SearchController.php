@@ -7,6 +7,10 @@ use App\Models\User;
 use App\Models\Course;
 use App\Models\CourseMaterial;
 use App\Models\Transaction;
+use App\Models\Category;
+use App\Models\Chapter;
+use App\Models\Institution;
+use App\Models\Review;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
@@ -22,7 +26,11 @@ class SearchController extends Controller
             'users' => [],
             'courses' => [],
             'course_materials' => [],
-            'transactions' => []
+            'transactions' => [],
+            'categories' => [],
+            'chapters' => [],
+            'institutions' => [],
+            'reviews' => []
         ];
 
         // Search users
@@ -56,6 +64,54 @@ class SearchController extends Controller
             ];
         });
 
+        // Search categories
+        $categories = Category::where('name', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->withCount('courses')
+            ->limit(5)
+            ->get(['id', 'name', 'description']);
+        
+        $results['categories'] = $categories->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'description' => \Str::limit($category->description ?? '', 100),
+                'courses_count' => $category->courses_count
+            ];
+        });
+
+        // Search chapters
+        $chapters = Chapter::where('title', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->with('course:id,title')
+            ->limit(5)
+            ->get(['id', 'title', 'description', 'course_id']);
+        
+        $results['chapters'] = $chapters->map(function ($chapter) {
+            return [
+                'id' => $chapter->id,
+                'title' => $chapter->title,
+                'description' => \Str::limit($chapter->description ?? '', 100),
+                'course_title' => $chapter->course->title ?? 'Unknown'
+            ];
+        });
+
+        // Search institutions
+        $institutions = Institution::where('name', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->orWhere('address', 'like', "%{$query}%")
+            ->limit(5)
+            ->get(['id', 'name', 'description', 'address']);
+        
+        $results['institutions'] = $institutions->map(function ($institution) {
+            return [
+                'id' => $institution->id,
+                'name' => $institution->name,
+                'description' => \Str::limit($institution->description ?? '', 100),
+                'address' => \Str::limit($institution->address ?? '', 50)
+            ];
+        });
+
         // Search course materials
         $materials = CourseMaterial::where('title', 'like', "%{$query}%")
             ->orWhere('description', 'like', "%{$query}%")
@@ -68,6 +124,28 @@ class SearchController extends Controller
                 'title' => $material->title,
                 'description' => \Str::limit($material->description ?? '', 100),
                 'type' => ucfirst($material->type ?? 'document')
+            ];
+        });
+
+        // Search reviews
+        $reviews = Review::where('comment', 'like', "%{$query}%")
+            ->orWhereHas('user', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%");
+            })
+            ->orWhereHas('course', function ($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%");
+            })
+            ->with(['user:id,name', 'course:id,title'])
+            ->limit(5)
+            ->get(['id', 'user_id', 'course_id', 'rating', 'comment']);
+        
+        $results['reviews'] = $reviews->map(function ($review) {
+            return [
+                'id' => $review->id,
+                'user_name' => $review->user->name ?? 'Unknown',
+                'course_title' => $review->course->title ?? 'Unknown',
+                'rating' => $review->rating,
+                'comment' => \Str::limit($review->comment ?? '', 100)
             ];
         });
 

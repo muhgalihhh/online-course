@@ -29,6 +29,8 @@ import {
     FolderOpen,
     Clock,
     TrendingUp,
+    Star,
+    BookOpenCheck,
     X
 } from 'lucide-react';
 
@@ -36,7 +38,7 @@ interface SearchResult {
     id: string;
     title: string;
     description?: string;
-    type: 'user' | 'course' | 'transaction' | 'material' | 'chapter' | 'institution' | 'category' | 'page';
+    type: 'user' | 'course' | 'transaction' | 'material' | 'chapter' | 'institution' | 'category' | 'review' | 'page';
     url: string;
     icon?: React.ReactNode;
     meta?: string;
@@ -58,21 +60,20 @@ interface ClickableCommandItemProps {
 
 const ClickableCommandItem = forwardRef<HTMLDivElement, ClickableCommandItemProps>(
     ({ children, onItemClick, className, value }, ref) => {
+        const handleClick = (e: React.MouseEvent | React.PointerEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onItemClick();
+        };
+
         return (
             <CommandItem
                 ref={ref}
                 className={className}
                 value={value}
                 onSelect={onItemClick}
-                // Use onPointerDown instead of onClick or onMouseDown for better compatibility
-                onPointerDown={(e) => {
-                    // Prevent default to avoid focus issues
-                    e.preventDefault();
-                    // Small delay to ensure the click is registered properly
-                    requestAnimationFrame(() => {
-                        onItemClick();
-                    });
-                }}
+                onClick={handleClick}
+                onMouseDown={(e) => e.preventDefault()} // Prevent focus loss
                 style={{ cursor: 'pointer' }}
             >
                 {children}
@@ -251,6 +252,51 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 });
             }
 
+            // Process categories
+            if (data.categories) {
+                data.categories.forEach((category: any) => {
+                    results.push({
+                        id: `category-${category.id}`,
+                        title: category.name,
+                        description: category.description,
+                        type: 'category',
+                        url: route('admin.categories.edit', { category: category.id }),
+                        icon: <FolderOpen className="h-4 w-4" />,
+                        meta: `${category.courses_count || 0} courses`,
+                    });
+                });
+            }
+
+            // Process chapters
+            if (data.chapters) {
+                data.chapters.forEach((chapter: any) => {
+                    results.push({
+                        id: `chapter-${chapter.id}`,
+                        title: chapter.title,
+                        description: chapter.description,
+                        type: 'chapter',
+                        url: route('admin.chapters.edit', { chapter: chapter.id }),
+                        icon: <BookOpenCheck className="h-4 w-4" />,
+                        meta: chapter.course_title,
+                    });
+                });
+            }
+
+            // Process institutions
+            if (data.institutions) {
+                data.institutions.forEach((institution: any) => {
+                    results.push({
+                        id: `institution-${institution.id}`,
+                        title: institution.name,
+                        description: institution.description,
+                        type: 'institution',
+                        url: route('admin.institutions.edit'),
+                        icon: <Building2 className="h-4 w-4" />,
+                        meta: institution.address,
+                    });
+                });
+            }
+
             // Process course materials
             if (data.course_materials) {
                 data.course_materials.forEach((material: any) => {
@@ -262,6 +308,21 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                         url: route('admin.materials.show', { material: material.id }),
                         icon: <FileText className="h-4 w-4" />,
                         meta: material.type,
+                    });
+                });
+            }
+
+            // Process reviews
+            if (data.reviews) {
+                data.reviews.forEach((review: any) => {
+                    results.push({
+                        id: `review-${review.id}`,
+                        title: `Review by ${review.user_name}`,
+                        description: review.comment,
+                        type: 'review',
+                        url: route('admin.reviews'),
+                        icon: <Star className="h-4 w-4" />,
+                        meta: `${review.rating}/5 - ${review.course_title}`,
                     });
                 });
             }
@@ -351,12 +412,18 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
         setSearchQuery('');
         setSearchResults([]);
         
-        // Navigate first, then close dialog to ensure navigation happens
-        try {
-            console.log('Navigating to:', result.url);
-            
-            // Use setTimeout to ensure the navigation happens after the event handling is complete
-            setTimeout(() => {
+        // Close dialog first
+        if (controlledIsOpen !== undefined && onClose) {
+            onClose();
+        } else {
+            setOpen(false);
+        }
+        
+        // Navigate using Inertia after dialog is closed
+        // Small timeout to ensure dialog close animation doesn't interfere
+        setTimeout(() => {
+            try {
+                console.log('Navigating to:', result.url);
                 router.visit(result.url, {
                     preserveState: false,
                     preserveScroll: false,
@@ -369,21 +436,12 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                         console.log('Navigation successful');
                     }
                 });
-            }, 0);
-            
-            // Close dialog after triggering navigation
-            setTimeout(() => {
-                if (controlledIsOpen !== undefined && onClose) {
-                    onClose();
-                } else {
-                    setOpen(false);
-                }
-            }, 50);
-        } catch (error) {
-            console.error('Failed to navigate:', error);
-            // Fallback: try direct window navigation
-            window.location.href = result.url;
-        }
+            } catch (error) {
+                console.error('Failed to navigate:', error);
+                // Fallback: try direct window navigation
+                window.location.href = result.url;
+            }
+        }, 100);
     };
 
     const getTypeColor = (type: string) => {
@@ -392,10 +450,18 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 return 'bg-blue-500/10 text-blue-500';
             case 'course':
                 return 'bg-green-500/10 text-green-500';
+            case 'category':
+                return 'bg-indigo-500/10 text-indigo-500';
+            case 'chapter':
+                return 'bg-teal-500/10 text-teal-500';
+            case 'institution':
+                return 'bg-pink-500/10 text-pink-500';
             case 'transaction':
                 return 'bg-purple-500/10 text-purple-500';
             case 'material':
                 return 'bg-orange-500/10 text-orange-500';
+            case 'review':
+                return 'bg-yellow-500/10 text-yellow-500';
             case 'page':
                 return 'bg-gray-500/10 text-gray-500';
             default:
@@ -428,7 +494,7 @@ export function GlobalSearch({ isOpen: controlledIsOpen, onClose, trigger }: Glo
                 <DialogContent className="max-w-2xl p-0 overflow-hidden">
                     <Command className="rounded-lg border-0" shouldFilter={false}>
                         <CommandInput 
-                            placeholder="Cari pengguna, kursus, transaksi..."
+                            placeholder="Cari pengguna, kursus, kategori, bab, materi, ulasan, transaksi..."
                             value={searchQuery}
                             onValueChange={setSearchQuery}
                             autoFocus
