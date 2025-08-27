@@ -27,6 +27,10 @@ class Course extends Model
         'is_pro' => 'boolean',
     ];
 
+    protected $appends = [
+        'thumbnail',
+    ];
+
     /**
      * Institusi yang memiliki kursus ini.
      */
@@ -114,5 +118,16 @@ class Course extends Model
     {
         $status = $this->is_pro ? 'Pro' : 'Free';
         return "{$this->title} ({$status})";
+    }
+
+    /**
+     * Get the full URL for the course thumbnail
+     */
+    public function getThumbnailAttribute()
+    {
+        if ($this->thumbnail_path) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($this->thumbnail_path);
+        }
+        return null;
     }
 }
