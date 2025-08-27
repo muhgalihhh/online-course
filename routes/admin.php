@@ -54,9 +54,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/reviews/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('reviews.update-status');
     Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
 
-    // Settings
+    // Settings (simplified - only profile and password management)
     Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings');
-    Route::patch('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
-    Route::post('/settings', [AdminSettingController::class, 'update'])->name('settings.update.post');
-    Route::delete('/settings/delete-account', [AdminSettingController::class, 'deleteAccount'])->name('settings.delete-account');
+    Route::post('/settings/profile', [AdminSettingController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password', [AdminSettingController::class, 'updatePassword'])->name('settings.password');
+    Route::delete('/settings/account', [AdminSettingController::class, 'deleteAccount'])->name('settings.account');
 });
