@@ -5,14 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/stat-card';
 import { ActivityItem } from '@/components/activity-item';
-import { ChartCard, LineChartComponent, BarChartComponent, PieChartComponent } from '@/components/ui/charts';
+import { ChartCard, LineChartComponent, BarChartComponent } from '@/components/ui/charts';
 import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
-import { StatsSummary } from '@/components/stats-summary';
 import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { BookOpen, Users, TrendingUp, DollarSign, ArrowRight, Calendar, Mail, BarChart3, Crown, Download, UserCheck, UserX, Building2, RefreshCw, Bell, Eye, Plus, CreditCard, MessageSquare, Layers, FileText } from 'lucide-react';
+import { BookOpen, Users, DollarSign, ArrowRight, Calendar, Mail, Download, RefreshCw, Bell, CreditCard, MessageSquare, Layers, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useFormToast } from '@/hooks/use-form-toast';
 
@@ -26,15 +25,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Stats {
     totalUsers: number;
     totalCourses: number;
+    totalRevenue?: number;
 }
 
 interface DashboardProps extends PageProps {
     stats: Stats;
     recentUsers: User[];
+    userStats: { year: number; month: number; user_count?: number; users?: number }[];
+    courseStats: { year: number; month: number; course_count?: number }[];
+    revenueStats: { year: number; month: number; revenue?: number; transactions_count?: number }[];
     filters?: Record<string, any>;
 }
 
-export default function Dashboard({ stats, recentUsers, filters = {} }: DashboardProps) {
+export default function Dashboard({ stats, recentUsers, userStats = [], courseStats = [], revenueStats = [], filters = {} }: DashboardProps) {
     const [chartPeriod, setChartPeriod] = useState('30d');
     const { showSuccess, showError, showWarning, showInfo } = useFormToast();
 
@@ -56,22 +59,11 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                 ],
                 placeholder: "Select time period"
             },
-            metric: {
-                label: "Metric Type",
-                options: [
-                    { value: "users", label: "Users" },
-                    { value: "courses", label: "Courses" },
-                    { value: "revenue", label: "Revenue" },
-                    { value: "transactions", label: "Transactions" },
-                ],
-                placeholder: "Select metric"
-            },
             userType: {
                 label: "User Type",
                 options: [
-                    { value: "regular", label: "Regular Users" },
-                    { value: "premium", label: "Premium Users" },
-                    { value: "enterprise", label: "Enterprise Users" },
+                    { value: "user", label: "Users" },
+                    { value: "admin", label: "Admins" },
                 ],
                 placeholder: "Select user type"
             }
@@ -85,8 +77,6 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
             options: [
                 { value: "created_at", label: "Date Created" },
                 { value: "updated_at", label: "Last Updated" },
-                { value: "user_count", label: "User Count" },
-                { value: "revenue", label: "Revenue" },
             ],
             defaultSort: "created_at",
             defaultOrder: "desc"
@@ -109,105 +99,40 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
         }, 1500);
     };
 
-    // Data untuk chart pendaftaran
-    const registrationData = [
-        { month: 'Jan', regular: 45, premium: 12 },
-        { month: 'Feb', regular: 52, premium: 18 },
-        { month: 'Mar', regular: 38, premium: 15 },
-        { month: 'Apr', regular: 67, premium: 25 },
-        { month: 'May', regular: 73, premium: 32 },
-        { month: 'Jun', regular: 89, premium: 41 },
-    ];
+    // Helper: format month label
+    const monthLabel = (y: number, m: number) => {
+        const date = new Date(y, m - 1, 1);
+        return date.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+    };
 
-    // Data untuk chart bulanan
-    const monthlyData = [
-        { month: 'Jan', pendaftar: 57 },
-        { month: 'Feb', pendaftar: 70 },
-        { month: 'Mar', pendaftar: 53 },
-        { month: 'Apr', pendaftar: 92 },
-        { month: 'May', pendaftar: 105 },
-        { month: 'Jun', pendaftar: 130 },
-    ];
+    // Merge stats into overview data
+    const overviewMap: Record<string, { name: string; users: number; courses: number; revenue: number }> = {};
+    userStats.forEach((r) => {
+        const key = `${r.year}-${r.month}`;
+        overviewMap[key] = overviewMap[key] || { name: monthLabel(r.year, r.month), users: 0, courses: 0, revenue: 0 };
+        overviewMap[key].users = (r.user_count ?? (r as any).users) || 0;
+    });
+    courseStats.forEach((r) => {
+        const key = `${r.year}-${r.month}`;
+        overviewMap[key] = overviewMap[key] || { name: monthLabel(r.year, r.month), users: 0, courses: 0, revenue: 0 };
+        overviewMap[key].courses = r.course_count || 0;
+    });
+    revenueStats.forEach((r) => {
+        const key = `${r.year}-${r.month}`;
+        overviewMap[key] = overviewMap[key] || { name: monthLabel(r.year, r.month), users: 0, courses: 0, revenue: 0 };
+        overviewMap[key].revenue = (r.revenue || 0);
+    });
+    const overviewData = Object.values(overviewMap);
 
-    // Data untuk pie chart tipe user
-    const userTypeData = [
-        { name: 'Regular', value: 1250 },
-        { name: 'Premium', value: 320 },
-        { name: 'Enterprise', value: 85 },
-    ];
-
-    // Data untuk overview chart
-    const overviewData = [
-        { name: 'Jan', users: 1200, courses: 45, revenue: 1800000 },
-        { name: 'Feb', users: 1250, courses: 48, revenue: 1900000 },
-        { name: 'Mar', users: 1300, courses: 52, revenue: 2100000 },
-        { name: 'Apr', users: 1280, courses: 50, revenue: 2000000 },
-        { name: 'May', users: 1350, courses: 55, revenue: 2200000 },
-        { name: 'Jun', users: 1400, courses: 58, revenue: 2300000 },
-        { name: 'Jul', users: 1450, courses: 62, revenue: 2400000 },
-        { name: 'Aug', users: 1500, courses: 65, revenue: 2500000 },
-    ];
-
-    // Data untuk statistik detail
-    const detailedStats = [
-        {
-            label: 'Pendaftar Baru',
-            value: 89,
-            change: '+12%',
-            isPositive: true,
-            icon: UserCheck,
-            color: '#10b981'
-        },
-        {
-            label: 'User Aktif',
-            value: 1247,
-            change: '+8%',
-            isPositive: true,
-            icon: Users,
-            color: '#3b82f6'
-        },
-        {
-            label: 'User Non-Aktif',
-            value: 23,
-            change: '-3%',
-            isPositive: false,
-            icon: UserX,
-            color: '#ef4444'
-        },
-        {
-            label: 'Conversion Rate',
-            value: '15.2%',
-            change: '+2.1%',
-            isPositive: true,
-            icon: TrendingUp,
-            color: '#f59e0b'
-        }
-    ];
-
-    // Data untuk mini charts
-    const userTrendData = [
-        { value: 1200 }, { value: 1250 }, { value: 1300 }, { value: 1280 }, 
-        { value: 1350 }, { value: 1400 }, { value: 1450 }, { value: 1500 }
-    ];
-    
-    const courseTrendData = [
-        { value: 45 }, { value: 48 }, { value: 52 }, { value: 50 }, 
-        { value: 55 }, { value: 58 }, { value: 62 }, { value: 65 }
-    ];
-    
-    const revenueTrendData = [
-        { value: 1800000 }, { value: 1900000 }, { value: 2100000 }, { value: 2000000 }, 
-        { value: 2200000 }, { value: 2300000 }, { value: 2400000 }, { value: 2500000 }
-    ];
-    
-    const growthTrendData = [
-        { value: 12 }, { value: 13 }, { value: 14 }, { value: 13.5 }, 
-        { value: 15 }, { value: 15.5 }, { value: 16 }, { value: 15.2 }
-    ];
+    // Helper for Rupiah formatting
+    const formatRupiah = (value: number) => {
+        return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+    };
 
     const handleExportData = () => {
-        // Implement export functionality
-        console.log('Exporting dashboard data...');
+        // Download CSV with current filters
+        // @ts-ignore
+        window.location.href = route('admin.dashboard.export', filters || {});
     };
 
     return (
@@ -252,8 +177,7 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                     value={stats.totalUsers}
                     description="dari bulan lalu"
                     icon={Users}
-                    trend={{ value: "+12%", isPositive: true }}
-                    chartData={userTrendData}
+                    trend={undefined}
                 />
                 
                 <StatCard
@@ -261,26 +185,15 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                     value={stats.totalCourses}
                     description="dari bulan lalu"
                     icon={BookOpen}
-                    trend={{ value: "+8%", isPositive: true }}
-                    chartData={courseTrendData}
+                    trend={undefined}
                 />
 
                 <StatCard
                     title="Pendapatan"
-                    value="Rp 2.4M"
+                    value={formatRupiah(stats.totalRevenue || 0)}
                     description="dari bulan lalu"
                     icon={DollarSign}
-                    trend={{ value: "+23%", isPositive: true }}
-                    chartData={revenueTrendData}
-                />
-
-                <StatCard
-                    title="Pertumbuhan"
-                    value="+15.2%"
-                    description="dari bulan lalu"
-                    icon={TrendingUp}
-                    trend={{ value: "+2.1%", isPositive: true }}
-                    chartData={growthTrendData}
+                    trend={undefined}
                 />
             </div>
 
@@ -377,10 +290,10 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                 </Card>
             </div>
 
-            {/* Overview Chart */}
+            {/* Overview Chart (Users, Courses, Revenue) */}
             <OverviewChart
                 title="Overview Platform"
-                description="Perkembangan users, courses, dan revenue dalam 8 bulan terakhir"
+                description="Perkembangan users, courses, dan revenue berdasarkan bulan"
                 data={overviewData}
                 categories={["users", "courses", "revenue"]}
                 colors={["#3b82f6", "#10b981", "#f59e0b"]}
@@ -394,58 +307,49 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
 
             {/* Charts Section */}
             <div className="grid gap-6 lg:grid-cols-2">
-                {/* User Registration Trend */}
+                {/* User Growth per Month */}
                 <ChartCard
-                    title="Trend Pendaftaran"
-                    description="Perbandingan pendaftar regular vs premium"
-                    trend={{
-                        value: "+18%",
-                        isPositive: true,
-                        label: "vs bulan lalu"
-                    }}
+                    title="Pertumbuhan Pengguna"
+                    description="Jumlah pengguna per bulan"
                 >
                     <LineChartComponent
-                        data={registrationData}
+                        data={userStats.map(r => ({ month: monthLabel(r.year, r.month), users: (r.user_count ?? (r as any).users) || 0 }))}
                         index="month"
-                        categories={["regular", "premium"]}
-                        colors={["#3b82f6", "#10b981"]}
+                        categories={["users"]}
+                        colors={["#3b82f6"]}
                     />
                 </ChartCard>
 
-                {/* User Types Distribution */}
+                {/* Course Created per Month */}
                 <ChartCard
-                    title="Distribusi Tipe User"
-                    description="Persentase berdasarkan tipe user"
-                    trend={{
-                        value: "+5%",
-                        isPositive: true,
-                        label: "Premium growth"
-                    }}
+                    title="Kursus Baru per Bulan"
+                    description="Jumlah kursus dibuat per bulan"
                 >
-                    <PieChartComponent data={userTypeData} />
+                    <BarChartComponent
+                        data={courseStats.map(r => ({ month: monthLabel(r.year, r.month), courses: r.course_count || 0 }))}
+                        index="month"
+                        categories={["courses"]}
+                        colors={["#10b981"]}
+                    />
                 </ChartCard>
             </div>
 
-            {/* Monthly Registration Stats */}
+            {/* Revenue per Month */}
             <ChartCard
-                title="Pendaftaran Bulanan"
-                description="Total pendaftar per bulan"
+                title="Pendapatan Bulanan"
+                description="Total pendapatan per bulan"
             >
                 <BarChartComponent
-                    data={monthlyData}
+                    data={revenueStats.map(r => ({ month: monthLabel(r.year, r.month), revenue: r.revenue || 0 }))}
                     index="month"
-                    categories={["pendaftar"]}
-                    colors={["#3b82f6"]}
+                    categories={["revenue"]}
+                    colors={["#f59e0b"]}
+                    valueFormatter={(value) => formatRupiah(value)}
                 />
             </ChartCard>
 
-            {/* Detailed Statistics and Recent Activity */}
+            {/* Recent Activity (sample UI) and Recent Users */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <StatsSummary
-                    title="Statistik Detail User"
-                    stats={detailedStats}
-                />
-                
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg">Aktivitas Terbaru</CardTitle>
@@ -478,7 +382,7 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                         <ActivityItem
                             title="Laporan bulanan selesai"
                             time="1 hari yang lalu"
-                            icon={TrendingUp}
+                            icon={BookOpen}
                             iconBgColor="bg-purple-100"
                             iconColor="text-purple-600"
                         />
@@ -531,7 +435,7 @@ export default function Dashboard({ stats, recentUsers, filters = {} }: Dashboar
                 </CardContent>
             </Card>
 
-            {/* Demo Toast Notifications */}
+            {/* Demo Toast Notifications (UI-only) */}
             <Card>
                 <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Demo Toast Notifications</CardTitle>

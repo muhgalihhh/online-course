@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 // Routes untuk Admin
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/export', [AdminController::class, 'export'])->name('dashboard.export');
 
     // User Management
     Route::resource('users', AdminUserController::class);
@@ -46,6 +47,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+    Route::get('/analytics/export', [AdminAnalyticsController::class, 'export'])->name('analytics.export');
 
     // Reviews
     Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews');
