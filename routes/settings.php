@@ -1,24 +1,28 @@
 <?php
 
-use App\Http\Controllers\Settings\PasswordController;
-use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
-    Route::redirect('settings', '/settings/profile');
-
-    Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
-
-    Route::put('settings/password', [PasswordController::class, 'update'])
-        ->middleware('throttle:6,1')
-        ->name('password.update');
-
+    // Redirect old settings routes to admin settings for admin users
+    Route::redirect('settings', '/admin/settings')->middleware('role:admin');
+    Route::redirect('settings/profile', '/admin/settings')->middleware('role:admin');
+    Route::redirect('settings/password', '/admin/settings')->middleware('role:admin');
+    Route::redirect('settings/appearance', '/admin/settings')->middleware('role:admin');
+    
+    // Keep the old routes for non-admin users (will show 403 if they try to access)
+    Route::get('settings', function () {
+        return redirect('/dashboard');
+    })->name('profile.edit');
+    
+    Route::get('settings/profile', function () {
+        return redirect('/dashboard');
+    })->name('profile.update');
+    
+    Route::get('settings/password', function () {
+        return redirect('/dashboard');
+    })->name('password.edit');
+    
     Route::get('settings/appearance', function () {
-        return Inertia::render('settings/appearance');
+        return redirect('/dashboard');
     })->name('appearance');
 });
