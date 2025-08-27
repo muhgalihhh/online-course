@@ -10,7 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GlobalSearch } from '@/components/global-search';
+import { GlobalSearch } from '@/components/admin/global-search';
 import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
