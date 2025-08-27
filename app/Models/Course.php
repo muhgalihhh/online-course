@@ -74,4 +74,29 @@ class Course extends Model
     {
         return $this->hasMany(CourseReview::class);
     }
+
+    /**
+     * Alias untuk courseReviews untuk konsistensi
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+
+    /**
+     * Get formatted price accessor
+     */
+    public function getFormattedPriceAttribute()
+    {
+        return 'Rp ' . number_format($this->price, 0, ',', '.');
+    }
+
+    /**
+     * Get search display name
+     */
+    public function getSearchDisplayAttribute()
+    {
+        $status = $this->is_pro ? 'Pro' : 'Free';
+        return "{$this->title} ({$status})";
+    }
 }
