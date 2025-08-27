@@ -16,7 +16,7 @@ import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { BarChart3, Bell, HelpCircle, LogOut, Settings, Shield, User, Menu, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AdminHeaderProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -35,6 +35,24 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
     };
 
     const handleToggleSidebar = onToggleSidebar ?? toggleSidebar;
+
+    // Global keyboard shortcut for mobile search (Cmd/Ctrl + K)
+    useEffect(() => {
+        const down = (e: KeyboardEvent) => {
+            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+                // Check if we're on mobile and the desktop search is not visible
+                const isDesktopSearchVisible = window.innerWidth >= 640; // sm breakpoint
+                
+                if (!isDesktopSearchVisible) {
+                    e.preventDefault();
+                    setSearchOpen(true);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', down);
+        return () => document.removeEventListener('keydown', down);
+    }, []);
 
     return (
         <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
