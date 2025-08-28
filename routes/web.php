@@ -43,9 +43,20 @@ if (app()->environment('local')) {
     Route::get('/test-503', function () {
         abort(503);
     });
+    
+    Route::get('/test-419', function () {
+        abort(419);
+    });
 }
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/settings.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/user.php';
+
+// Fallback route untuk menangani 404 - harus di paling bawah
+Route::fallback(function () {
+    return Inertia::render('errors/404', [
+        'status' => 404
+    ]);
+});
