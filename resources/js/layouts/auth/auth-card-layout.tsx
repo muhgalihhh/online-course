@@ -1,6 +1,6 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toaster';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
@@ -26,17 +26,13 @@ export default function AuthCardLayout({
 
                 <Card>
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl text-center">{title}</CardTitle>
-                        {description && (
-                            <CardDescription className="text-center">
-                                {description}
-                            </CardDescription>
-                        )}
+                        <CardTitle className="text-center text-2xl">{title}</CardTitle>
+                        {description && <CardDescription className="text-center">{description}</CardDescription>}
                     </CardHeader>
                     <CardContent>{children}</CardContent>
                 </Card>
             </div>
-            <Toaster position="top-center" />
+            <Toaster />
         </div>
     );
 }

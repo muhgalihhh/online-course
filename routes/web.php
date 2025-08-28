@@ -6,7 +6,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     // Fetch institution data for contact info
     $institution = \App\Models\Institution::first();
-    
+
     // Fetch top courses for the welcome page
     $topCourses = \App\Models\Course::with(['category', 'institution', 'reviews'])
         ->where('status', 'published')
@@ -15,7 +15,7 @@ Route::get('/', function () {
         ->orderBy('enrollments_count', 'desc')
         ->limit(3)
         ->get();
-    
+
     // Add computed properties
     $topCourses->each(function ($course) {
         $course->average_rating = $course->reviews_avg_rating ?? 0;
@@ -66,23 +66,23 @@ if (app()->environment('local')) {
     Route::get('/test-404', function () {
         abort(404);
     });
-    
+
     Route::get('/test-500', function () {
         abort(500);
     });
-    
+
     Route::get('/test-403', function () {
         abort(403);
     });
-    
+
     Route::get('/test-503', function () {
         abort(503);
     });
-    
+
     Route::get('/test-419', function () {
         abort(419);
     });
-    
+
     // Include test redirect routes
     require __DIR__ . '/test-redirect.php';
 }
@@ -98,10 +98,10 @@ Route::any('/{any}', function () {
     // Check if user is authenticated and trying to access admin/user routes
     $path = request()->path();
     $segments = explode('/', trim($path, '/'));
-    
+
     if (auth()->check() && count($segments) > 0) {
         $prefix = $segments[0];
-        
+
         // If user is trying to access admin routes but doesn't have permission
         if ($prefix === 'admin' && !auth()->user()->isAdmin()) {
             return Inertia::render('errors/403', [
@@ -109,13 +109,13 @@ Route::any('/{any}', function () {
                 'message' => 'You do not have permission to access this area.'
             ]);
         }
-        
+
         // If admin is trying to access user routes
         if ($prefix === 'user' && auth()->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
     }
-    
+
     // Return 404 for all other cases
     return Inertia::render('errors/404', [
         'status' => 404,

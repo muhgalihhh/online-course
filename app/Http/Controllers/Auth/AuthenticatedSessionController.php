@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
 
         // Check if there's an intended URL
         $intended = session()->pull('url.intended');
-        
+
         if ($intended) {
             return redirect($intended);
         }
