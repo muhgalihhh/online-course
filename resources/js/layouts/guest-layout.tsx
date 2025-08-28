@@ -7,9 +7,11 @@ import {
     Menu,
     Search,
     X,
+    User,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface GuestLayoutProps {
     children: React.ReactNode;
@@ -17,6 +19,7 @@ interface GuestLayoutProps {
 
 const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { user, isAuthenticated } = useAuth();
 
     const navigationItems = [
         { name: 'Beranda', href: '/', active: true },
@@ -64,12 +67,21 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                             </Button>
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
-                            <Button variant="outline" size="sm">
-                                Daftar
-                            </Button>
-                            <Button size="sm">
-                                <Link href="/login">Masuk</Link>
-                            </Button>
+                            {isAuthenticated ? (
+                                <Button size="sm" className="gap-2">
+                                    <User className="h-4 w-4" />
+                                    <Link href="/dashboard">Masuk</Link>
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button variant="outline" size="sm">
+                                        <Link href="/register">Daftar</Link>
+                                    </Button>
+                                    <Button size="sm">
+                                        <Link href="/login">Masuk</Link>
+                                    </Button>
+                                </>
+                            )}
                         </div>
 
                         {/* Mobile menu button */}
@@ -104,14 +116,21 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                         <Search className="mr-2 h-4 w-4" />
                                         Cari Kursus
                                     </Button>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" className="flex-1">
-                                            Daftar
+                                    {isAuthenticated ? (
+                                        <Button size="sm" className="w-full justify-center gap-2">
+                                            <User className="h-4 w-4" />
+                                            <Link href="/dashboard">Masuk</Link>
                                         </Button>
-                                        <Button size="sm" className="flex-1">
-                                            <Link href="/login">Masuk</Link>
-                                        </Button>
-                                    </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" className="flex-1">
+                                                <Link href="/register">Daftar</Link>
+                                            </Button>
+                                            <Button size="sm" className="flex-1">
+                                                <Link href="/login">Masuk</Link>
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </nav>
                         </div>

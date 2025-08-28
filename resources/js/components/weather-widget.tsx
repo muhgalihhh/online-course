@@ -12,9 +12,13 @@ import {
     Thermometer,
     Droplets,
     Eye,
-    Clock
+    Clock,
+    CloudSnow,
+    CloudDrizzle,
+    Loader2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface WeatherData {
     location: string;
@@ -25,6 +29,7 @@ interface WeatherData {
     visibility: number;
     feelsLike: number;
     icon: React.ReactNode;
+    description: string;
 }
 
 const WeatherWidget = () => {
