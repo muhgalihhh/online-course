@@ -19,8 +19,25 @@ import {
     Linkedin
 } from 'lucide-react';
 import { useState } from 'react';
+import { usePage } from '@inertiajs/react';
+
+interface Institution {
+    id: number;
+    name: string;
+    description?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    website?: string;
+    photo_path?: string;
+}
+
+interface PageProps {
+    institution?: Institution;
+}
 
 export default function Kontak() {
+    const { institution } = usePage<PageProps>().props;
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -39,17 +56,17 @@ export default function Kontak() {
         {
             icon: <MapPin className="h-5 w-5" />,
             title: "Alamat",
-            content: "Jl. Brawijaya No. 123, Pare, Kediri, Jawa Timur 64212"
+            content: institution?.address || "Pare, Kediri, Jawa Timur"
         },
         {
             icon: <Phone className="h-5 w-5" />,
             title: "Telepon",
-            content: "+62 812-3456-7890"
+            content: institution?.phone || "Belum tersedia"
         },
         {
             icon: <Mail className="h-5 w-5" />,
             title: "Email",
-            content: "info@pareeduhub.com"
+            content: institution?.email || "info@pareeduhub.com"
         },
         {
             icon: <Clock className="h-5 w-5" />,
@@ -59,7 +76,7 @@ export default function Kontak() {
     ];
 
     const socialMedia = [
-        { icon: <Facebook className="h-5 w-5" />, name: "Facebook", url: "#" },
+        { icon: <Facebook className="h-5 w-5" />, name: "Facebook", url: institution?.website || "#" },
         { icon: <Twitter className="h-5 w-5" />, name: "Twitter", url: "#" },
         { icon: <Instagram className="h-5 w-5" />, name: "Instagram", url: "#" },
         { icon: <Youtube className="h-5 w-5" />, name: "Youtube", url: "#" },
@@ -217,7 +234,7 @@ export default function Kontak() {
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold mb-4">Lokasi Kami</h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Kunjungi kantor kami di Pare, Kediri untuk konsultasi langsung
+                            {institution?.address ? `Kunjungi kantor kami di ${institution.address} untuk konsultasi langsung` : 'Kunjungi kantor kami untuk konsultasi langsung'}
                         </p>
                     </div>
                     <Card className="border-0 shadow-lg overflow-hidden">
