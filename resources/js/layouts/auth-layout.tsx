@@ -1,9 +1,21 @@
-import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
+import AuthCardLayout from '@/layouts/auth/auth-card-layout';
 
-export default function AuthLayout({ children, title, description, ...props }: { children: React.ReactNode; title: string; description: string }) {
+export default function AuthLayout({ 
+    children, 
+    title, 
+    description, 
+    variant = 'card',
+    ...props 
+}: { 
+    children: React.ReactNode; 
+    title: string; 
+    description?: string;
+    variant?: 'simple' | 'card' | 'split';
+}) {
+    // Default to card layout for better shadcn/ui consistency
     return (
-        <AuthLayoutTemplate title={title} description={description} {...props}>
+        <AuthCardLayout title={title} description={description} {...props}>
             {children}
-        </AuthLayoutTemplate>
+        </AuthCardLayout>
     );
 }

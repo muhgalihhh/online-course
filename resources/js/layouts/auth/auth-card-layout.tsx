@@ -13,23 +13,27 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-            <div className="flex w-full max-w-md flex-col gap-6">
-                <Link href={route('home')} className="flex items-center gap-2 self-center font-medium">
-                    <div className="flex h-9 w-9 items-center justify-center">
-                        <AppLogoIcon className="size-9 fill-current text-black dark:text-white" />
-                    </div>
-                </Link>
-
-                <div className="flex flex-col gap-6">
-                    <Card className="rounded-xl">
-                        <CardHeader className="px-10 pt-8 pb-0 text-center">
-                            <CardTitle className="text-xl">{title}</CardTitle>
-                            <CardDescription>{description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-10 py-8">{children}</CardContent>
-                    </Card>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 md:p-10">
+            <div className="w-full max-w-md space-y-6">
+                <div className="flex flex-col items-center space-y-2">
+                    <Link href={route('home')} className="flex items-center space-x-2">
+                        <AppLogoIcon className="h-8 w-8" />
+                        <span className="text-2xl font-semibold">Pare EduHub</span>
+                    </Link>
+                    <p className="text-sm text-muted-foreground">Platform Kursus Online</p>
                 </div>
+
+                <Card>
+                    <CardHeader className="space-y-1">
+                        <CardTitle className="text-2xl text-center">{title}</CardTitle>
+                        {description && (
+                            <CardDescription className="text-center">
+                                {description}
+                            </CardDescription>
+                        )}
+                    </CardHeader>
+                    <CardContent>{children}</CardContent>
+                </Card>
             </div>
         </div>
     );
