@@ -35,12 +35,19 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        if ($user->isAdmin()) {
-
-            return redirect(route('admin.dashboard'));
+        // Check if there's an intended URL
+        $intended = session()->pull('url.intended');
+        
+        if ($intended) {
+            return redirect($intended);
         }
 
-        return redirect(route('user.dashboard'));
+        // Otherwise, redirect based on role
+        if ($user->isAdmin()) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return redirect()->intended(route('user.dashboard'));
     }
 
     /**
