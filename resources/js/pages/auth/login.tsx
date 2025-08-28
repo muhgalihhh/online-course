@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface LoginProps {
     status?: string;
@@ -19,7 +21,17 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             <Head title="Masuk" />
 
             <Form method="post" action={route('login')} resetOnSuccess={['password']} className="flex flex-col gap-6">
-                {({ processing, errors }) => (
+                {({ processing, errors }) => {
+                    // Show toast notification if there's an authentication error
+                    useEffect(() => {
+                        if (errors.email) {
+                            toast.error(errors.email, {
+                                description: 'Silakan periksa kembali email dan password Anda.',
+                            });
+                        }
+                    }, [errors.email]);
+
+                    return (
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
@@ -76,7 +88,8 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             </TextLink>
                         </div>
                     </>
-                )}
+                    );
+                }}
             </Form>
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
