@@ -10,52 +10,31 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
-        <div className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-6 md:p-10">
-            {/* Background decorative elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 blur-3xl"></div>
-                <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 blur-3xl"></div>
-            </div>
-
-            <div className="relative w-full max-w-md">
-                <div className="rounded-2xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-xl dark:border-slate-800/50 dark:bg-slate-900/80 dark:shadow-slate-900/50">
-                    <div className="flex flex-col gap-8">
-                        {/* Logo and branding section */}
-                        <div className="flex flex-col items-center gap-6">
-                            <Link href={route('home')} className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105">
-                                <div className="relative">
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 blur-xl transition-all duration-300 group-hover:from-primary/30 group-hover:to-primary/20"></div>
-                                    <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-slate-50 shadow-lg ring-1 ring-slate-200/50 transition-all duration-300 group-hover:shadow-xl dark:from-slate-800 dark:to-slate-700 dark:ring-slate-700/50">
-                                        <AppLogoIcon className="h-16 w-16 transition-transform duration-300 group-hover:scale-110" />
-                                    </div>
-                                </div>
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                                        Pare EduHub
-                                    </h2>
-                                    <p className="text-sm text-muted-foreground">Platform Kursus Online</p>
-                                </div>
-                                <span className="sr-only">{title}</span>
-                            </Link>
-
-                            {/* Title and description */}
-                            <div className="space-y-3 text-center">
-                                <h1 className="bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-slate-300">
-                                    {title}
-                                </h1>
-                                {description && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{description}</p>}
-                            </div>
-                        </div>
-
-                        {/* Content section */}
-                        <div className="space-y-4">{children}</div>
-                    </div>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 md:p-10">
+            <div className="w-full max-w-md space-y-8">
+                {/* Logo and branding section */}
+                <div className="flex flex-col items-center space-y-2">
+                    <Link href={route('home')} className="flex items-center space-x-2">
+                        <AppLogoIcon className="h-8 w-8" />
+                        <span className="text-2xl font-semibold">Pare EduHub</span>
+                    </Link>
+                    <p className="text-sm text-muted-foreground">Platform Kursus Online</p>
                 </div>
 
-                {/* Footer decoration */}
-                <div className="mt-8 text-center">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Secure • Reliable • Fast</p>
+                {/* Title and description */}
+                <div className="space-y-2 text-center">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        {title}
+                    </h1>
+                    {description && (
+                        <p className="text-sm text-muted-foreground">
+                            {description}
+                        </p>
+                    )}
                 </div>
+
+                {/* Content section */}
+                <div>{children}</div>
             </div>
         </div>
     );
