@@ -28,11 +28,11 @@ export default function AdminSidebarLayout({ children, header }: AdminSidebarLay
         <>
             <Head title="Admin Dashboard" />
             <div
-                className={`grid min-h-screen w-full transition-[grid-template-columns] duration-300 ease-in-out ${isSidebarExpanded ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[60px_1fr]'}`}
+                className={`grid h-screen w-full overflow-hidden transition-[grid-template-columns] duration-300 ease-in-out ${isSidebarExpanded ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[60px_1fr]'}`}
             >
-                {/* Sidebar untuk Desktop */}
-                <div className="hidden border-r bg-muted/40 md:block">
-                    <div className="flex h-full max-h-screen flex-col gap-2">
+                {/* Sidebar untuk Desktop - Fixed */}
+                <div className="hidden border-r bg-muted/40 md:block h-screen sticky top-0">
+                    <div className="flex h-full flex-col gap-2">
                         <div className="flex h-14 items-center justify-between border-b px-4 lg:h-[60px] lg:px-6">
                             <a href={route('admin.dashboard')} className="flex items-center gap-2 font-semibold">
                                 <Package2 className="h-6 w-6" />
@@ -43,20 +43,24 @@ export default function AdminSidebarLayout({ children, header }: AdminSidebarLay
                                 </span>
                             </a>
                         </div>
-                        <div className="flex-1 overflow-auto py-2">
+                        <div className="flex-1 overflow-y-auto py-2">
                             <AdminSidebar isExpanded={isSidebarExpanded} onToggle={toggleSidebar} />
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col">
-                    {/* Header */}
-                    <AdminHeader onToggleSidebar={toggleSidebar} />
+                <div className="flex flex-col h-screen overflow-hidden">
+                    {/* Header - Fixed */}
+                    <div className="sticky top-0 z-50">
+                        <AdminHeader onToggleSidebar={toggleSidebar} />
+                    </div>
 
-                    {/* Konten Utama */}
-                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                        {header ? <div className="mb-2 lg:mb-4">{header}</div> : null}
-                        {children}
+                    {/* Konten Utama - Scrollable */}
+                    <main className="flex-1 overflow-y-auto">
+                        <div className="flex flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                            {header ? <div className="mb-2 lg:mb-4">{header}</div> : null}
+                            {children}
+                        </div>
                     </main>
                 </div>
             </div>
