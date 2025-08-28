@@ -13,6 +13,7 @@ import AuthLayout from '@/layouts/auth-layout';
 export default function Register() {
     const { toast } = useToast();
     const [hasShownToast, setHasShownToast] = useState(false);
+    const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
     
     return (
         <AuthLayout title="Buat Akun Baru" description="Masukkan detail Anda untuk membuat akun di platform Pare EduHub">
@@ -27,26 +28,53 @@ export default function Register() {
                 {({ processing, errors }) => {
                     // Show toast for validation errors
                     useEffect(() => {
-                        if (errors.email && (errors.email.includes('sudah digunakan') || errors.email.includes('sudah terdaftar') || errors.email.includes('already been taken')) && !hasShownToast) {
+                        if (Object.keys(errors).length > 0 && !hasShownToast) {
+                            let toastTitle = 'Registrasi Gagal';
+                            let toastDescription = 'Terjadi kesalahan saat registrasi.';
+                            
+                            // Check for specific error messages
+                            if (errors.name) {
+                                if (errors.name.includes('required') || errors.name.includes('wajib')) {
+                                    toastDescription = 'Nama lengkap wajib diisi.';
+                                } else if (errors.name.includes('minimal') || errors.name.includes('minimum')) {
+                                    toastDescription = 'Nama lengkap minimal 3 karakter.';
+                                } else {
+                                    toastDescription = errors.name;
+                                }
+                            } else if (errors.email) {
+                                if (errors.email.includes('sudah digunakan') || errors.email.includes('sudah terdaftar') || errors.email.includes('already been taken') || errors.email.includes('has already been taken')) {
+                                    toastDescription = 'Email sudah terdaftar. Silakan gunakan email lain atau login dengan email tersebut.';
+                                } else if (errors.email.includes('format') || errors.email.includes('valid')) {
+                                    toastDescription = 'Format email tidak valid. Silakan masukkan email yang benar.';
+                                } else if (errors.email.includes('required') || errors.email.includes('wajib')) {
+                                    toastDescription = 'Email wajib diisi.';
+                                } else {
+                                    toastDescription = errors.email;
+                                }
+                            } else if (errors.password) {
+                                if (errors.password.includes('konfirmasi') || errors.password.includes('confirmation')) {
+                                    toastDescription = 'Konfirmasi password tidak cocok. Pastikan password dan konfirmasi password sama.';
+                                } else if (errors.password.includes('minimal') || errors.password.includes('minimum') || errors.password.includes('at least')) {
+                                    toastDescription = 'Password minimal 8 karakter.';
+                                } else if (errors.password.includes('required') || errors.password.includes('wajib')) {
+                                    toastDescription = 'Password wajib diisi.';
+                                } else {
+                                    toastDescription = errors.password;
+                                }
+                            } else if (errors.password_confirmation) {
+                                if (errors.password_confirmation.includes('match') || errors.password_confirmation.includes('cocok') || errors.password_confirmation.includes('sama')) {
+                                    toastDescription = 'Konfirmasi password tidak cocok dengan password.';
+                                } else if (errors.password_confirmation.includes('required') || errors.password_confirmation.includes('wajib')) {
+                                    toastDescription = 'Konfirmasi password wajib diisi.';
+                                } else {
+                                    toastDescription = errors.password_confirmation;
+                                }
+                            }
+                            
                             toast({
                                 variant: 'destructive',
-                                title: 'Registrasi Gagal',
-                                description: 'Email sudah terdaftar. Silakan gunakan email lain atau login dengan email tersebut.',
-                            });
-                            setHasShownToast(true);
-                        } else if (errors.password && (errors.password.includes('konfirmasi') || errors.password.includes('confirmation')) && !hasShownToast) {
-                            toast({
-                                variant: 'destructive',
-                                title: 'Registrasi Gagal',
-                                description: 'Konfirmasi password tidak cocok. Pastikan password dan konfirmasi password sama.',
-                            });
-                            setHasShownToast(true);
-                        } else if (Object.keys(errors).length > 0 && !hasShownToast) {
-                            const firstError = Object.values(errors)[0];
-                            toast({
-                                variant: 'destructive',
-                                title: 'Registrasi Gagal',
-                                description: firstError || 'Silakan periksa kembali data yang Anda masukkan.',
+                                title: toastTitle,
+                                description: toastDescription,
                             });
                             setHasShownToast(true);
                         }
@@ -71,8 +99,21 @@ export default function Register() {
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Nama lengkap Anda"
+                                    className={errors.name && touchedFields.name ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
+                                    onBlur={() => setTouchedFields(prev => ({ ...prev, name: true }))}
                                 />
-                                <InputError message={errors.name} className="mt-2" />
+                                {errors.name && touchedFields.name && (
+                                    <InputError 
+                                        message={
+                                            errors.name.includes('required') || errors.name.includes('wajib')
+                                                ? 'Nama lengkap wajib diisi'
+                                                : errors.name.includes('minimal') || errors.name.includes('minimum')
+                                                ? 'Nama minimal 3 karakter'
+                                                : errors.name
+                                        }
+                                        className="mt-2" 
+                                    />
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -85,8 +126,22 @@ export default function Register() {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@contoh.com"
+                                    className={errors.email && touchedFields.email ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
+                                    onBlur={() => setTouchedFields(prev => ({ ...prev, email: true }))}
                                 />
-                                <InputError message={errors.email} />
+                                {errors.email && touchedFields.email && (
+                                    <InputError 
+                                        message={
+                                            errors.email.includes('sudah digunakan') || errors.email.includes('sudah terdaftar') || errors.email.includes('already been taken') || errors.email.includes('has already been taken')
+                                                ? 'Email sudah terdaftar'
+                                                : errors.email.includes('format') || errors.email.includes('valid')
+                                                ? 'Format email tidak valid'
+                                                : errors.email.includes('required') || errors.email.includes('wajib')
+                                                ? 'Email wajib diisi'
+                                                : errors.email
+                                        }
+                                    />
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -98,9 +153,23 @@ export default function Register() {
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder="Password"
+                                    placeholder="Password (minimal 8 karakter)"
+                                    className={errors.password && touchedFields.password ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
+                                    onBlur={() => setTouchedFields(prev => ({ ...prev, password: true }))}
                                 />
-                                <InputError message={errors.password} />
+                                {errors.password && touchedFields.password && (
+                                    <InputError 
+                                        message={
+                                            errors.password.includes('minimal') || errors.password.includes('minimum') || errors.password.includes('at least')
+                                                ? 'Password minimal 8 karakter'
+                                                : errors.password.includes('required') || errors.password.includes('wajib')
+                                                ? 'Password wajib diisi'
+                                                : errors.password.includes('konfirmasi') || errors.password.includes('confirmation')
+                                                ? 'Password tidak cocok dengan konfirmasi'
+                                                : errors.password
+                                        }
+                                    />
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -113,8 +182,20 @@ export default function Register() {
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Konfirmasi password"
+                                    className={errors.password_confirmation && touchedFields.password_confirmation ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
+                                    onBlur={() => setTouchedFields(prev => ({ ...prev, password_confirmation: true }))}
                                 />
-                                <InputError message={errors.password_confirmation} />
+                                {errors.password_confirmation && touchedFields.password_confirmation && (
+                                    <InputError 
+                                        message={
+                                            errors.password_confirmation?.includes('match') || errors.password_confirmation?.includes('cocok') || errors.password_confirmation?.includes('sama')
+                                                ? 'Konfirmasi password tidak cocok'
+                                                : errors.password_confirmation?.includes('required') || errors.password_confirmation?.includes('wajib')
+                                                ? 'Konfirmasi password wajib diisi'
+                                                : errors.password_confirmation
+                                        }
+                                    />
+                                )}
                             </div>
 
                             <Button type="submit" className="mt-2 w-full" tabIndex={5}>

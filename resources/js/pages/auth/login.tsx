@@ -29,28 +29,75 @@ function LoginFormContent({
     const [hasShownToast, setHasShownToast] = useState(false);
 
     useEffect(() => {
-        if (errors.email && !hasShownToast) {
+        // Handle different error scenarios
+        if (Object.keys(errors).length > 0 && !hasShownToast) {
+            let toastTitle = 'Login Gagal';
+            let toastDescription = 'Terjadi kesalahan saat login.';
+            
+            // Check for specific error messages
+            if (errors.email) {
+                if (errors.email.includes('credentials') || errors.email.includes('tidak cocok') || errors.email.includes('do not match')) {
+                    toastDescription = 'Email atau password yang Anda masukkan salah. Silakan coba lagi.';
+                } else if (errors.email.includes('tidak ditemukan') || errors.email.includes('not found')) {
+                    toastDescription = 'Email tidak terdaftar. Silakan daftar terlebih dahulu.';
+                } else if (errors.email.includes('format') || errors.email.includes('valid')) {
+                    toastDescription = 'Format email tidak valid. Silakan masukkan email yang benar.';
+                } else {
+                    toastDescription = errors.email;
+                }
+            } else if (errors.password) {
+                if (errors.password.includes('salah') || errors.password.includes('incorrect') || errors.password.includes('wrong')) {
+                    toastDescription = 'Password yang Anda masukkan salah. Silakan coba lagi.';
+                } else if (errors.password.includes('required') || errors.password.includes('wajib')) {
+                    toastDescription = 'Password wajib diisi.';
+                } else {
+                    toastDescription = errors.password;
+                }
+            }
+            
             toast({
                 variant: 'destructive',
-                title: 'Login Gagal',
-                description: errors.email || 'Silakan periksa kembali email dan password Anda.',
+                title: toastTitle,
+                description: toastDescription,
             });
             setHasShownToast(true);
         }
 
         // Reset the flag when errors are cleared
-        if (!errors.email) {
+        if (Object.keys(errors).length === 0) {
             setHasShownToast(false);
         }
-    }, [errors.email, toast, hasShownToast]);
+    }, [errors, toast, hasShownToast]);
 
     return (
         <div className="space-y-6">
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="email">Alamat Email</Label>
-                    <Input id="email" type="email" name="email" required autoFocus tabIndex={1} autoComplete="email" placeholder="email@contoh.com" />
-                    <InputError message={errors.email} />
+                    <Input 
+                        id="email" 
+                        type="email" 
+                        name="email" 
+                        required 
+                        autoFocus 
+                        tabIndex={1} 
+                        autoComplete="email" 
+                        placeholder="email@contoh.com"
+                        className={errors.email ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
+                    />
+                    {errors.email && (
+                        <InputError 
+                            message={
+                                errors.email.includes('credentials') || errors.email.includes('tidak cocok') 
+                                    ? 'Email atau password salah'
+                                    : errors.email.includes('tidak ditemukan')
+                                    ? 'Email tidak terdaftar'
+                                    : errors.email.includes('format') || errors.email.includes('valid')
+                                    ? 'Format email tidak valid'
+                                    : errors.email
+                            } 
+                        />
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -70,8 +117,21 @@ function LoginFormContent({
                         tabIndex={2}
                         autoComplete="current-password"
                         placeholder="Password"
+                        className={errors.password ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
                     />
-                    <InputError message={errors.password} />
+                    {errors.password && (
+                        <InputError 
+                            message={
+                                errors.password.includes('salah') || errors.password.includes('incorrect') || errors.password.includes('wrong')
+                                    ? 'Password salah'
+                                    : errors.password.includes('required') || errors.password.includes('wajib')
+                                    ? 'Password wajib diisi'
+                                    : errors.password.includes('minimum') || errors.password.includes('minimal')
+                                    ? 'Password minimal 8 karakter'
+                                    : errors.password
+                            } 
+                        />
+                    )}
                 </div>
 
                 <div className="flex items-center space-x-2">
