@@ -30,6 +30,7 @@ interface Course {
     description?: string;
     price: number;
     is_pro: boolean;
+    status?: 'draft' | 'published';
     thumbnail?: string;
     thumbnail_path?: string;
     created_at: string;
@@ -218,6 +219,13 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                         <Badge variant={course.is_pro ? 'default' : 'secondary'}>
                                             {course.is_pro ? 'PRO' : 'FREE'}
                                         </Badge>
+                                        {course.status && (
+                                            <Badge 
+                                                variant={course.status === 'published' ? 'success' : 'warning'}
+                                            >
+                                                {course.status === 'published' ? 'Published' : 'Draft'}
+                                            </Badge>
+                                        )}
                                         {course.category && (
                                             <Badge variant="outline">{course.category.name}</Badge>
                                         )}

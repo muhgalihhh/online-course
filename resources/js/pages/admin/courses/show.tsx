@@ -16,6 +16,7 @@ interface CourseShowProps extends PageProps {
 		description: string;
 		price: number;
 		is_pro: boolean;
+		status: 'draft' | 'published';
 		thumbnail_path?: string;
 		thumbnail?: string;
 		institution: { id: number; name: string };
@@ -97,6 +98,9 @@ export default function CourseShow({ course }: CourseShowProps) {
 									<div className="flex items-center gap-2 mb-4">
 										<Badge variant={course.is_pro ? 'default' : 'secondary'} className="text-xs">
 											{course.is_pro ? 'Pro' : 'Free'}
+										</Badge>
+										<Badge variant={course.status === 'published' ? 'success' : 'warning'} className="text-xs">
+											{course.status === 'published' ? 'Published' : 'Draft'}
 										</Badge>
 										<Badge variant="outline" className="text-xs">
 											<DollarSign className="h-3 w-3 mr-1" />

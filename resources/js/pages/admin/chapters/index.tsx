@@ -37,6 +37,7 @@ interface Course {
     description?: string;
     price: number;
     is_pro: boolean;
+    status?: 'draft' | 'published';
     thumbnail?: string;
     created_at: string;
     category?: Category;
@@ -229,9 +230,16 @@ export default function Chapters({ courses, categories, institutions }: Chapters
                         <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-2">
                                 <CardTitle className="line-clamp-1 text-base">{course.title}</CardTitle>
-                                <Badge variant={course.is_pro ? 'default' : 'secondary'} className="text-xs">
-                                    {course.is_pro ? 'PRO' : 'FREE'}
-                                </Badge>
+                                <div className="flex gap-1">
+                                    <Badge variant={course.is_pro ? 'default' : 'secondary'} className="text-xs">
+                                        {course.is_pro ? 'PRO' : 'FREE'}
+                                    </Badge>
+                                    {course.status && (
+                                        <Badge variant={course.status === 'published' ? 'success' : 'warning'} className="text-xs">
+                                            {course.status === 'published' ? 'Published' : 'Draft'}
+                                        </Badge>
+                                    )}
+                                </div>
                             </div>
                             {course.description && <CardDescription className="mt-1 line-clamp-1 text-xs">{course.description}</CardDescription>}
                         </CardHeader>

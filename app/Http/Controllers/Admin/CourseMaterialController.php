@@ -92,7 +92,7 @@ class CourseMaterialController extends Controller
             'materials' => $materials,
             'groupedMaterials' => $groupedMaterials,
             'chapters' => Chapter::with(['course'])->get(),
-            'courses' => Course::all(),
+            'courses' => Course::select('id', 'title', 'status')->get(),
             'filters' => $request->only(['search', 'course_id', 'chapter_id', 'type', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
