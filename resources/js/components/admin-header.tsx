@@ -34,7 +34,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
     const handleToggleSidebar = onToggleSidebar ?? toggleSidebar;
 
     return (
-        <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="w-full border-b bg-background shadow-sm">
             <div className="flex h-16 items-center justify-between px-4">
                 {/* Left side - Toggle Sidebar */}
                 <div className="flex items-center gap-4">
