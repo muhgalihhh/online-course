@@ -29,9 +29,36 @@ import {
     Database,
     Smartphone
 } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useAuth } from '@/hooks/use-auth';
+
+interface Course {
+    id: number;
+    title: string;
+    description: string;
+    price: number;
+    is_pro: boolean;
+    thumbnail: string | null;
+    category: {
+        id: number;
+        name: string;
+    };
+    institution: {
+        id: number;
+        name: string;
+    };
+    average_rating: number;
+    total_reviews: number;
+    total_students: number;
+}
+
+interface PageProps {
+    topCourses?: Course[];
+}
 
 export default function Welcome() {
+    const { topCourses } = usePage<PageProps>().props;
+    const { isAuthenticated } = useAuth();
     const features = [
         {
             icon: <BookOpen className="h-6 w-6" />,
@@ -72,48 +99,56 @@ export default function Welcome() {
         { label: "Rating Rata-rata", value: "4.9", icon: <Star className="h-4 w-4" /> }
     ];
 
-    const topCourses = [
+    const handleEnrollCourse = (courseId: number, isPro: boolean) => {
+        if (!isAuthenticated) {
+            alert('Silakan login atau daftar terlebih dahulu untuk mendaftar kursus ini.');
+            router.visit('/login');
+        } else {
+            // Navigate to enrollment/payment page
+            router.visit(`/courses/${courseId}/enroll`);
+        }
+    };
+
+    // Use real courses from database or fallback to dummy data
+    const displayCourses = topCourses && topCourses.length > 0 ? topCourses : [
         {
             id: 1,
             title: "Full-Stack Laravel & React Mastery",
-            category: "Web Development",
-            thumbnail: "https://via.placeholder.com/300x180",
-            rating: 4.9,
-            reviews: 1250,
-            students: 2500,
-            price: 750000,
-            isPro: true,
             description: "Bangun aplikasi web modern dari awal hingga deployment dengan teknologi terkini.",
-            instructor: "Ahmad Rizki",
-            duration: "40 jam"
+            price: 750000,
+            is_pro: true,
+            thumbnail: null,
+            category: { id: 1, name: "Web Development" },
+            institution: { id: 1, name: "Tech Academy" },
+            average_rating: 4.9,
+            total_reviews: 1250,
+            total_students: 2500
         },
         {
             id: 2,
             title: "UI/UX Design for Modern Apps",
-            category: "Design",
-            thumbnail: "https://via.placeholder.com/300x180",
-            rating: 4.8,
-            reviews: 2100,
-            students: 3000,
-            price: 550000,
-            isPro: true,
             description: "Pelajari prinsip desain antarmuka yang intuitif dan menarik untuk aplikasi modern.",
-            instructor: "Sarah Wijaya",
-            duration: "35 jam"
+            price: 550000,
+            is_pro: true,
+            thumbnail: null,
+            category: { id: 2, name: "Design" },
+            institution: { id: 1, name: "Design Institute" },
+            average_rating: 4.8,
+            total_reviews: 2100,
+            total_students: 3000
         },
         {
             id: 3,
             title: "Advanced DevOps with Kubernetes",
-            category: "DevOps",
-            thumbnail: "https://via.placeholder.com/300x180",
-            rating: 4.7,
-            reviews: 980,
-            students: 1800,
-            price: 850000,
-            isPro: true,
             description: "Orkestrasi dan skalabilitas aplikasi tingkat lanjut dengan teknologi container.",
-            instructor: "Budi Santoso",
-            duration: "45 jam"
+            price: 850000,
+            is_pro: true,
+            thumbnail: null,
+            category: { id: 3, name: "DevOps" },
+            institution: { id: 1, name: "Cloud Academy" },
+            average_rating: 4.7,
+            total_reviews: 980,
+            total_students: 1800
         }
     ];
 
@@ -126,40 +161,64 @@ export default function Welcome() {
         "Bayar sekali untuk akses semua kelas Pro selamanya"
     ];
 
-    const CourseCard = ({ course }: { course: any }) => (
-        <Card className="overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
+    const CourseCard = ({ course }: { course: Course }) => (
+        <Card className="overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg h-full flex flex-col">
             <CardHeader className="p-0">
-                <img src={course.thumbnail} alt={course.title} className="aspect-[16/9] w-full object-cover" />
-                <div className="absolute top-2 right-2">
-                    <Badge variant={course.isPro ? "default" : "secondary"}>
-                        {course.isPro ? "Pro" : "Free"}
-                    </Badge>
+                <div className="relative">
+                    <img 
+                        src={course.thumbnail || 'https://via.placeholder.com/400x225'} 
+                        alt={course.title} 
+                        className="aspect-[16/9] w-full object-cover" 
+                    />
+                    <div className="absolute top-2 right-2">
+                        <Badge variant={course.is_pro ? "default" : "secondary"}>
+                            {course.is_pro ? "Pro" : "Free"}
+                        </Badge>
+                    </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-4">
-                <Badge variant="outline" className="mb-2">{course.category}</Badge>
+            <CardContent className="p-4 flex-1 flex flex-col">
+                <Badge variant="outline" className="mb-2 w-fit">{course.category.name}</Badge>
                 <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">{course.description}</p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{course.rating}</span>
-                        <span>({course.reviews})</span>
+                        <span className="font-semibold">{course.average_rating.toFixed(1)}</span>
+                        <span>({course.total_reviews})</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>{course.students.toLocaleString()}</span>
+                        <span>{course.total_students.toLocaleString()}</span>
                     </div>
                 </div>
-                <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                        <p>Oleh: {course.instructor}</p>
-                        <p>{course.duration}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-lg font-bold text-primary">
-                            {course.isPro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            {course.institution.name}
                         </p>
+                        <p className="text-lg font-bold text-primary">
+                            {course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            asChild
+                        >
+                            <Link href={`/courses/${course.id}`}>
+                                Detail
+                            </Link>
+                        </Button>
+                        <Button 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleEnrollCourse(course.id, course.is_pro)}
+                        >
+                            {course.is_pro ? 'Pesan' : 'Ikuti'}
+                        </Button>
                     </div>
                 </div>
             </CardContent>
@@ -348,7 +407,7 @@ export default function Welcome() {
                     </div>
                     
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {topCourses.map((course) => (
+                        {displayCourses.map((course) => (
                             <CourseCard key={course.id} course={course} />
                         ))}
                     </div>

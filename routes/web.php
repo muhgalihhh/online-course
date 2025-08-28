@@ -4,13 +4,46 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    // Fetch top courses for the welcome page
+    $topCourses = \App\Models\Course::with(['category', 'institution', 'reviews'])
+        ->where('status', 'published')
+        ->withAvg('reviews', 'rating')
+        ->withCount('enrollments')
+        ->orderBy('enrollments_count', 'desc')
+        ->limit(3)
+        ->get();
+    
+    // Add computed properties
+    $topCourses->each(function ($course) {
+        $course->average_rating = $course->reviews_avg_rating ?? 0;
+        $course->total_reviews = $course->reviews->count();
+        $course->total_students = $course->enrollments_count;
+    });
+
     return Inertia::render('welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'topCourses' => $topCourses,
     ]);
 })->name('home');
+
+// Public course routes (accessible without login)
+Route::get('/courses', [\App\Http\Controllers\CourseController::class, 'index'])->name('courses.index');
+Route::get('/courses/{id}', [\App\Http\Controllers\CourseController::class, 'show'])->name('courses.show');
+Route::get('/kelas-pro', [\App\Http\Controllers\CourseController::class, 'pro'])->name('courses.pro');
+Route::get('/kelas-free', [\App\Http\Controllers\CourseController::class, 'free'])->name('courses.free');
+Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, 'institutions'])->name('institutions.index');
+
+// Static pages
+Route::get('/tentang', function () {
+    return Inertia::render('tentang');
+})->name('about');
+
+Route::get('/kontak', function () {
+    return Inertia::render('kontak');
+})->name('contact');
 
 // Dashboard untuk semua user yang login
 Route::get('/dashboard', function () {

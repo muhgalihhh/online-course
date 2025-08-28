@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
     CloudRain, 
     Sun, 
@@ -15,7 +16,10 @@ import {
     Clock,
     CloudSnow,
     CloudDrizzle,
-    Loader2
+    Loader2,
+    Search,
+    X,
+    Edit2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -41,33 +45,124 @@ const WeatherWidget = () => {
         windSpeed: 12,
         visibility: 10,
         feelsLike: 30,
-        icon: <Cloud className="h-6 w-6" />
+        icon: <Cloud className="h-6 w-6" />,
+        description: "Cerah dengan sedikit awan"
     });
 
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [isLoading, setIsLoading] = useState(false);
+    const [searchLocation, setSearchLocation] = useState("Pare, Kediri");
+    const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [inputLocation, setInputLocation] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    
+    const API_KEY = 'c652cbba36019afd965ac4cb698ba98f';
+    const API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
 
+        // Fetch weather on component mount
+        fetchWeather(searchLocation);
+
         return () => clearInterval(timer);
     }, []);
 
-    const getWeatherIcon = (condition: string) => {
-        switch (condition.toLowerCase()) {
-            case 'cerah':
+    const getWeatherIcon = (weatherCode: string, iconCode?: string) => {
+        // Map OpenWeather icon codes to our icons
+        if (iconCode) {
+            const mainCode = iconCode.slice(0, 2);
+            switch (mainCode) {
+                case '01': // Clear
+                    return <Sun className="h-6 w-6 text-yellow-500" />;
+                case '02': // Few clouds
+                case '03': // Scattered clouds
+                    return <Cloud className="h-6 w-6 text-gray-500" />;
+                case '04': // Broken clouds
+                    return <Cloud className="h-6 w-6 text-gray-600" />;
+                case '09': // Shower rain
+                case '10': // Rain
+                    return <CloudRain className="h-6 w-6 text-blue-500" />;
+                case '11': // Thunderstorm
+                    return <CloudLightning className="h-6 w-6 text-yellow-600" />;
+                case '13': // Snow
+                    return <CloudSnow className="h-6 w-6 text-blue-300" />;
+                case '50': // Mist
+                    return <CloudDrizzle className="h-6 w-6 text-gray-400" />;
+                default:
+                    return <Sun className="h-6 w-6 text-yellow-500" />;
+            }
+        }
+        
+        // Fallback to weather condition text
+        switch (weatherCode.toLowerCase()) {
+            case 'clear':
                 return <Sun className="h-6 w-6 text-yellow-500" />;
-            case 'cerah berawan':
+            case 'clouds':
                 return <Cloud className="h-6 w-6 text-gray-500" />;
-            case 'berawan':
-                return <Cloud className="h-6 w-6 text-gray-600" />;
-            case 'hujan':
+            case 'rain':
                 return <CloudRain className="h-6 w-6 text-blue-500" />;
-            case 'hujan petir':
+            case 'thunderstorm':
                 return <CloudLightning className="h-6 w-6 text-yellow-600" />;
+            case 'snow':
+                return <CloudSnow className="h-6 w-6 text-blue-300" />;
+            case 'mist':
+            case 'fog':
+                return <CloudDrizzle className="h-6 w-6 text-gray-400" />;
             default:
                 return <Sun className="h-6 w-6 text-yellow-500" />;
+        }
+    };
+
+    const fetchWeather = async (location: string) => {
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const response = await axios.get(API_URL, {
+                params: {
+                    q: location,
+                    appid: API_KEY,
+                    units: 'metric',
+                    lang: 'id'
+                }
+            });
+
+            const data = response.data;
+            
+            setWeather({
+                location: `${data.name}, ${data.sys.country}`,
+                temperature: Math.round(data.main.temp),
+                condition: data.weather[0].main,
+                description: data.weather[0].description,
+                humidity: data.main.humidity,
+                windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+                visibility: Math.round(data.visibility / 1000), // Convert m to km
+                feelsLike: Math.round(data.main.feels_like),
+                icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon)
+            });
+            
+            setSearchLocation(location);
+        } catch (err: any) {
+            console.error('Error fetching weather:', err);
+            if (err.response?.status === 404) {
+                setError('Lokasi tidak ditemukan. Silakan coba nama kota lain.');
+            } else {
+                setError('Gagal memuat data cuaca. Silakan coba lagi.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLocationSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (inputLocation.trim()) {
+            fetchWeather(inputLocation.trim());
+            setIsEditingLocation(false);
+            setInputLocation("");
         }
     };
 
@@ -87,6 +182,11 @@ const WeatherWidget = () => {
             day: 'numeric'
         });
     };
+
+    const popularCities = [
+        "Jakarta", "Surabaya", "Bandung", "Medan", 
+        "Semarang", "Makassar", "Yogyakarta", "Bali"
+    ];
 
     return (
         <Card className="border-0 shadow-lg">
@@ -109,75 +209,165 @@ const WeatherWidget = () => {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {/* Current Weather */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Lokasi</span>
-                        </div>
-                        <span className="font-medium">{weather.location}</span>
+                    {/* Location Search */}
+                    <div className="space-y-2">
+                        {isEditingLocation ? (
+                            <form onSubmit={handleLocationSubmit} className="space-y-2">
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="text"
+                                        placeholder="Masukkan nama kota..."
+                                        value={inputLocation}
+                                        onChange={(e) => setInputLocation(e.target.value)}
+                                        className="flex-1"
+                                        autoFocus
+                                    />
+                                    <Button type="submit" size="sm" disabled={isLoading}>
+                                        <Search className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                        type="button" 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsEditingLocation(false);
+                                            setInputLocation("");
+                                        }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                    {popularCities.map((city) => (
+                                        <Button
+                                            key={city}
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs h-7 px-2"
+                                            onClick={() => {
+                                                fetchWeather(city);
+                                                setIsEditingLocation(false);
+                                                setInputLocation("");
+                                            }}
+                                        >
+                                            {city}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Lokasi</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">{weather.location}</span>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => setIsEditingLocation(true)}
+                                    >
+                                        <Edit2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <Separator />
                     
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Thermometer className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Suhu</span>
+                    {error && (
+                        <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                            {error}
                         </div>
-                        <span className="font-medium">{weather.temperature}°C</span>
-                    </div>
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            {getWeatherIcon(weather.condition)}
-                            <span className="text-sm text-muted-foreground">Kondisi</span>
+                    )}
+
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-                        <span className="font-medium">{weather.condition}</span>
-                    </div>
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Droplets className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Kelembaban</span>
-                        </div>
-                        <span className="font-medium">{weather.humidity}%</span>
-                    </div>
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wind className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Kecepatan Angin</span>
-                        </div>
-                        <span className="font-medium">{weather.windSpeed} km/h</span>
-                    </div>
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Jarak Pandang</span>
-                        </div>
-                        <span className="font-medium">{weather.visibility} km</span>
-                    </div>
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Thermometer className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Terasa Seperti</span>
-                        </div>
-                        <span className="font-medium">{weather.feelsLike}°C</span>
-                    </div>
+                    ) : (
+                        <>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Thermometer className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Suhu</span>
+                                </div>
+                                <span className="font-medium">{weather.temperature}°C</span>
+                            </div>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    {weather.icon}
+                                    <span className="text-sm text-muted-foreground">Kondisi</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="font-medium block">{weather.condition}</span>
+                                    <span className="text-xs text-muted-foreground capitalize">{weather.description}</span>
+                                </div>
+                            </div>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Droplets className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Kelembaban</span>
+                                </div>
+                                <span className="font-medium">{weather.humidity}%</span>
+                            </div>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Wind className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Kecepatan Angin</span>
+                                </div>
+                                <span className="font-medium">{weather.windSpeed} km/h</span>
+                            </div>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Jarak Pandang</span>
+                                </div>
+                                <span className="font-medium">{weather.visibility} km</span>
+                            </div>
+                            <Separator />
+                            
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Thermometer className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Terasa Seperti</span>
+                                </div>
+                                <span className="font-medium">{weather.feelsLike}°C</span>
+                            </div>
+                        </>
+                    )}
                     
                     <div className="pt-2 text-xs text-muted-foreground text-center">
                         {formatDate(currentTime)}
                     </div>
                     
-                    <Button variant="outline" size="sm" className="w-full">
-                        Perbarui Cuaca
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => fetchWeather(searchLocation)}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Memperbarui...
+                            </>
+                        ) : (
+                            'Perbarui Cuaca'
+                        )}
                     </Button>
                 </div>
             </CardContent>
