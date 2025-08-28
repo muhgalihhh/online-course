@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    // Fetch institution data for contact info
+    $institution = \App\Models\Institution::first();
+    
     // Fetch top courses for the welcome page
     $topCourses = \App\Models\Course::with(['category', 'institution', 'reviews'])
         ->where('status', 'published')
@@ -26,6 +29,7 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
         'topCourses' => $topCourses,
+        'institution' => $institution,
     ]);
 })->name('home');
 
