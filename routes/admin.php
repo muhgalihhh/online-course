@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 
 // Routes untuk Admin
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Redirect /admin to /admin/dashboard
+    Route::get('/', function () {
+        return redirect()->route('admin.dashboard');
+    });
+    
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [AdminController::class, 'export'])->name('dashboard.export');
     
