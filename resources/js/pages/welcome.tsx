@@ -52,18 +52,30 @@ interface Course {
     total_students: number;
 }
 
+interface Institution {
+    id: number;
+    name: string;
+    description?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    website?: string;
+    photo_path?: string;
+}
+
 interface PageProps {
     topCourses?: Course[];
+    institution?: Institution;
 }
 
 export default function Welcome() {
-    const { topCourses } = usePage<PageProps>().props;
+    const { topCourses, institution } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
     const features = [
         {
             icon: <BookOpen className="h-6 w-6" />,
-            title: "Katalog Kursus Lengkap",
-            description: "Akses ratusan kursus berkualitas dari dasar hingga advanced dengan sertifikasi resmi"
+            title: "Kursus Berkualitas Tinggi",
+            description: "Akses kursus berkualitas yang dirancang khusus dari dasar hingga advanced dengan sertifikasi resmi"
         },
         {
             icon: <GraduationCap className="h-6 w-6" />,
@@ -119,7 +131,7 @@ export default function Welcome() {
             is_pro: true,
             thumbnail: null,
             category: { id: 1, name: "Web Development" },
-            institution: { id: 1, name: "Tech Academy" },
+            institution: { id: 1, name: institution?.name || "Pare EduHub" },
             average_rating: 4.9,
             total_reviews: 1250,
             total_students: 2500
@@ -132,7 +144,7 @@ export default function Welcome() {
             is_pro: true,
             thumbnail: null,
             category: { id: 2, name: "Design" },
-            institution: { id: 1, name: "Design Institute" },
+            institution: { id: 1, name: institution?.name || "Pare EduHub" },
             average_rating: 4.8,
             total_reviews: 2100,
             total_students: 3000
@@ -145,7 +157,7 @@ export default function Welcome() {
             is_pro: true,
             thumbnail: null,
             category: { id: 3, name: "DevOps" },
-            institution: { id: 1, name: "Cloud Academy" },
+            institution: { id: 1, name: institution?.name || "Pare EduHub" },
             average_rating: 4.7,
             total_reviews: 980,
             total_students: 1800
@@ -153,7 +165,7 @@ export default function Welcome() {
     ];
 
     const benefits = [
-        "Akses ke ratusan kursus berkualitas dari dasar hingga advanced",
+        "Akses ke kursus berkualitas tinggi yang dirancang khusus",
         "Kelas gratis dan premium dengan sertifikasi resmi",
         "Download materi PDF untuk belajar offline",
         "Live chat support 24/7",
@@ -193,10 +205,7 @@ export default function Welcome() {
                     </div>
                 </div>
                 <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            {course.institution.name}
-                        </p>
+                    <div className="flex items-center justify-end">
                         <p className="text-lg font-bold text-primary">
                             {course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
                         </p>
@@ -235,17 +244,17 @@ export default function Welcome() {
                             <div className="space-y-4">
                                 <Badge variant="secondary" className="w-fit">
                                     <Star className="mr-1 h-3 w-3" />
-                                    Platform Kursus Online Terpercaya
+                                    Platform Kursus Online Personal
                                 </Badge>
                                 <h1 className="text-4xl font-bold tracking-tight lg:text-6xl">
                                     Tingkatkan Skill dengan{' '}
                                     <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                                        Pare EduHub
+                                        {institution?.name || 'Pare EduHub'}
                                     </span>
                                 </h1>
                                 <p className="text-xl text-muted-foreground">
-                                    Platform pembelajaran online terdepan yang menyediakan ratusan kursus berkualitas. 
-                                    Dari materi dasar hingga advanced, semua tersedia untuk karir digital Anda.
+                                    Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi. 
+                                    Dari materi dasar hingga advanced, semua dirancang khusus untuk pengembangan karir digital Anda.
                                 </p>
                             </div>
                             
@@ -254,7 +263,7 @@ export default function Welcome() {
                                     <Link href="/register">Mulai Belajar Sekarang</Link>
                                 </Button>
                                 <Button variant="outline" size="lg" className="text-base">
-                                    <Link href="/courses">Lihat Katalog Kursus</Link>
+                                    <Link href="/courses">Lihat Semua Kursus</Link>
                                 </Button>
                             </div>
 
@@ -369,10 +378,10 @@ export default function Welcome() {
                 <div className="container mx-auto px-4">
                     <div className="grid gap-12 lg:grid-cols-2">
                         <div className="space-y-6">
-                            <h2 className="text-3xl font-bold">Mengapa Memilih Pare EduHub?</h2>
+                            <h2 className="text-3xl font-bold">Mengapa Memilih {institution?.name || 'Pare EduHub'}?</h2>
                             <p className="text-muted-foreground text-lg">
-                                Platform pembelajaran online terdepan yang menyediakan kursus berkualitas untuk semua level. 
-                                Dapatkan akses ke ratusan kursus dari dasar hingga advanced.
+                                Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi untuk semua level. 
+                                Dapatkan akses ke kursus-kursus pilihan dari dasar hingga advanced.
                             </p>
                             <div className="space-y-4">
                                 {benefits.map((benefit, index) => (

@@ -12,6 +12,22 @@ import {
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
+import { usePage } from '@inertiajs/react';
+
+interface Institution {
+    id: number;
+    name: string;
+    description?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    website?: string;
+    photo_path?: string;
+}
+
+interface PageProps {
+    institution?: Institution;
+}
 
 interface GuestLayoutProps {
     children: React.ReactNode;
@@ -20,10 +36,10 @@ interface GuestLayoutProps {
 const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, isAuthenticated } = useAuth();
+    const { institution } = usePage<PageProps>().props;
 
     const navigationItems = [
         { name: 'Beranda', href: '/', active: true },
-        { name: 'Katalog Lembaga', href: '/katalog-lembaga' },
         { name: 'Kelas Pro', href: '/kelas-pro' },
         { name: 'Kelas Free', href: '/kelas-free' },
         { name: 'Tentang', href: '/tentang' },
@@ -152,13 +168,12 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                     <GraduationCap className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <span className="text-xl font-bold">Pare EduHub</span>
-                                    <p className="text-sm text-muted-foreground">Platform LMS Terpercaya</p>
+                                    <span className="text-xl font-bold">{institution?.name || 'Pare EduHub'}</span>
+                                    <p className="text-sm text-muted-foreground">Platform Kursus Online Personal</p>
                                 </div>
                             </div>
                             <p className="mb-4 max-w-md text-muted-foreground">
-                                Platform pembelajaran online terdepan yang menghubungkan lembaga pendidikan dengan peserta didik. 
-                                Akses ribuan kursus berkualitas dari lembaga terpercaya di seluruh Indonesia.
+                                {institution?.description || 'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
                             </p>
                             <div className="flex gap-4">
                                 <Button size="sm" variant="outline" className="h-9 w-9 p-0">
@@ -171,11 +186,6 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                         <div>
                             <h4 className="mb-4 font-semibold">Menu Utama</h4>
                             <ul className="space-y-2">
-                                <li>
-                                    <Link href="/katalog-lembaga" className="text-muted-foreground transition-colors hover:text-primary">
-                                        Katalog Lembaga
-                                    </Link>
-                                </li>
                                 <li>
                                     <Link href="/kelas-pro" className="text-muted-foreground transition-colors hover:text-primary">
                                         Kelas Pro
@@ -205,15 +215,15 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                             <ul className="space-y-3">
                                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span>📧</span>
-                                    <span>info@pareeduhub.com</span>
+                                    <span>{institution?.email || 'info@pareeduhub.com'}</span>
                                 </li>
                                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span>📞</span>
-                                    <span>+62 812-3456-7890</span>
+                                    <span>{institution?.phone || '+62 812-3456-7890'}</span>
                                 </li>
                                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span>📍</span>
-                                    <span>Pare, Kediri, Jawa Timur</span>
+                                    <span>{institution?.address || 'Pare, Kediri, Jawa Timur'}</span>
                                 </li>
                             </ul>
 
@@ -221,7 +231,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                 <div className="text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                         <BookOpen className="h-3 w-3" />
-                                        100+ Lembaga Terdaftar
+                                        500+ Kursus Tersedia
                                     </span>
                                 </div>
                             </div>
@@ -231,7 +241,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                     {/* Copyright */}
                     <div className="mt-8 border-t pt-8">
                         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-                            <p className="text-sm text-muted-foreground">© 2025 Pare EduHub. Semua hak dilindungi.</p>
+                            <p className="text-sm text-muted-foreground">© 2025 {institution?.name || 'Pare EduHub'}. Semua hak dilindungi.</p>
                             <div className="flex gap-6 text-sm text-muted-foreground">
                                 <Link href="/privacy" className="transition-colors hover:text-primary">
                                     Kebijakan Privasi
