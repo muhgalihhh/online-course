@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, FileText, Video } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Video, Plus } from 'lucide-react';
 
 interface Course { id: number; title: string; }
 
@@ -80,7 +80,18 @@ export default function ChapterShow({ chapter }: ChapterShowProps) {
 
 				<Card>
 					<CardHeader>
-						<CardTitle>Daftar Materi</CardTitle>
+						<div className="flex items-center justify-between">
+							<CardTitle>Daftar Materi</CardTitle>
+							<Link href={route('admin.materials.create', { 
+								course_id: chapter.course.id, 
+								chapter_id: chapter.id 
+							})}>
+								<Button size="sm">
+									<Plus className="mr-2 h-4 w-4" />
+									Tambah Materi
+								</Button>
+							</Link>
+						</div>
 					</CardHeader>
 					<CardContent>
 						<div className="divide-y">
