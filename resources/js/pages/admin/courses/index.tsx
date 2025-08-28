@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Eye, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Image as ImageIcon, Send, FileX } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { DeleteConfirmation } from '@/components/delete-confirmation';
@@ -18,6 +18,7 @@ interface Course {
     description: string;
     price: number;
     is_pro: boolean;
+    status: 'draft' | 'published';
     created_at: string;
     thumbnail_path?: string;
     thumbnail?: string;
@@ -40,6 +41,7 @@ interface CourseIndexProps extends PageProps {
         category_id: string;
         institution_id: string;
         is_pro: string;
+        status: string;
         price_min: string;
         price_max: string;
         date_from: string;
@@ -74,6 +76,14 @@ export default function CourseIndex({ courses, categories, institutions, filters
                     { value: "false", label: "Free Course" }
                 ],
                 placeholder: "All Types"
+            },
+            status: {
+                label: "Status",
+                options: [
+                    { value: "published", label: "Published" },
+                    { value: "draft", label: "Draft" }
+                ],
+                placeholder: "All Status"
             }
         },
         numberRange: {
@@ -144,6 +154,7 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                     <TableHead>Institusi</TableHead>
                                     <TableHead>Kategori</TableHead>
                                     <TableHead>Harga</TableHead>
+                                    <TableHead>Tipe</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Tanggal Dibuat</TableHead>
                                     <TableHead>Aksi</TableHead>
@@ -178,23 +189,37 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                                 {course.is_pro ? 'Pro' : 'Free'}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell>
+                                            <Badge variant={course.status === 'published' ? 'success' : 'warning'}>
+                                                {course.status === 'published' ? 'Published' : 'Draft'}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>{new Date(course.created_at).toLocaleDateString()}</TableCell>
                                         <TableCell>
                                             <div className="flex space-x-2">
                                                 <Link href={route('admin.courses.edit', course.id)}>
-                                                    <Button variant="outline" size="sm">
+                                                    <Button variant="outline" size="sm" title="Edit">
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
                                                 <Link href={route('admin.courses.show', course.id)}>
-                                                    <Button variant="outline" size="sm">
+                                                    <Button variant="outline" size="sm" title="View">
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
                                                 <Button 
+                                                    variant={course.status === 'draft' ? 'default' : 'secondary'}
+                                                    size="sm"
+                                                    onClick={() => router.patch(route('admin.courses.toggle-publish', course.id))}
+                                                    title={course.status === 'draft' ? 'Publikasikan' : 'Ubah ke Draft'}
+                                                >
+                                                    {course.status === 'draft' ? <Send className="h-4 w-4" /> : <FileX className="h-4 w-4" />}
+                                                </Button>
+                                                <Button 
                                                     variant="destructive" 
                                                     size="sm"
                                                     onClick={() => setDeleteDialog({ isOpen: true, courseId: course.id, courseTitle: course.title })}
+                                                    title="Delete"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

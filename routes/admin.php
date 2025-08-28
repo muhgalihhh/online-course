@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Course Management
     Route::resource('courses', AdminCourseController::class);
+    Route::patch('/courses/{course}/toggle-publish', [AdminCourseController::class, 'togglePublish'])->name('courses.toggle-publish');
 
     // Category Management
     Route::resource('categories', AdminCategoryController::class);
