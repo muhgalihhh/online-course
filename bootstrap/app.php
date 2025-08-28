@@ -38,36 +38,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Handle authentication exceptions
-        $exceptions->respond(function (AuthenticationException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => $e->getMessage(),
-                ], 401);
-            }
-
-            return redirect()->guest(route('login'))
-                ->with('error', 'Anda harus login untuk mengakses halaman ini.');
-        });
-
-        // Handle Inertia error pages
         $exceptions->respond(function ($response, $exception, $request) {
-            // Show custom error pages for common HTTP status codes
             if (in_array($response->getStatusCode(), [403, 404, 419, 500, 503])) {
                 if ($request->inertia()) {
-                    // Special handling for 419 (session expired)
                     if ($response->getStatusCode() === 419) {
                         return back()->with([
                             'error' => 'Sesi telah berakhir. Silakan refresh halaman.',
                         ]);
                     }
-                    
-                    // Render the appropriate error page
+
                     return Inertia::render('errors/' . $response->getStatusCode(), [
                         'status' => $response->getStatusCode()
                     ])
-                    ->toResponse($request)
-                    ->setStatusCode($response->getStatusCode());
+                        ->toResponse($request)
+                        ->setStatusCode($response->getStatusCode());
                 }
             }
 

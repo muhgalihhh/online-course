@@ -1,7 +1,6 @@
 // resources/js/pages/admin/chapters/by-course.tsx
 
 import { DeleteConfirmation } from '@/components/delete-confirmation';
-import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Clock, Edit, Eye, FileText, Filter, GraduationCap, Play, Plus, PlusSquare, Search, Trash2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, Edit, Eye, FileText, Filter, Image as ImageIcon, Plus, PlusSquare, Search, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface Category {
@@ -130,23 +129,20 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
 
     // Filter chapters based on search and status
     const filteredChapters = chapters.filter((chapter) => {
-        const matchesSearch = searchTerm === '' || 
+        const matchesSearch =
+            searchTerm === '' ||
             chapter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (chapter.description && chapter.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'free' && chapter.is_free) ||
-            (statusFilter === 'premium' && !chapter.is_free);
-        
+
+        const matchesStatus =
+            statusFilter === 'all' || (statusFilter === 'free' && chapter.is_free) || (statusFilter === 'premium' && !chapter.is_free);
+
         return matchesSearch && matchesStatus;
     });
 
     // Pagination
     const totalPages = Math.ceil(filteredChapters.length / itemsPerPage);
-    const paginatedChapters = filteredChapters.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+    const paginatedChapters = filteredChapters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     // Reset to first page when filters change
     React.useEffect(() => {
@@ -188,23 +184,23 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                 <Card className="overflow-hidden">
                     <div className="flex flex-col md:flex-row">
                         {/* Thumbnail Section */}
-                        <div className="md:w-48 h-48 md:h-auto relative bg-gradient-to-br from-primary/10 to-primary/5">
+                        <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 md:h-auto md:w-48">
                             {course.thumbnail || course.thumbnail_path ? (
                                 <img
                                     src={course.thumbnail || `/storage/${course.thumbnail_path}`}
                                     alt={course.title}
-                                    className="w-full h-full object-cover"
+                                    className="h-full w-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center">
+                                <div className="flex h-full w-full items-center justify-center">
                                     <div className="text-center">
-                                        <ImageIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-2" />
+                                        <ImageIcon className="mx-auto mb-2 h-12 w-12 text-muted-foreground/50" />
                                         <p className="text-xs text-muted-foreground">No Thumbnail</p>
                                     </div>
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* Course Info Section */}
                         <div className="flex-1">
                             <CardHeader className="pb-3">
@@ -212,35 +208,25 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                     <div>
                                         <CardTitle className="text-lg">{course.title}</CardTitle>
                                         {course.description && (
-                                            <CardDescription className="text-sm mt-1 line-clamp-2">{course.description}</CardDescription>
+                                            <CardDescription className="mt-1 line-clamp-2 text-sm">{course.description}</CardDescription>
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <Badge variant={course.is_pro ? 'default' : 'secondary'}>
-                                            {course.is_pro ? 'PRO' : 'FREE'}
-                                        </Badge>
+                                        <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'PRO' : 'FREE'}</Badge>
                                         {course.status && (
-                                            <Badge 
-                                                variant={course.status === 'published' ? 'success' : 'warning'}
-                                            >
+                                            <Badge variant={course.status === 'published' ? 'success' : 'warning'}>
                                                 {course.status === 'published' ? 'Published' : 'Draft'}
                                             </Badge>
                                         )}
-                                        {course.category && (
-                                            <Badge variant="outline">{course.category.name}</Badge>
-                                        )}
+                                        {course.category && <Badge variant="outline">{course.category.name}</Badge>}
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-0">
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                     <span>{chapters.length} chapters</span>
-                                    {course.is_pro && (
-                                        <span>•</span>
-                                    )}
-                                    {course.is_pro && (
-                                        <span className="font-medium">{formatPrice(course.price)}</span>
-                                    )}
+                                    {course.is_pro && <span>•</span>}
+                                    {course.is_pro && <span className="font-medium">{formatPrice(course.price)}</span>}
                                     {course.institution && (
                                         <>
                                             <span>•</span>
@@ -332,9 +318,7 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                         </TableCell>
                                         <TableCell>
                                             {chapter.description ? (
-                                                <div className="max-w-[300px] line-clamp-2 text-sm text-muted-foreground">
-                                                    {chapter.description}
-                                                </div>
+                                                <div className="line-clamp-2 max-w-[300px] text-sm text-muted-foreground">{chapter.description}</div>
                                             ) : (
                                                 <span className="text-muted-foreground">-</span>
                                             )}
@@ -367,7 +351,7 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link href={route('admin.materials.by-chapter', chapter.id)}>
+                                                <Link href={route('admin.chapters.show', chapter.id)}>
                                                     <Button variant="outline" size="sm" title="Kelola Materi">
                                                         <PlusSquare className="h-4 w-4" />
                                                         <span className="ml-1">Materi</span>
@@ -383,9 +367,9 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
-                                                <Button 
-                                                    variant="destructive" 
-                                                    size="sm" 
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
                                                     onClick={() => handleDelete(chapter.id, chapter.title)}
                                                     title="Hapus"
                                                 >
@@ -399,9 +383,9 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                         </Table>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">Belum ada chapter</h3>
-                            <p className="text-sm text-muted-foreground text-center mb-4">
+                            <BookOpen className="mb-4 h-12 w-12 text-muted-foreground" />
+                            <h3 className="mb-2 text-lg font-semibold">Belum ada chapter</h3>
+                            <p className="mb-4 text-center text-sm text-muted-foreground">
                                 Kursus ini belum memiliki chapter. Mulai dengan menambahkan chapter pertama.
                             </p>
                             <Link href={route('admin.chapters.create', { course_id: course.id })}>
@@ -421,40 +405,33 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                     <CardContent className="py-3">
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-muted-foreground">
-                                Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredChapters.length)} dari {filteredChapters.length} chapters
+                                Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredChapters.length)}{' '}
+                                dari {filteredChapters.length} chapters
                             </p>
                             <div className="flex items-center space-x-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                >
+                                <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
                                     Previous
                                 </Button>
                                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                                     // Show only certain page numbers
-                                    if (
-                                        page === 1 || 
-                                        page === totalPages || 
-                                        (page >= currentPage - 1 && page <= currentPage + 1)
-                                    ) {
+                                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
                                         return (
                                             <Button
                                                 key={page}
                                                 variant={page === currentPage ? 'default' : 'outline'}
                                                 size="sm"
-                                                className="w-8 h-8 p-0"
+                                                className="h-8 w-8 p-0"
                                                 onClick={() => handlePageChange(page)}
                                             >
                                                 {page}
                                             </Button>
                                         );
-                                    } else if (
-                                        page === currentPage - 2 || 
-                                        page === currentPage + 2
-                                    ) {
-                                        return <span key={page} className="px-1">...</span>;
+                                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                                        return (
+                                            <span key={page} className="px-1">
+                                                ...
+                                            </span>
+                                        );
                                     }
                                     return null;
                                 })}
