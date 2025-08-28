@@ -67,7 +67,7 @@ class AnalyticsController extends Controller
             })
             ->orderByDesc('enrollments_count')
             ->limit(10)
-            ->get(['id', 'title']);
+            ->get(['id', 'title', 'status']);
 
         // Distribution of courses by type (pro vs free)
         $proCourses = Course::when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))

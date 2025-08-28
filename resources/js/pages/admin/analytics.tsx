@@ -26,7 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface AnalyticsProps extends PageProps {
     userStats: { year: number; month: number; users?: number }[];
     revenueStats: { year: number; month: number; revenue?: number; transactions_count?: number }[];
-    topCourses: { id: number; title: string; enrollments_count?: number; avg_rating?: number }[];
+    topCourses: { id: number; title: string; status?: 'draft' | 'published'; enrollments_count?: number; avg_rating?: number }[];
     courseTypeDistribution: { name: string; value: number }[];
     categoryPerformance?: { name: string; percentage: number; count: number }[];
     totals: { totalRevenue: number; totalUsers: number; totalCourses: number; totalTransactions: number };
@@ -196,7 +196,17 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                         {topCourses.map((course, index) => (
                             <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
                                 <div className="flex-1">
-                                    <h4 className="font-medium">{course.title}</h4>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium">{course.title}</h4>
+                                        {course.status && (
+                                            <Badge 
+                                                variant={course.status === 'published' ? 'success' : 'warning'} 
+                                                className="text-xs"
+                                            >
+                                                {course.status === 'published' ? 'Published' : 'Draft'}
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                                         <span>{(course.enrollments_count ?? 0).toLocaleString('id-ID')} enrollments</span>
                                         <div className="flex items-center gap-1">

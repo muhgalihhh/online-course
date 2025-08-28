@@ -63,7 +63,7 @@ interface MaterialsProps extends PageProps {
     materials: PaginatedData<Material>;
     groupedMaterials: GroupedMaterial;
     chapters: Chapter[];
-    courses: Array<{id: number; title: string}>;
+    courses: Array<{id: number; title: string; status?: 'draft' | 'published'}>;
     filters: {
         search?: string;
         course_id?: string;
@@ -239,9 +239,19 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
                                             onClick={() => setSelectedCourse(course.id)}
                                         >
                                             <CardHeader className="pb-3">
-                                                <CardTitle className="text-lg line-clamp-2">
-                                                    {course.title}
-                                                </CardTitle>
+                                                <div className="space-y-2">
+                                                    <CardTitle className="text-lg line-clamp-2">
+                                                        {course.title}
+                                                    </CardTitle>
+                                                    {course.status && (
+                                                        <Badge 
+                                                            variant={course.status === 'published' ? 'success' : 'warning'} 
+                                                            className="text-xs"
+                                                        >
+                                                            {course.status === 'published' ? 'Published' : 'Draft'}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </CardHeader>
                                             <CardContent>
                                                 <div className="space-y-2">
@@ -284,10 +294,20 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
                                         ← Kembali ke Daftar Course
                                     </Button>
                                     <div>
-                                        <CardTitle className="text-xl">
-                                            {courses.find(c => c.id === selectedCourse)?.title}
-                                        </CardTitle>
-                                        <p className="text-sm text-muted-foreground mt-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <CardTitle className="text-xl">
+                                                {courses.find(c => c.id === selectedCourse)?.title}
+                                            </CardTitle>
+                                            {courses.find(c => c.id === selectedCourse)?.status && (
+                                                <Badge 
+                                                    variant={courses.find(c => c.id === selectedCourse)?.status === 'published' ? 'success' : 'warning'} 
+                                                    className="text-xs"
+                                                >
+                                                    {courses.find(c => c.id === selectedCourse)?.status === 'published' ? 'Published' : 'Draft'}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
                                             Kelola materi untuk course ini
                                         </p>
                                     </div>
