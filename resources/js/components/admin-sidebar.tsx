@@ -114,8 +114,6 @@ const menuGroups: MenuGroup[] = [
                 label: 'Transactions',
                 icon: ArrowLeftRight,
                 href: 'admin.transactions.index',
-                badge: 'New',
-                badgeVariant: 'secondary',
             },
         ],
     },
@@ -172,13 +170,20 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
                         <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
                     )}
                     
-                    <Icon 
-                        iconNode={item.icon as any} 
-                        className={cn(
-                            "h-4 w-4 shrink-0 transition-colors",
-                            isActive && "text-primary"
-                        )} 
-                    />
+                                                    <div className={cn(
+                                    "p-1.5 rounded-lg transition-all",
+                                    isActive 
+                                        ? "bg-primary/10" 
+                                        : "group-hover:bg-muted"
+                                )}>
+                                    <Icon 
+                                        iconNode={item.icon as any} 
+                                        className={cn(
+                                            "h-4 w-4 shrink-0 transition-colors",
+                                            isActive && "text-primary"
+                                        )} 
+                                    />
+                                </div>
                     <span
                         className={cn(
                             'ml-3 transition-all duration-300', 
@@ -232,7 +237,14 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
         <TooltipProvider>
             <aside className="flex h-full w-full flex-col bg-background border-r">
                 <div className="flex h-14 items-center justify-between border-b px-4">
-                    <AppLogo />
+                    <div className="flex items-center gap-2">
+                        <AppLogo />
+                        {isExpanded && (
+                            <Badge variant="secondary" className="text-xs">
+                                Admin
+                            </Badge>
+                        )}
+                    </div>
                     {/* <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggle}>
                         {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         <span className="sr-only">Toggle sidebar</span>
