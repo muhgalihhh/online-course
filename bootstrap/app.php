@@ -81,13 +81,24 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // Handle any other exception (but skip ValidationException)
+        // Handle any other exception (but skip ValidationException and other framework exceptions)
         $exceptions->render(function (\Throwable $e, $request) {
             // Don't handle ValidationException - let it be handled by Laravel's default validation handling
             if ($e instanceof ValidationException) {
                 return null; // Return null to let Laravel handle it normally
             }
-
+            
+            // Don't handle AuthenticationException - it has its own handler above
+            if ($e instanceof AuthenticationException) {
+                return null;
+            }
+            
+            // Don't handle HttpException - it has its own handler above
+            if ($e instanceof HttpException) {
+                return null;
+            }
+            
+            // Only handle actual server errors (500) for unexpected exceptions
             if ($request->wantsJson() || $request->inertia()) {
                 // In production, don't expose internal errors
                 $isDebug = config('app.debug');
@@ -100,12 +111,22 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->respond(function ($response, $exception, $request) {
+            // Skip validation errors - they should be handled by Inertia automatically
+            if ($exception instanceof ValidationException) {
+                return $response;
+            }
+            
             // List of error codes we have custom pages for
             $customErrorPages = [403, 404, 419, 500, 503];
             $statusCode = $response->getStatusCode();
 
             // Handle Inertia requests
             if ($request->inertia()) {
+                // Don't interfere with 422 validation errors
+                if ($statusCode === 422) {
+                    return $response;
+                }
+                
                 // Handle 419 (CSRF token mismatch) specially
                 if ($statusCode === 419) {
                     return Inertia::render('errors/419', [
