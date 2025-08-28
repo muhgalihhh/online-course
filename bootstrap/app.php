@@ -39,19 +39,32 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function ($response, $exception, $request) {
-            if (in_array($response->getStatusCode(), [403, 404, 419, 500, 503])) {
-                if ($request->inertia()) {
-                    if ($response->getStatusCode() === 419) {
-                        return back()->with([
-                            'error' => 'Sesi telah berakhir. Silakan refresh halaman.',
-                        ]);
-                    }
-
-                    return Inertia::render('errors/' . $response->getStatusCode(), [
-                        'status' => $response->getStatusCode()
-                    ])
-                        ->toResponse($request)
-                        ->setStatusCode($response->getStatusCode());
+            // List of error codes we have custom pages for
+            $customErrorPages = [403, 404, 419, 500, 503];
+            $statusCode = $response->getStatusCode();
+            
+            // Handle Inertia requests
+            if ($request->inertia()) {
+                // Handle 419 (CSRF token mismatch) specially
+                if ($statusCode === 419) {
+                    return Inertia::render('errors/419', [
+                        'status' => 419
+                    ])->toResponse($request)->setStatusCode(419);
+                }
+                
+                // Handle custom error pages
+                if (in_array($statusCode, $customErrorPages)) {
+                    return Inertia::render('errors/' . $statusCode, [
+                        'status' => $statusCode
+                    ])->toResponse($request)->setStatusCode($statusCode);
+                }
+                
+                // For other errors, use the generic error page
+                if ($statusCode >= 400) {
+                    return Inertia::render('errors/index', [
+                        'status' => $statusCode,
+                        'message' => $exception->getMessage() ?: null
+                    ])->toResponse($request)->setStatusCode($statusCode);
                 }
             }
 
