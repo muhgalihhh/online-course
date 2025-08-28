@@ -9,7 +9,11 @@ import {
     GraduationCap,
     Layers,
     Info,
-    Upload
+    Upload,
+    BookOpen,
+    Video,
+    FileText,
+    HelpCircle
 } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -106,16 +110,48 @@ export default function HelpSupport({}: HelpSupportProps) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {/* Visual Flow Diagram */}
-                        <div className="mb-8 p-6 bg-muted/30 rounded-lg">
-                            <div className="flex items-center justify-center flex-wrap gap-4">
-                                <Badge variant="outline" className="text-sm py-1 px-3">1. Buat Kursus</Badge>
-                                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                                <Badge variant="outline" className="text-sm py-1 px-3">2. Tambah Chapter</Badge>
-                                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                                <Badge variant="outline" className="text-sm py-1 px-3">3. Upload Materi</Badge>
-                                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                                <Badge variant="default" className="text-sm py-1 px-3 bg-green-500">✓ Selesai</Badge>
+                        {/* Enhanced Visual Flow Diagram */}
+                        <div className="mb-8 p-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center justify-center flex-wrap gap-6">
+                                <div className="relative group">
+                                    <Badge variant="outline" className="text-sm py-2 px-4 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all cursor-pointer border-blue-300">
+                                        <span className="font-bold text-blue-600 mr-2">1</span> 
+                                        Buat Kursus
+                                    </Badge>
+                                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Setup dasar</span>
+                                    </div>
+                                </div>
+                                <ArrowRight className="h-6 w-6 text-blue-400 animate-pulse" />
+                                <div className="relative group">
+                                    <Badge variant="outline" className="text-sm py-2 px-4 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all cursor-pointer border-purple-300">
+                                        <span className="font-bold text-purple-600 mr-2">2</span>
+                                        Tambah Chapter
+                                    </Badge>
+                                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Struktur konten</span>
+                                    </div>
+                                </div>
+                                <ArrowRight className="h-6 w-6 text-purple-400 animate-pulse" />
+                                <div className="relative group">
+                                    <Badge variant="outline" className="text-sm py-2 px-4 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all cursor-pointer border-green-300">
+                                        <span className="font-bold text-green-600 mr-2">3</span>
+                                        Upload Materi
+                                    </Badge>
+                                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Konten pembelajaran</span>
+                                    </div>
+                                </div>
+                                <ArrowRight className="h-6 w-6 text-green-400 animate-pulse" />
+                                <div className="relative group">
+                                    <Badge className="text-sm py-2 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                                        Selesai!
+                                    </Badge>
+                                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Siap dipublikasikan</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -128,8 +164,11 @@ export default function HelpSupport({}: HelpSupportProps) {
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start gap-4">
                                                 <div className="flex-shrink-0">
-                                                    <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                                                        {flowStep.step}
+                                                    <div className="relative">
+                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center font-bold text-lg shadow-lg">
+                                                            {flowStep.step}
+                                                        </div>
+                                                        <div className="absolute -inset-1 rounded-full bg-primary/20 animate-ping" />
                                                     </div>
                                                 </div>
                                                 <div className="flex-1">

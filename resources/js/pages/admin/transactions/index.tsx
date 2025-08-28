@@ -58,9 +58,13 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
                 label: "Status",
                 options: [
                     { value: "pending", label: "Pending" },
-                    { value: "completed", label: "Completed" },
-                    { value: "failed", label: "Failed" },
-                    { value: "cancelled", label: "Cancelled" }
+                    { value: "settlement", label: "Settlement" },
+                    { value: "capture", label: "Capture" },
+                    { value: "expire", label: "Expired" },
+                    { value: "cancel", label: "Cancelled" },
+                    { value: "deny", label: "Denied" },
+                    { value: "failure", label: "Failed" },
+                    { value: "refund", label: "Refunded" }
                 ],
                 placeholder: "All Status"
             },
@@ -107,13 +111,19 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
+            case 'settlement':
+            case 'capture':
             case 'completed':
                 return 'default';
             case 'pending':
                 return 'secondary';
+            case 'expire':
+            case 'cancel':
+            case 'deny':
+            case 'failure':
             case 'failed':
                 return 'destructive';
-            case 'cancelled':
+            case 'refund':
                 return 'outline';
             default:
                 return 'secondary';
@@ -122,14 +132,25 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
 
     const getStatusLabel = (status: string) => {
         switch (status) {
+            case 'settlement':
+                return 'Berhasil';
+            case 'capture':
+                return 'Diproses';
             case 'completed':
                 return 'Selesai';
             case 'pending':
                 return 'Menunggu';
+            case 'expire':
+                return 'Kedaluwarsa';
+            case 'cancel':
+                return 'Dibatalkan';
+            case 'deny':
+                return 'Ditolak';
+            case 'failure':
             case 'failed':
                 return 'Gagal';
-            case 'cancelled':
-                return 'Dibatalkan';
+            case 'refund':
+                return 'Dikembalikan';
             default:
                 return status;
         }
