@@ -1,14 +1,19 @@
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function Register() {
+    const { toast } = useToast();
+    const [hasShownToast, setHasShownToast] = useState(false);
+    
     return (
         <AuthLayout title="Buat Akun Baru" description="Masukkan detail Anda untuk membuat akun di platform Pare EduHub">
             <Head title="Daftar" />
@@ -19,7 +24,40 @@ export default function Register() {
                 disableWhileProcessing
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
+                {({ processing, errors }) => {
+                    // Show toast for validation errors
+                    useEffect(() => {
+                        if (errors.email && (errors.email.includes('sudah digunakan') || errors.email.includes('sudah terdaftar') || errors.email.includes('already been taken')) && !hasShownToast) {
+                            toast({
+                                variant: 'destructive',
+                                title: 'Registrasi Gagal',
+                                description: 'Email sudah terdaftar. Silakan gunakan email lain atau login dengan email tersebut.',
+                            });
+                            setHasShownToast(true);
+                        } else if (errors.password && (errors.password.includes('konfirmasi') || errors.password.includes('confirmation')) && !hasShownToast) {
+                            toast({
+                                variant: 'destructive',
+                                title: 'Registrasi Gagal',
+                                description: 'Konfirmasi password tidak cocok. Pastikan password dan konfirmasi password sama.',
+                            });
+                            setHasShownToast(true);
+                        } else if (Object.keys(errors).length > 0 && !hasShownToast) {
+                            const firstError = Object.values(errors)[0];
+                            toast({
+                                variant: 'destructive',
+                                title: 'Registrasi Gagal',
+                                description: firstError || 'Silakan periksa kembali data yang Anda masukkan.',
+                            });
+                            setHasShownToast(true);
+                        }
+
+                        // Reset the flag when errors are cleared
+                        if (Object.keys(errors).length === 0) {
+                            setHasShownToast(false);
+                        }
+                    }, [errors]);
+                    
+                    return (
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
@@ -92,7 +130,8 @@ export default function Register() {
                             </TextLink>
                         </div>
                     </>
-                )}
+                    );
+                }}
             </Form>
         </AuthLayout>
     );
