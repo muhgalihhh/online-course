@@ -41,7 +41,9 @@ Route::get('/kelas-free', [\App\Http\Controllers\CourseController::class, 'free'
 Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, 'institutions'])->name('institutions.index');
 
 // Static pages
-// Route for About page removed as requested
+Route::get('/tentang', function () {
+    return Inertia::render('tentang');
+})->name('about');
 
 Route::get('/kontak', function () {
     return Inertia::render('kontak');
