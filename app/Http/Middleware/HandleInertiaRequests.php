@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -47,5 +48,23 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn() => $request->session()->get('error'),
             ],
         ];
+    }
+
+    /**
+     * Determines what props should be always available on error pages.
+     *
+     * @see https://inertiajs.com/error-handling
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    public function resolveValidationErrors(Request $request)
+    {
+        if (!$request->hasSession() || !$request->session()->has('errors')) {
+            return [];
+        }
+
+        return collect($request->session()->get('errors')->getBags())->mapWithKeys(function ($bag, $key) {
+            return [$key === 'default' ? 'errors' : $key => $bag->messages()];
+        })->all();
     }
 }
