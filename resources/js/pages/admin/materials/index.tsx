@@ -11,6 +11,7 @@ import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types
 import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Eye, FileText, Search, Video, File, Youtube, Image, FileIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Pagination } from '@/components/pagination';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -452,6 +453,13 @@ export default function Materials({ materials, groupedMaterials, chapters, cours
                                 </Link>
                             </CardContent>
                         </Card>
+                    )}
+                    
+                    {/* Pagination */}
+                    {materials.links && materials.links.length > 0 && (
+                        <div className="mt-6">
+                            <Pagination links={materials.links} />
+                        </div>
                     )}
                 </div>
             )}
