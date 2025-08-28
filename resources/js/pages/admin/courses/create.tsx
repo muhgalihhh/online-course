@@ -36,6 +36,7 @@ export default function CourseCreate({ categories, institutions }: CourseCreateP
         description: '',
         price: '',
         is_pro: false,
+        status: 'draft' as 'draft' | 'published',
         thumbnail_path: null as File | null,
     });
 
@@ -241,6 +242,23 @@ export default function CourseCreate({ categories, institutions }: CourseCreateP
                                     />
                                     <Label htmlFor="is_pro">Kursus Pro</Label>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Status Publikasi</Label>
+                                <Select
+                                    value={data.status}
+                                    onValueChange={(value: 'draft' | 'published') => setData('status', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="draft">Draft (Belum dipublikasi)</SelectItem>
+                                        <SelectItem value="published">Published (Sudah dipublikasi)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.status && <p className="text-sm text-red-600">{errors.status}</p>}
                             </div>
 
                             <div className="flex justify-end space-x-2 pt-4 border-t">

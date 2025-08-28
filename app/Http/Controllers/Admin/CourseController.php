@@ -46,6 +46,11 @@ class CourseController extends Controller
             $query->where('is_pro', $request->get('is_pro') === 'true');
         }
 
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
         // Filter by price range
         if ($request->filled('price_min')) {
             $query->where('price', '>=', $request->get('price_min'));
@@ -80,7 +85,7 @@ class CourseController extends Controller
             'courses' => $courses,
             'categories' => Category::all(),
             'institutions' => Institution::all(),
-            'filters' => $request->only(['search', 'category_id', 'institution_id', 'is_pro', 'price_min', 'price_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
+            'filters' => $request->only(['search', 'category_id', 'institution_id', 'is_pro', 'status', 'price_min', 'price_max', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
     }
 
@@ -191,5 +196,21 @@ class CourseController extends Controller
         return Inertia::render('admin/courses/show', [
             'course' => $courseData,
         ]);
+    }
+
+    /**
+     * Toggle status publikasi kursus.
+     */
+    public function togglePublish(Course $course)
+    {
+        if ($course->isDraft()) {
+            $course->publish();
+            $message = 'Kursus berhasil dipublikasikan.';
+        } else {
+            $course->unpublish();
+            $message = 'Kursus berhasil diubah ke draft.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 }

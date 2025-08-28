@@ -20,6 +20,7 @@ class Course extends Model
         'description',
         'price',
         'is_pro',
+        'status',
         'thumbnail_path',
     ];
 
@@ -129,5 +130,37 @@ class Course extends Model
             return \Illuminate\Support\Facades\Storage::disk('public')->url($this->thumbnail_path);
         }
         return null;
+    }
+
+    /**
+     * Check if the course is published
+     */
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
+
+    /**
+     * Check if the course is draft
+     */
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    /**
+     * Publish the course
+     */
+    public function publish(): bool
+    {
+        return $this->update(['status' => 'published']);
+    }
+
+    /**
+     * Unpublish the course (set to draft)
+     */
+    public function unpublish(): bool
+    {
+        return $this->update(['status' => 'draft']);
     }
 }

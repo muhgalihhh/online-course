@@ -28,6 +28,7 @@ class UpdateCourseRequest extends FormRequest
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'is_pro' => 'boolean',
+            'status' => 'required|in:draft,published',
             'thumbnail_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
@@ -44,6 +45,7 @@ class UpdateCourseRequest extends FormRequest
             'description' => 'deskripsi kursus',
             'price' => 'harga kursus',
             'is_pro' => 'status pro',
+            'status' => 'status publikasi',
             'thumbnail_path' => 'thumbnail kursus',
         ];
     }
