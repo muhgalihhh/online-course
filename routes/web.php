@@ -26,6 +26,25 @@ Route::get('/dashboard', function () {
 
 
 
+// Test routes for error pages (remove in production)
+if (app()->environment('local')) {
+    Route::get('/test-404', function () {
+        abort(404);
+    });
+    
+    Route::get('/test-500', function () {
+        abort(500);
+    });
+    
+    Route::get('/test-403', function () {
+        abort(403);
+    });
+    
+    Route::get('/test-503', function () {
+        abort(503);
+    });
+}
+
 require __DIR__ . '/auth.php';
 require __DIR__ . '/settings.php';
 require __DIR__ . '/admin.php';
