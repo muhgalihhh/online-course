@@ -14,7 +14,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BarChart3, Bell, HelpCircle, LogOut, Menu, Settings, Shield, User } from 'lucide-react';
+import { BarChart3, HelpCircle, LogOut, Menu, Settings, Shield, User } from 'lucide-react';
 
 interface AdminHeaderProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -26,15 +26,12 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
     const { auth } = page.props;
     const getInitials = useInitials();
     const { toggleSidebar } = useSidebar();
-    
 
     const handleLogout = () => {
         router.post(route('logout'));
     };
 
     const handleToggleSidebar = onToggleSidebar ?? toggleSidebar;
-
-    
 
     return (
         <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,61 +42,10 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle sidebar</span>
                     </Button>
-                    
                 </div>
 
                 {/* Right side - Notifications and Profile */}
                 <div className="flex items-center gap-2">
-                    
-
-                    {/* Notifications */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                                <Bell className="h-5 w-5" />
-                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                                    3
-                                </Badge>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-80">
-                            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <div className="max-h-64 overflow-y-auto">
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-blue-500" />
-                                        <span className="text-sm font-medium">New user registered</span>
-                                    </div>
-                                    <p className="mt-1 text-xs text-muted-foreground">John Doe has joined the platform</p>
-                                    <span className="mt-1 text-xs text-muted-foreground">2 minutes ago</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-green-500" />
-                                        <span className="text-sm font-medium">Course completed</span>
-                                    </div>
-                                    <p className="mt-1 text-xs text-muted-foreground">Advanced React course has been completed</p>
-                                    <span className="mt-1 text-xs text-muted-foreground">1 hour ago</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                                        <span className="text-sm font-medium">System update</span>
-                                    </div>
-                                    <p className="mt-1 text-xs text-muted-foreground">New features have been deployed</p>
-                                    <span className="mt-1 text-xs text-muted-foreground">3 hours ago</span>
-                                </DropdownMenuItem>
-                            </div>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="#" className="w-full text-center">
-                                    View all notifications
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -157,8 +103,6 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
                     </DropdownMenu>
                 </div>
             </div>
-
-            
         </header>
     );
 }
