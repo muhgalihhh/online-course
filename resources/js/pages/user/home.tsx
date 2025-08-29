@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import UserLayout from '@/layouts/user-layout';
 import { ArrowRight, Award, BookOpen, CloudSun, LifeBuoy, MessageSquare, PlayCircle, ShoppingCart, Star, Users, Zap } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
+import { useToast } from '@/hooks/use-toast';
 
 // --- Tipe Data (sesuai migrasi) ---
 interface Course {
@@ -30,6 +32,25 @@ interface Review {
 }
 
 const Home: React.FC = () => {
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast({
+                title: 'Berhasil!',
+                description: flash.success,
+            });
+        }
+        if (flash?.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: flash.error,
+            });
+        }
+    }, [flash?.success, flash?.error]);
+
     // --- Data Statis (Contoh) ---
     const NAMA_PLATFORM = 'Pare EduHub'; // Ganti dengan nama platform Anda
 

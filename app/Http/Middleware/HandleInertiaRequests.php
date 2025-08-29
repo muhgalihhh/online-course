@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn() => $request->session()->get('error'),
             ],
             'institution' => fn() => Institution::first(),
+            'url' => $request->path() ? '/' . $request->path() : '/',
         ];
     }
 

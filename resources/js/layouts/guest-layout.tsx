@@ -5,7 +5,6 @@ import {
     BookOpen,
     GraduationCap,
     Menu,
-    Search,
     X,
     User,
 } from 'lucide-react';
@@ -36,10 +35,18 @@ interface GuestLayoutProps {
 const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, isAuthenticated } = useAuth();
-    const { institution } = usePage<PageProps>().props;
+    const { institution, url } = usePage<PageProps & { url: string }>().props;
+
+    // Function to check if a link is active
+    const isActiveLink = (href: string) => {
+        if (href === '/') {
+            return url === '/';
+        }
+        return url.startsWith(href);
+    };
 
     const navigationItems = [
-        { name: 'Beranda', href: '/', active: true },
+        { name: 'Beranda', href: '/' },
         { name: 'Kelas Pro', href: '/kelas-pro' },
         { name: 'Kelas Free', href: '/kelas-free' },
         { name: 'Tentang', href: '/tentang' },
@@ -63,24 +70,27 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
 
                         {/* Desktop Navigation */}
                         <nav className="hidden items-center space-x-8 md:flex">
-                            {navigationItems.map((item) => (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                                        item.active ? 'text-primary' : 'text-muted-foreground'
-                                    }`}
-                                >
-                                    {item.name}
-                                </Link>
-                            ))}
+                            {navigationItems.map((item) => {
+                                const isActive = isActiveLink(item.href);
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`relative text-sm font-medium transition-colors hover:text-primary ${
+                                            isActive ? 'text-primary' : 'text-muted-foreground'
+                                        }`}
+                                    >
+                                        {item.name}
+                                        {isActive && (
+                                            <span className="absolute -bottom-[21px] left-0 right-0 h-[2px] bg-primary" />
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </nav>
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
-                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                                <Search className="h-4 w-4" />
-                            </Button>
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
                             {isAuthenticated ? (
@@ -115,23 +125,25 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                     {isMobileMenuOpen && (
                         <div className="border-t py-4 md:hidden">
                             <nav className="space-y-4">
-                                {navigationItems.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                            item.active ? 'text-primary' : 'text-muted-foreground'
-                                        }`}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
+                                {navigationItems.map((item) => {
+                                    const isActive = isActiveLink(item.href);
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`block text-sm font-medium transition-colors hover:text-primary ${
+                                                isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                            }`}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                {isActive && <span className="h-2 w-2 rounded-full bg-primary" />}
+                                                {item.name}
+                                            </span>
+                                        </Link>
+                                    );
+                                })}
                                 <div className="space-y-4 border-t pt-4">
-                                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                                        <Search className="mr-2 h-4 w-4" />
-                                        Cari Kursus
-                                    </Button>
                                     {isAuthenticated ? (
                                         <Button size="sm" className="w-full justify-center gap-2">
                                             <User className="h-4 w-4" />

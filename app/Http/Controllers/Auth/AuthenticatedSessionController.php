@@ -44,10 +44,10 @@ class AuthenticatedSessionController extends Controller
 
         // Otherwise, redirect based on role
         if ($user->isAdmin()) {
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->intended(route('admin.dashboard'))->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }
 
-        return redirect()->intended(route('user.dashboard'));
+        return redirect()->intended(route('user.dashboard'))->with('success', 'Selamat datang kembali, ' . $user->name . '!');
     }
 
     /**
