@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, X, Minimize2, Maximize2 } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface LiveChatWidgetProps {
     tawkToId?: string;
@@ -11,11 +12,12 @@ interface LiveChatWidgetProps {
 }
 
 const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({ 
-    tawkToId = "YOUR_TAWK_TO_ID", 
-    tawkToKey = "YOUR_TAWK_TO_KEY" 
+    tawkToId = "68b08159be8646192a419bab", 
+    tawkToKey = "1j3onihr8" 
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const { user } = useAuth();
 
     useEffect(() => {
         // Load Tawk.to script
@@ -79,7 +81,7 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
                 </Badge>
             </div>
 
-            {/* Custom Chat Widget (Fallback if Tawk.to doesn't load) */}
+            {/* Custom Chat Widget */}
             {isOpen && (
                 <div className="fixed bottom-24 right-6 z-50 w-80">
                     <Card className="border-0 shadow-2xl">
@@ -119,7 +121,7 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
                                     {/* Welcome Message */}
                                     <div className="bg-muted/50 rounded-lg p-3">
                                         <p className="text-sm text-muted-foreground">
-                                            👋 Halo! Ada yang bisa kami bantu? Tim support kami siap melayani Anda.
+                                            👋 Halo {user?.name || 'User'}! Ada yang bisa kami bantu? Tim support kami siap melayani Anda.
                                         </p>
                                     </div>
                                     

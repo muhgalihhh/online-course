@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import UserLayout from '@/layouts/user-layout';
+import UserDashboardLayout from '@/layouts/user-dashboard-layout';
 import { ArrowRight, Award, BookOpen, CloudSun, LifeBuoy, MessageSquare, PlayCircle, ShoppingCart, Star, Users, Zap } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
@@ -204,7 +204,7 @@ const Home: React.FC = () => {
     );
 
     return (
-        <UserLayout>
+        <UserDashboardLayout>
             {/* Hero Section */}
             <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-20">
                 <div className="container mx-auto px-4 text-center">
@@ -369,7 +369,7 @@ const Home: React.FC = () => {
                     </Accordion>
                 </div>
             </section>
-        </UserLayout>
+        </UserDashboardLayout>
     );
 };
 
