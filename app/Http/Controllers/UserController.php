@@ -35,7 +35,7 @@ class UserController extends Controller
         })
         ->filter(); // Remove null courses
 
-        return Inertia::render('user/dashboard', [
+        return Inertia::render('user/home', [
             'user' => $user->only(['name', 'email', 'role', 'created_at']),
             'enrollments' => $enrollments
         ]);
