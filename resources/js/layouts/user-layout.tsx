@@ -1,7 +1,6 @@
 import AppLogo from '@/components/app-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import LiveChatWidget from '@/components/live-chat-widget';
 import {
     Bell,
     BookOpen,
@@ -244,9 +243,6 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
                     </div>
                 </div>
             </footer>
-
-            {/* Live Chat Widget - Available for authenticated users */}
-            <LiveChatWidget />
         </div>
     );
 };

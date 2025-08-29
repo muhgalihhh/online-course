@@ -1,15 +1,32 @@
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { Button } from '@/components/ui/button';
+import LiveChatWidget from '@/components/live-chat-widget';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     BookOpen,
     GraduationCap,
     Menu,
     X,
     User,
+    Settings,
+    LogOut,
+    ShoppingBag,
+    Heart,
+    History,
+    CreditCard,
+    HelpCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
 import { usePage } from '@inertiajs/react';
 
@@ -28,13 +45,13 @@ interface PageProps {
     institution?: Institution;
 }
 
-interface GuestLayoutProps {
+interface UserDashboardLayoutProps {
     children: React.ReactNode;
 }
 
-const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
+const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, isAuthenticated } = useAuth();
+    const { user } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
 
     // Function to check if a link is active
@@ -46,11 +63,25 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     };
 
     const navigationItems = [
-        { name: 'Beranda', href: '/' },
+        { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Kelas Saya', href: '/my-courses' },
         { name: 'Kelas Pro', href: '/kelas-pro' },
         { name: 'Kelas Free', href: '/kelas-free' },
         { name: 'Tentang Kami', href: '/tentang' },
     ];
+
+    const handleLogout = () => {
+        router.post('/logout');
+    };
+
+    const getInitials = (name: string) => {
+        return name
+            ?.split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2) || 'U';
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -92,21 +123,86 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                         <div className="hidden items-center space-x-4 md:flex">
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
-                            {isAuthenticated ? (
-                                <Button size="sm" className="gap-2">
-                                    <User className="h-4 w-4" />
-                                    <Link href="/dashboard">Masuk</Link>
-                                </Button>
-                            ) : (
-                                <>
-                                    <Button variant="outline" size="sm">
-                                        <Link href="/register">Daftar</Link>
+                            
+                            {/* Profile Dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarImage src={user?.avatar} alt={user?.name} />
+                                            <AvatarFallback>{getInitials(user?.name || '')}</AvatarFallback>
+                                        </Avatar>
                                     </Button>
-                                    <Button size="sm">
-                                        <Link href="/login">Masuk</Link>
-                                    </Button>
-                                </>
-                            )}
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end" forceMount>
+                                    <DropdownMenuLabel className="font-normal">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-medium leading-none">{user?.name}</p>
+                                            <p className="text-xs leading-none text-muted-foreground">
+                                                {user?.email}
+                                            </p>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profile" className="cursor-pointer">
+                                            <User className="mr-2 h-4 w-4" />
+                                            <span>Profile</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/my-courses" className="cursor-pointer">
+                                            <BookOpen className="mr-2 h-4 w-4" />
+                                            <span>Kelas Saya</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/purchases" className="cursor-pointer">
+                                            <ShoppingBag className="mr-2 h-4 w-4" />
+                                            <span>Pembelian</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/wishlist" className="cursor-pointer">
+                                            <Heart className="mr-2 h-4 w-4" />
+                                            <span>Wishlist</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/history" className="cursor-pointer">
+                                            <History className="mr-2 h-4 w-4" />
+                                            <span>Riwayat</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/settings" className="cursor-pointer">
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            <span>Pengaturan</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/billing" className="cursor-pointer">
+                                            <CreditCard className="mr-2 h-4 w-4" />
+                                            <span>Tagihan</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/help" className="cursor-pointer">
+                                            <HelpCircle className="mr-2 h-4 w-4" />
+                                            <span>Bantuan</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                        onClick={handleLogout}
+                                        className="cursor-pointer text-red-600 focus:text-red-600"
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Keluar</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
 
                         {/* Mobile menu button */}
@@ -123,6 +219,18 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                     {/* Mobile Navigation */}
                     {isMobileMenuOpen && (
                         <div className="border-t py-4 md:hidden">
+                            {/* Mobile User Info */}
+                            <div className="mb-4 flex items-center gap-3 px-2">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                                    <AvatarFallback>{getInitials(user?.name || '')}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium">{user?.name}</p>
+                                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                                </div>
+                            </div>
+
                             <nav className="space-y-4">
                                 {navigationItems.map((item) => {
                                     const isActive = isActiveLink(item.href);
@@ -142,22 +250,42 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                         </Link>
                                     );
                                 })}
-                                <div className="space-y-4 border-t pt-4">
-                                    {isAuthenticated ? (
-                                        <Button size="sm" className="w-full justify-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            <Link href="/dashboard">Masuk</Link>
-                                        </Button>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Button variant="outline" size="sm" className="flex-1">
-                                                <Link href="/register">Daftar</Link>
-                                            </Button>
-                                            <Button size="sm" className="flex-1">
-                                                <Link href="/login">Masuk</Link>
-                                            </Button>
-                                        </div>
-                                    )}
+                                
+                                <div className="space-y-2 border-t pt-4">
+                                    <Link
+                                        href="/profile"
+                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <User className="h-4 w-4" />
+                                        Profile
+                                    </Link>
+                                    <Link
+                                        href="/purchases"
+                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <ShoppingBag className="h-4 w-4" />
+                                        Pembelian
+                                    </Link>
+                                    <Link
+                                        href="/settings"
+                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                        Pengaturan
+                                    </Link>
+                                    <button
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            handleLogout();
+                                        }}
+                                        className="flex w-full items-center gap-2 text-sm text-red-600 hover:text-red-700"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Keluar
+                                    </button>
                                 </div>
                             </nav>
                         </div>
@@ -198,6 +326,16 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                             <h4 className="mb-4 font-semibold">Menu Utama</h4>
                             <ul className="space-y-2">
                                 <li>
+                                    <Link href="/dashboard" className="text-muted-foreground transition-colors hover:text-primary">
+                                        Dashboard
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/my-courses" className="text-muted-foreground transition-colors hover:text-primary">
+                                        Kelas Saya
+                                    </Link>
+                                </li>
+                                <li>
                                     <Link href="/kelas-pro" className="text-muted-foreground transition-colors hover:text-primary">
                                         Kelas Pro
                                     </Link>
@@ -212,7 +350,6 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                         Tentang Kami
                                     </Link>
                                 </li>
-
                             </ul>
                         </div>
 
@@ -264,8 +401,11 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                     </div>
                 </div>
             </footer>
+
+            {/* Live Chat Widget - Only for Users */}
+            <LiveChatWidget />
         </div>
     );
 };
 
-export default GuestLayout;
+export default UserDashboardLayout;
