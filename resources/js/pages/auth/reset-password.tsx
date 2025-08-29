@@ -5,7 +5,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import GuestLayout from '@/layouts/guest-layout';
 
 interface ResetPasswordProps {
     token: string;
@@ -14,9 +14,18 @@ interface ResetPasswordProps {
 
 export default function ResetPassword({ token, email }: ResetPasswordProps) {
     return (
-        <AuthLayout title="Reset Password" description="Silakan masukkan password baru Anda di bawah ini">
+        <GuestLayout>
             <Head title="Reset Password" />
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-md space-y-8">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold tracking-tight">Reset Password</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Silakan masukkan password baru Anda di bawah ini
+                        </p>
+                    </div>
 
+                    <div className="mt-8 bg-card rounded-lg border shadow-sm p-6">
             <Form
                 method="post"
                 action={route('password.store')}
@@ -63,6 +72,9 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     </div>
                 )}
             </Form>
-        </AuthLayout>
+                    </div>
+                </div>
+            </div>
+        </GuestLayout>
     );
 }

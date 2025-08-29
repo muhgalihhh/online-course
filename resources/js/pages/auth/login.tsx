@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import AuthLayout from '@/layouts/auth-layout';
+import GuestLayout from '@/layouts/guest-layout';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -160,29 +160,42 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const [submitCount, setSubmitCount] = useState(0);
     
     return (
-        <AuthLayout title="Masuk ke Akun Anda" description="Masukkan email dan password Anda untuk masuk ke platform Pare EduHub">
+        <GuestLayout>
             <Head title="Masuk" />
+            
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-md space-y-8">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold tracking-tight">Masuk ke Akun Anda</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Masukkan email dan password Anda untuk masuk ke platform Pare EduHub
+                        </p>
+                    </div>
 
-            <Form 
-                method="post" 
-                action={route('login')} 
-                resetOnSuccess={['password']} 
-                className="space-y-6"
-                onBefore={() => {
-                    // Increment submit count when form is submitted
-                    setSubmitCount(prev => prev + 1);
-                    return true;
-                }}
-            >
-                {({ processing, errors }) => <LoginFormContent processing={processing} errors={errors} canResetPassword={canResetPassword} submitCount={submitCount} />}
-            </Form>
+                    <div className="mt-8 bg-card rounded-lg border shadow-sm p-6">
+                        <Form 
+                            method="post" 
+                            action={route('login')} 
+                            resetOnSuccess={['password']} 
+                            className="space-y-6"
+                            onBefore={() => {
+                                // Increment submit count when form is submitted
+                                setSubmitCount(prev => prev + 1);
+                                return true;
+                            }}
+                        >
+                            {({ processing, errors }) => <LoginFormContent processing={processing} errors={errors} canResetPassword={canResetPassword} submitCount={submitCount} />}
+                        </Form>
 
-            {status && (
-                <Alert className="border-green-200 bg-green-50 text-green-900">
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertDescription>{status}</AlertDescription>
-                </Alert>
-            )}
-        </AuthLayout>
+                        {status && (
+                            <Alert className="mt-4 border-green-200 bg-green-50 text-green-900">
+                                <CheckCircle className="h-4 w-4" />
+                                <AlertDescription>{status}</AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </GuestLayout>
     );
 }

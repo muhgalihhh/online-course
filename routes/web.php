@@ -49,6 +49,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
+    
+    // My Courses route (redirects based on role)
+    Route::get('/my-courses', function () {
+        $user = auth()->user();
+        
+        if ($user->isAdmin()) {
+            // Admins don't have enrolled courses, redirect to courses management
+            return redirect()->route('admin.courses.index');
+        }
+        
+        return redirect()->route('user.my-courses');
+    })->name('my-courses');
 });
 
 // Midtrans webhook (no auth)
