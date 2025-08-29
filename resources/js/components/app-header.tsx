@@ -36,7 +36,7 @@ const rightNavItems: NavItem[] = [
     },
 ];
 
-const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const activeItemStyles = 'text-primary font-semibold dark:text-primary';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -46,6 +46,20 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    
+    // Function to check if the current route is active
+    const isActiveRoute = (href: string) => {
+        // Exact match for dashboard
+        if (href === '/dashboard' && page.url === '/dashboard') {
+            return true;
+        }
+        // For other routes, check if the current URL starts with the href
+        if (href !== '/dashboard') {
+            return page.url === href || page.url.startsWith(href + '/');
+        }
+        return false;
+    };
+    
     return (
         <>
             <div className="border-b border-sidebar-border/80">
@@ -66,12 +80,22 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
                                         <div className="flex flex-col space-y-4">
-                                            {mainNavItems.map((item) => (
-                                                <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
-                                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                                    <span>{item.title}</span>
-                                                </Link>
-                                            ))}
+                                            {mainNavItems.map((item) => {
+                                                const isActive = isActiveRoute(item.href);
+                                                return (
+                                                    <Link 
+                                                        key={item.title} 
+                                                        href={item.href} 
+                                                        className={cn(
+                                                            "flex items-center space-x-2 font-medium transition-colors",
+                                                            isActive ? "text-primary" : "text-foreground hover:text-primary"
+                                                        )}
+                                                    >
+                                                        {item.icon && <Icon iconNode={item.icon} className={cn("h-5 w-5", isActive && "text-primary")} />}
+                                                        <span>{item.title}</span>
+                                                    </Link>
+                                                );
+                                            })}
                                         </div>
 
                                         <div className="flex flex-col space-y-4">
@@ -102,24 +126,27 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                                {mainNavItems.map((item, index) => (
-                                    <NavigationMenuItem key={index} className="relative flex h-full items-center">
-                                        <Link
-                                            href={item.href}
-                                            className={cn(
-                                                navigationMenuTriggerStyle(),
-                                                page.url === item.href && activeItemStyles,
-                                                'h-9 cursor-pointer px-3',
+                                {mainNavItems.map((item, index) => {
+                                    const isActive = isActiveRoute(item.href);
+                                    return (
+                                        <NavigationMenuItem key={index} className="relative flex h-full items-center">
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    navigationMenuTriggerStyle(),
+                                                    isActive && activeItemStyles,
+                                                    'h-9 cursor-pointer px-3 transition-all',
+                                                )}
+                                            >
+                                                {item.icon && <Icon iconNode={item.icon} className={cn("mr-2 h-4 w-4", isActive && "text-primary")} />}
+                                                {item.title}
+                                            </Link>
+                                            {isActive && (
+                                                <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-primary"></div>
                                             )}
-                                        >
-                                            {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
-                                            {item.title}
-                                        </Link>
-                                        {page.url === item.href && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
-                                        )}
-                                    </NavigationMenuItem>
-                                ))}
+                                        </NavigationMenuItem>
+                                    );
+                                })}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
