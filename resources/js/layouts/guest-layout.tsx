@@ -49,8 +49,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
         { name: 'Beranda', href: '/' },
         { name: 'Kelas Pro', href: '/kelas-pro' },
         { name: 'Kelas Free', href: '/kelas-free' },
-        { name: 'Tentang', href: '/tentang' },
-        { name: 'Kontak', href: '/kontak' },
+        { name: 'Tentang Kami', href: '/tentang' },
     ];
 
     return (
@@ -213,11 +212,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                         Tentang Kami
                                     </Link>
                                 </li>
-                                <li>
-                                    <Link href="/kontak" className="text-muted-foreground transition-colors hover:text-primary">
-                                        Kontak
-                                    </Link>
-                                </li>
+
                             </ul>
                         </div>
 

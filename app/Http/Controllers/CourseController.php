@@ -171,4 +171,34 @@ class CourseController extends Controller
             'institutions' => $institutions
         ]);
     }
+
+    /**
+     * Show enrollment page for a course
+     */
+    public function enroll($id)
+    {
+        $course = Course::with(['category', 'institution'])->findOrFail($id);
+
+        // Check if course is published
+        if ($course->status !== 'published') {
+            abort(404);
+        }
+
+        // Check if user is already enrolled
+        $isEnrolled = false;
+        if (auth()->check()) {
+            $isEnrolled = $course->enrollments()
+                ->where('user_id', auth()->id())
+                ->exists();
+        }
+
+        if ($isEnrolled) {
+            return redirect()->route('courses.show', $course->id)
+                ->with('info', 'Anda sudah terdaftar di kursus ini.');
+        }
+
+        return Inertia::render('courses/enroll', [
+            'course' => $course
+        ]);
+    }
 }

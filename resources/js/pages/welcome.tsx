@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import WeatherWidget from '@/components/weather-widget';
 import LiveChatWidget from '@/components/live-chat-widget';
-import InstitutionCard from '@/components/institution-card';
+import CustomAlert from '@/components/custom-alert';
 import { 
     BookOpen, 
     GraduationCap, 
@@ -27,10 +27,22 @@ import {
     Code,
     Palette,
     Database,
-    Smartphone
+    Smartphone,
+    Layers,
+    TrendingUp,
+    BookMarked
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
+
+interface Category {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    courses_count?: number;
+}
 
 interface Course {
     id: number;
@@ -66,11 +78,33 @@ interface Institution {
 interface PageProps {
     topCourses?: Course[];
     institution?: Institution;
+    categories?: Category[];
+    auth?: {
+        user?: {
+            id: number;
+            name: string;
+            email: string;
+            role: string;
+        };
+    };
 }
 
 export default function Welcome() {
-    const { topCourses, institution } = usePage<PageProps>().props;
+    const { topCourses, institution, categories, auth } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
+    const [alertState, setAlertState] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        type: 'info' | 'warning' | 'error' | 'success';
+        onAction?: () => void;
+    }>({
+        open: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+
     const features = [
         {
             icon: <BookOpen className="h-6 w-6" />,
@@ -107,62 +141,39 @@ export default function Welcome() {
     const stats = [
         { label: "Kursus Tersedia", value: "500+", icon: <BookOpen className="h-4 w-4" /> },
         { label: "Siswa Aktif", value: "50K+", icon: <Users className="h-4 w-4" /> },
-        { label: "Kategori", value: "15+", icon: <GraduationCap className="h-4 w-4" /> },
+        { label: "Kategori", value: `${categories?.length || 15}+`, icon: <GraduationCap className="h-4 w-4" /> },
         { label: "Rating Rata-rata", value: "4.9", icon: <Star className="h-4 w-4" /> }
     ];
 
     const handleEnrollCourse = (courseId: number, isPro: boolean) => {
+        // Check if user is logged in
         if (!isAuthenticated) {
-            alert('Silakan login atau daftar terlebih dahulu untuk mendaftar kursus ini.');
-            router.visit('/login');
-        } else {
-            // Navigate to enrollment/payment page
-            router.visit(`/courses/${courseId}/enroll`);
+            setAlertState({
+                open: true,
+                title: 'Login Diperlukan',
+                description: 'Silakan login atau daftar terlebih dahulu untuk mendaftar kursus ini.',
+                type: 'warning',
+                onAction: () => {
+                    router.visit('/login');
+                }
+            });
+            return;
         }
-    };
 
-    // Use real courses from database or fallback to dummy data
-    const displayCourses = topCourses && topCourses.length > 0 ? topCourses : [
-        {
-            id: 1,
-            title: "Full-Stack Laravel & React Mastery",
-            description: "Bangun aplikasi web modern dari awal hingga deployment dengan teknologi terkini.",
-            price: 750000,
-            is_pro: true,
-            thumbnail: null,
-            category: { id: 1, name: "Web Development" },
-            institution: { id: 1, name: institution?.name || "Pare EduHub" },
-            average_rating: 4.9,
-            total_reviews: 1250,
-            total_students: 2500
-        },
-        {
-            id: 2,
-            title: "UI/UX Design for Modern Apps",
-            description: "Pelajari prinsip desain antarmuka yang intuitif dan menarik untuk aplikasi modern.",
-            price: 550000,
-            is_pro: true,
-            thumbnail: null,
-            category: { id: 2, name: "Design" },
-            institution: { id: 1, name: institution?.name || "Pare EduHub" },
-            average_rating: 4.8,
-            total_reviews: 2100,
-            total_students: 3000
-        },
-        {
-            id: 3,
-            title: "Advanced DevOps with Kubernetes",
-            description: "Orkestrasi dan skalabilitas aplikasi tingkat lanjut dengan teknologi container.",
-            price: 850000,
-            is_pro: true,
-            thumbnail: null,
-            category: { id: 3, name: "DevOps" },
-            institution: { id: 1, name: institution?.name || "Pare EduHub" },
-            average_rating: 4.7,
-            total_reviews: 980,
-            total_students: 1800
+        // Check if user is admin
+        if (auth?.user?.role === 'admin') {
+            setAlertState({
+                open: true,
+                title: 'Akses Terbatas',
+                description: 'Admin tidak dapat mendaftar kursus. Silakan gunakan akun user untuk mendaftar kursus.',
+                type: 'error'
+            });
+            return;
         }
-    ];
+
+        // Navigate to enrollment/payment page
+        router.visit(`/courses/${courseId}/enroll`);
+    };
 
     const benefits = [
         "Akses ke kursus berkualitas tinggi yang dirancang khusus",
@@ -172,6 +183,17 @@ export default function Welcome() {
         "Widget cuaca real-time",
         "Bayar sekali untuk akses semua kelas Pro selamanya"
     ];
+
+    const getCategoryIcon = (categoryName: string) => {
+        const name = categoryName.toLowerCase();
+        if (name.includes('web') || name.includes('development')) return <Code className="h-5 w-5" />;
+        if (name.includes('design') || name.includes('ui')) return <Palette className="h-5 w-5" />;
+        if (name.includes('data') || name.includes('database')) return <Database className="h-5 w-5" />;
+        if (name.includes('mobile') || name.includes('android') || name.includes('ios')) return <Smartphone className="h-5 w-5" />;
+        if (name.includes('devops') || name.includes('cloud')) return <Layers className="h-5 w-5" />;
+        if (name.includes('business') || name.includes('marketing')) return <TrendingUp className="h-5 w-5" />;
+        return <BookMarked className="h-5 w-5" />;
+    };
 
     const CourseCard = ({ course }: { course: Course }) => (
         <Card className="overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg h-full flex flex-col">
@@ -236,11 +258,12 @@ export default function Welcome() {
 
     return (
         <GuestLayout>
-            {/* Hero Section */}
+            {/* Hero Section with Weather Widget */}
             <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-primary/5 py-20">
                 <div className="container mx-auto px-4">
-                    <div className="grid items-center gap-12 lg:grid-cols-2">
-                        <div className="space-y-8">
+                    <div className="grid items-start gap-12 lg:grid-cols-3">
+                        {/* Main Hero Content */}
+                        <div className="lg:col-span-2 space-y-8">
                             <div className="space-y-4">
                                 <Badge variant="secondary" className="w-fit">
                                     <Star className="mr-1 h-3 w-3" />
@@ -259,10 +282,10 @@ export default function Welcome() {
                             </div>
                             
                             <div className="flex flex-col gap-4 sm:flex-row">
-                                <Button size="lg" className="text-base">
+                                <Button size="lg" className="text-base" asChild>
                                     <Link href="/register">Mulai Belajar Sekarang</Link>
                                 </Button>
-                                <Button variant="outline" size="lg" className="text-base">
+                                <Button variant="outline" size="lg" className="text-base" asChild>
                                     <Link href="/courses">Lihat Semua Kursus</Link>
                                 </Button>
                             </div>
@@ -283,6 +306,175 @@ export default function Welcome() {
                             </div>
                         </div>
 
+                        {/* Weather Widget in Hero */}
+                        <div className="lg:col-span-1">
+                            <WeatherWidget />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Categories Section */}
+            {categories && categories.length > 0 && (
+                <section className="py-16">
+                    <div className="container mx-auto px-4">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold mb-4">Kategori Kursus</h2>
+                            <p className="text-muted-foreground max-w-2xl mx-auto">
+                                Jelajahi berbagai kategori kursus yang tersedia di platform kami
+                            </p>
+                        </div>
+                        
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            {categories.slice(0, 8).map((category) => (
+                                <Link
+                                    key={category.id}
+                                    href={`/courses?category=${category.id}`}
+                                    className="group"
+                                >
+                                    <Card className="border-0 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                                        <CardContent className="p-6">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                    {getCategoryIcon(category.name)}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-semibold">{category.name}</h3>
+                                                    {category.courses_count !== undefined && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {category.courses_count} Kursus
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {category.description && (
+                                                <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+                                                    {category.description}
+                                                </p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
+                        
+                        {categories.length > 8 && (
+                            <div className="text-center mt-8">
+                                <Button variant="outline" size="lg" asChild>
+                                    <Link href="/courses">
+                                        Lihat Semua Kategori
+                                    </Link>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
+
+            {/* Stats Section */}
+            <section className="py-16 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+                        {stats.map((stat, index) => (
+                            <Card key={index} className="border-0 shadow-sm">
+                                <CardContent className="p-6 text-center">
+                                    <div className="mb-2 flex justify-center">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                            {stat.icon}
+                                        </div>
+                                    </div>
+                                    <div className="text-2xl font-bold">{stat.value}</div>
+                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="py-16">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-bold mb-4">Fitur Unggulan Platform</h2>
+                        <p className="text-muted-foreground max-w-2xl mx-auto">
+                            Nikmati berbagai fitur canggih yang dirancang untuk memberikan pengalaman belajar terbaik
+                        </p>
+                    </div>
+                    
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {features.map((feature, index) => (
+                            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                                <CardHeader>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
+                                        {feature.icon}
+                                    </div>
+                                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <CardDescription className="text-base">
+                                        {feature.description}
+                                    </CardDescription>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Top Courses Section */}
+            {topCourses && topCourses.length > 0 && (
+                <section className="py-16 bg-muted/30">
+                    <div className="container mx-auto px-4">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold mb-4">Kursus Terpopuler</h2>
+                            <p className="text-muted-foreground max-w-2xl mx-auto">
+                                Temukan kursus terbaik dengan rating tinggi dan ulasan positif dari ribuan siswa
+                            </p>
+                        </div>
+                        
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {topCourses.map((course) => (
+                                <CourseCard key={course.id} course={course} />
+                            ))}
+                        </div>
+                        
+                        <div className="text-center mt-8">
+                            <Button size="lg" asChild>
+                                <Link href="/courses">
+                                    Lihat Semua Kursus
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Benefits Section */}
+            <section className="py-16">
+                <div className="container mx-auto px-4">
+                    <div className="grid gap-12 lg:grid-cols-2">
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold">Mengapa Memilih {institution?.name || 'Pare EduHub'}?</h2>
+                            <p className="text-muted-foreground text-lg">
+                                Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi untuk semua level. 
+                                Dapatkan akses ke kursus-kursus pilihan dari dasar hingga advanced.
+                            </p>
+                            <div className="space-y-4">
+                                {benefits.map((benefit, index) => (
+                                    <div key={index} className="flex items-center gap-3">
+                                        <CheckCircle className="h-5 w-5 text-primary" />
+                                        <span className="text-muted-foreground">{benefit}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="pt-4">
+                                <Button size="lg" asChild>
+                                    <Link href="/register">Bergabung Sekarang</Link>
+                                </Button>
+                            </div>
+                        </div>
+                        
                         <div className="relative">
                             <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/20 to-primary/5">
                                 <CardContent className="p-6">
@@ -322,107 +514,6 @@ export default function Welcome() {
                 </div>
             </section>
 
-            {/* Stats Section */}
-            <section className="py-16">
-                <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-                        {stats.map((stat, index) => (
-                            <Card key={index} className="border-0 shadow-sm">
-                                <CardContent className="p-6 text-center">
-                                    <div className="mb-2 flex justify-center">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                            {stat.icon}
-                                        </div>
-                                    </div>
-                                    <div className="text-2xl font-bold">{stat.value}</div>
-                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Section */}
-            <section className="py-16 bg-muted/30">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Fitur Unggulan Platform</h2>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Nikmati berbagai fitur canggih yang dirancang untuk memberikan pengalaman belajar terbaik
-                        </p>
-                    </div>
-                    
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {features.map((feature, index) => (
-                            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                                <CardHeader>
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                                        {feature.icon}
-                                    </div>
-                                    <CardTitle className="text-lg">{feature.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <CardDescription className="text-base">
-                                        {feature.description}
-                                    </CardDescription>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Benefits Section */}
-            <section className="py-16">
-                <div className="container mx-auto px-4">
-                    <div className="grid gap-12 lg:grid-cols-2">
-                        <div className="space-y-6">
-                            <h2 className="text-3xl font-bold">Mengapa Memilih {institution?.name || 'Pare EduHub'}?</h2>
-                            <p className="text-muted-foreground text-lg">
-                                Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi untuk semua level. 
-                                Dapatkan akses ke kursus-kursus pilihan dari dasar hingga advanced.
-                            </p>
-                            <div className="space-y-4">
-                                {benefits.map((benefit, index) => (
-                                    <div key={index} className="flex items-center gap-3">
-                                        <CheckCircle className="h-5 w-5 text-primary" />
-                                        <span className="text-muted-foreground">{benefit}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="pt-4">
-                                <Button size="lg">
-                                    <Link href="/register">Bergabung Sekarang</Link>
-                                </Button>
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-6">
-                            <WeatherWidget />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Top Courses Section */}
-            <section className="py-16 bg-muted/30">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Kursus Terpopuler</h2>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Temukan kursus terbaik dengan rating tinggi dan ulasan positif dari ribuan siswa
-                        </p>
-                    </div>
-                    
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {displayCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* CTA Section */}
             <section className="py-16 bg-primary text-primary-foreground">
                 <div className="container mx-auto px-4 text-center">
@@ -431,15 +522,25 @@ export default function Welcome() {
                         Bergabunglah dengan ribuan siswa yang telah merasakan manfaat platform pembelajaran kami
                     </p>
                     <div className="flex flex-col gap-4 sm:flex-row justify-center">
-                        <Button size="lg" variant="secondary" className="text-base">
+                        <Button size="lg" variant="secondary" className="text-base" asChild>
                             <Link href="/register">Daftar Sekarang</Link>
                         </Button>
-                        <Button size="lg" variant="outline" className="text-base border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+                        <Button size="lg" variant="outline" className="text-base border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
                             <Link href="/login">Masuk</Link>
                         </Button>
                     </div>
                 </div>
             </section>
+            
+            {/* Custom Alert Dialog */}
+            <CustomAlert
+                open={alertState.open}
+                onClose={() => setAlertState({ ...alertState, open: false })}
+                title={alertState.title}
+                description={alertState.description}
+                type={alertState.type}
+                onAction={alertState.onAction}
+            />
             
             {/* Live Chat Widget */}
             <LiveChatWidget />
