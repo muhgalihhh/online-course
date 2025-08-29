@@ -118,8 +118,13 @@ export default function CourseShow() {
         if (!isAuthenticated) {
             setShowLoginDialog(true);
         } else {
-            // Navigate to enrollment/payment page
-            router.visit(`/courses/${course.id}/enroll`);
+            // For free courses, directly enroll without payment
+            if (!course.is_pro && course.price === 0) {
+                router.post(`/courses/${course.id}/enroll-free`);
+            } else {
+                // Navigate to enrollment/payment page for pro courses
+                router.visit(`/courses/${course.id}/enroll`);
+            }
         }
     };
 
@@ -542,12 +547,18 @@ export default function CourseShow() {
                     <DialogHeader>
                         <DialogTitle>Login Diperlukan</DialogTitle>
                         <DialogDescription>
-                            Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.
+                            {course.is_pro ? 
+                                'Silakan login atau daftar terlebih dahulu untuk memesan kursus pro ini.' :
+                                'Silakan login atau daftar terlebih dahulu untuk mengikuti kursus gratis ini.'
+                            }
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowLoginDialog(false)}>
+                            Batal
+                        </Button>
                         <Button onClick={handleLoginRedirect}>
-                            OK
+                            Login
                         </Button>
                     </DialogFooter>
                 </DialogContent>

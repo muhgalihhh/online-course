@@ -75,9 +75,9 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
 
     const navigationItems = [
         { name: 'Beranda', href: '/', requiresAuth: false },
-        { name: 'Kelas Pro', href: isAuthenticated ? '/kelas-pro' : '/login', requiresAuth: true },
-        { name: 'Kelas Free', href: isAuthenticated ? '/kelas-free' : '/login', requiresAuth: true },
-        ...(isAuthenticated ? [{ name: 'Kelas Anda', href: '/my-courses', requiresAuth: false }] : []),
+        { name: 'Kelas Pro', href: '/kelas-pro', requiresAuth: false },
+        { name: 'Kelas Free', href: '/kelas-free', requiresAuth: false },
+        { name: 'Kelas Anda', href: isAuthenticated ? '/my-courses' : '/dashboard', requiresAuth: false },
         { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
     ];
 

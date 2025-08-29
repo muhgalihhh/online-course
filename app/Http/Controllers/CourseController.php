@@ -145,11 +145,7 @@ class CourseController extends Controller
      */
     public function pro(Request $request)
     {
-        // If user is not authenticated, redirect to dashboard
-        if (!auth()->check()) {
-            return redirect()->route('login')->with('info', 'Silakan login untuk melihat kelas Pro.');
-        }
-        
+        // Allow guest access but filter for pro courses
         $request->merge(['type' => 'pro']);
         return $this->index($request);
     }
@@ -159,11 +155,7 @@ class CourseController extends Controller
      */
     public function free(Request $request)
     {
-        // If user is not authenticated, redirect to dashboard
-        if (!auth()->check()) {
-            return redirect()->route('login')->with('info', 'Silakan login untuk melihat kelas Free.');
-        }
-        
+        // Allow guest access but filter for free courses
         $request->merge(['type' => 'free']);
         return $this->index($request);
     }
@@ -210,6 +202,52 @@ class CourseController extends Controller
         return Inertia::render('courses/enroll', [
             'course' => $course
         ]);
+    }
+
+    /**
+     * Handle free course enrollment
+     */
+    public function enrollFree($id)
+    {
+        $course = Course::with(['category', 'institution'])->findOrFail($id);
+
+        // Check if course is published
+        if ($course->status !== 'published') {
+            abort(404);
+        }
+
+        // Check if course is free
+        if ($course->is_pro || $course->price > 0) {
+            return redirect()->route('courses.show', $course->id)
+                ->with('error', 'Kursus ini adalah kursus berbayar.');
+        }
+
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('info', 'Silakan login untuk mendaftar di kursus ini.');
+        }
+
+        // Check if user is already enrolled
+        $isEnrolled = $course->enrollments()
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        if ($isEnrolled) {
+            return redirect()->route('courses.learn', $course->id)
+                ->with('info', 'Anda sudah terdaftar di kursus ini.');
+        }
+
+        // Create enrollment
+        \App\Models\Enrollment::create([
+            'user_id' => auth()->id(),
+            'course_id' => $course->id,
+            'enrolled_at' => now(),
+            'progress' => 0,
+        ]);
+
+        return redirect()->route('courses.learn', $course->id)
+            ->with('success', 'Selamat! Anda berhasil mendaftar di kursus ini.');
     }
 
     /**
