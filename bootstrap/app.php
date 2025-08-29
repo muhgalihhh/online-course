@@ -39,6 +39,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         ]);
         $middleware->redirectGuestsTo('/login');
+
+        // Exclude Midtrans webhook from CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            '/payments/midtrans/webhook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Handle NotFoundHttpException (404 errors)

@@ -47,7 +47,13 @@ Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, '
 // Course enrollment (requires authentication)
 Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
+    Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
+        ->name('payments.courses.create');
 });
+
+// Midtrans webhook (no auth)
+Route::post('/payments/midtrans/webhook', [\App\Http\Controllers\PaymentController::class, 'handleMidtransWebhook'])
+    ->name('payments.midtrans.webhook');
 
 // Static pages
 Route::get('/tentang', function () {
