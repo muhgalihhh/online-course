@@ -104,13 +104,13 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                                     <Link
                                         key={item.name}
                                         href={item.href}
-                                        className={`relative text-sm font-medium transition-colors hover:text-primary ${
-                                            isActive ? 'text-primary' : 'text-muted-foreground'
+                                        className={`relative text-sm font-medium transition-all hover:text-primary ${
+                                            isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
                                         }`}
                                     >
                                         {item.name}
                                         {isActive && (
-                                            <span className="absolute -bottom-[21px] left-0 right-0 h-[2px] bg-primary" />
+                                            <span className="absolute -bottom-[21px] left-0 right-0 h-[3px] bg-primary rounded-t-sm" />
                                         )}
                                     </Link>
                                 );

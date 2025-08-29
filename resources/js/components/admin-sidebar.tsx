@@ -160,27 +160,27 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
                 className={cn(
                     'group relative flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                     isActive 
-                        ? 'bg-primary/10 text-primary shadow-sm' 
+                        ? 'bg-primary/15 text-primary shadow-sm font-semibold' 
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
             >
                 <div className="flex items-center flex-1">
                     {/* Active indicator */}
                     {isActive && (
-                        <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+                        <div className="absolute left-0 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-primary shadow-lg" />
                     )}
                     
                                                     <div className={cn(
                                     "p-1.5 rounded-lg transition-all",
                                     isActive 
-                                        ? "bg-primary/10" 
+                                        ? "bg-primary/20" 
                                         : "group-hover:bg-muted"
                                 )}>
                                     <Icon 
                                         iconNode={item.icon as any} 
                                         className={cn(
-                                            "h-4 w-4 shrink-0 transition-colors",
-                                            isActive && "text-primary"
+                                            "h-4 w-4 shrink-0 transition-all",
+                                            isActive ? "text-primary scale-110" : "text-muted-foreground"
                                         )} 
                                     />
                                 </div>

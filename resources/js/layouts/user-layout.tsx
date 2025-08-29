@@ -20,6 +20,7 @@ import {
     Youtube,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 interface UserLayoutProps {
     children: React.ReactNode;
@@ -27,12 +28,26 @@ interface UserLayoutProps {
 
 const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const page = usePage();
+    
+    // Function to check if the current route is active
+    const isActiveRoute = (href: string) => {
+        // For hash links, check if we're on the home page
+        if (href.startsWith('#')) {
+            return page.url === '/';
+        }
+        // For actual routes
+        if (href === '/') {
+            return page.url === '/';
+        }
+        return page.url === href || page.url.startsWith(href + '/');
+    };
 
     const navigationItems = [
-        { name: 'Home', href: '#', active: true },
-        { name: 'Courses', href: '#courses' },
-        { name: 'About', href: '#about' },
-        { name: 'Contact', href: '#contact' },
+        { name: 'Home', href: '/' },
+        { name: 'Courses', href: '/courses' },
+        { name: 'About', href: '/tentang' },
+        { name: 'Contact', href: '/kontak' },
     ];
 
     return (
@@ -52,17 +67,23 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
 
                         {/* Desktop Navigation */}
                         <nav className="hidden items-center space-x-8 md:flex">
-                            {navigationItems.map((item) => (
-                                <a
-                                    key={item.name}
-                                    href={item.href}
-                                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                                        item.active ? 'text-primary' : 'text-muted-foreground'
-                                    }`}
-                                >
-                                    {item.name}
-                                </a>
-                            ))}
+                            {navigationItems.map((item) => {
+                                const isActive = isActiveRoute(item.href);
+                                return (
+                                    <a
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`relative text-sm font-medium transition-colors hover:text-primary ${
+                                            isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                        }`}
+                                    >
+                                        {item.name}
+                                        {isActive && (
+                                            <span className="absolute -bottom-6 left-0 right-0 h-0.5 bg-primary" />
+                                        )}
+                                    </a>
+                                );
+                            })}
                         </nav>
 
                         {/* Desktop Actions */}
@@ -93,18 +114,22 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
                     {isMobileMenuOpen && (
                         <div className="border-t py-4 md:hidden">
                             <nav className="space-y-4">
-                                {navigationItems.map((item) => (
-                                    <a
-                                        key={item.name}
-                                        href={item.href}
-                                        className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                            item.active ? 'text-primary' : 'text-muted-foreground'
-                                        }`}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                    >
-                                        {item.name}
-                                    </a>
-                                ))}
+                                {navigationItems.map((item) => {
+                                    const isActive = isActiveRoute(item.href);
+                                    return (
+                                        <a
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                                                isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                            }`}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            {isActive && <span className="h-2 w-2 rounded-full bg-primary" />}
+                                            {item.name}
+                                        </a>
+                                    );
+                                })}
                                 <div className="space-y-4 border-t pt-4">
                                     <Button variant="ghost" size="sm" className="w-full justify-start">
                                         <Search className="mr-2 h-4 w-4" />
