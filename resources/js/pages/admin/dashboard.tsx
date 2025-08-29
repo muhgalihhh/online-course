@@ -10,10 +10,11 @@ import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { OverviewChart } from '@/components/overview-chart';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type User } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { BookOpen, Users, DollarSign, ArrowRight, Calendar, Mail, Download, RefreshCw, Bell, CreditCard, MessageSquare, Layers, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormToast } from '@/hooks/use-form-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -48,6 +49,24 @@ interface DashboardProps extends PageProps {
 export default function Dashboard({ stats, recentUsers, recentActivities = [], userStats = [], courseStats = [], revenueStats = [], filters = {} }: DashboardProps) {
     const [chartPeriod, setChartPeriod] = useState('30d');
     const { showSuccess, showError, showWarning, showInfo } = useFormToast();
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast({
+                title: 'Berhasil!',
+                description: flash.success,
+            });
+        }
+        if (flash?.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: flash.error,
+            });
+        }
+    }, [flash?.success, flash?.error]);
 
     // Filter configuration for dashboard
     const filterConfig: FilterConfig = {
