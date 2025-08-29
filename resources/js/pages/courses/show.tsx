@@ -26,6 +26,15 @@ import {
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CourseMaterial {
     id: number;
@@ -103,15 +112,19 @@ interface PageProps {
 export default function CourseShow() {
     const { course, isEnrolled, relatedCourses } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
+    const [showLoginDialog, setShowLoginDialog] = useState(false);
 
     const handleEnroll = () => {
         if (!isAuthenticated) {
-            alert('Silakan login atau daftar terlebih dahulu untuk mendaftar kursus ini.');
-            router.visit('/login');
+            setShowLoginDialog(true);
         } else {
             // Navigate to enrollment/payment page
             router.visit(`/courses/${course.id}/enroll`);
         }
+    };
+
+    const handleLoginRedirect = () => {
+        router.visit('/login');
     };
 
     const getMaterialIcon = (type: string) => {
@@ -522,6 +535,23 @@ export default function CourseShow() {
                     </div>
                 </div>
             </section>
+
+            {/* Login Required Dialog */}
+            <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Login Diperlukan</DialogTitle>
+                        <DialogDescription>
+                            Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button onClick={handleLoginRedirect}>
+                            OK
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </GuestLayout>
     );
 }

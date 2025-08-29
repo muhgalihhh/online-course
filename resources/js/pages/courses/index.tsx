@@ -21,6 +21,14 @@ import {
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Course {
     id: number;
@@ -78,6 +86,7 @@ export default function CoursesIndex() {
     const { isAuthenticated } = useAuth();
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [showLoginDialog, setShowLoginDialog] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -94,12 +103,15 @@ export default function CoursesIndex() {
 
     const handleBookCourse = (courseId: number, isPro: boolean) => {
         if (!isAuthenticated) {
-            alert('Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.');
-            router.visit('/login');
+            setShowLoginDialog(true);
         } else {
             // Navigate to enrollment/payment page
             router.visit(`/courses/${courseId}/enroll`);
         }
+    };
+
+    const handleLoginRedirect = () => {
+        router.visit('/login');
     };
 
     const CourseCard = ({ course }: { course: Course }) => (
@@ -424,6 +436,23 @@ export default function CoursesIndex() {
                     )}
                 </div>
             </section>
+
+            {/* Login Required Dialog */}
+            <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Login Diperlukan</DialogTitle>
+                        <DialogDescription>
+                            Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button onClick={handleLoginRedirect}>
+                            OK
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </GuestLayout>
     );
 }
