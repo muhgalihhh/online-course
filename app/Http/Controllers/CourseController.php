@@ -145,6 +145,11 @@ class CourseController extends Controller
      */
     public function pro(Request $request)
     {
+        // If user is not authenticated, redirect to dashboard
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('info', 'Silakan login untuk melihat kelas Pro.');
+        }
+        
         $request->merge(['type' => 'pro']);
         return $this->index($request);
     }
@@ -154,6 +159,11 @@ class CourseController extends Controller
      */
     public function free(Request $request)
     {
+        // If user is not authenticated, redirect to dashboard
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('info', 'Silakan login untuk melihat kelas Free.');
+        }
+        
         $request->merge(['type' => 'free']);
         return $this->index($request);
     }

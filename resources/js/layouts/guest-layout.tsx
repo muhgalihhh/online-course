@@ -25,9 +25,8 @@ import {
     HelpCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
-import { usePage } from '@inertiajs/react';
 
 interface Institution {
     id: number;
@@ -75,11 +74,11 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     };
 
     const navigationItems = [
-        { name: 'Beranda', href: '/' },
-        { name: 'Kelas Pro', href: '/kelas-pro' },
-        { name: 'Kelas Free', href: '/kelas-free' },
-        ...(isAuthenticated ? [{ name: 'Kelas Anda', href: '/my-courses' }] : []),
-        { name: 'Tentang Kami', href: '/tentang' },
+        { name: 'Beranda', href: '/', requiresAuth: false },
+        { name: 'Kelas Pro', href: isAuthenticated ? '/kelas-pro' : '/login', requiresAuth: true },
+        { name: 'Kelas Free', href: isAuthenticated ? '/kelas-free' : '/login', requiresAuth: true },
+        ...(isAuthenticated ? [{ name: 'Kelas Anda', href: '/my-courses', requiresAuth: false }] : []),
+        { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
     ];
 
     return (
@@ -101,10 +100,23 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                         <nav className="hidden items-center space-x-8 md:flex">
                             {navigationItems.map((item) => {
                                 const isActive = isActiveLink(item.href);
+                                const handleClick = (e: React.MouseEvent) => {
+                                    if (item.requiresAuth && !isAuthenticated) {
+                                        e.preventDefault();
+                                        router.visit('/login', {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                            onSuccess: () => {
+                                                // Flash message is handled by server
+                                            }
+                                        });
+                                    }
+                                };
                                 return (
                                     <Link
                                         key={item.name}
                                         href={item.href}
+                                        onClick={handleClick}
                                         className={`relative text-sm font-medium transition-colors hover:text-primary ${
                                             isActive ? 'text-primary' : 'text-muted-foreground'
                                         }`}
@@ -206,6 +218,19 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                             <nav className="space-y-4">
                                 {navigationItems.map((item) => {
                                     const isActive = isActiveLink(item.href);
+                                    const handleClick = (e: React.MouseEvent) => {
+                                        if (item.requiresAuth && !isAuthenticated) {
+                                            e.preventDefault();
+                                            router.visit('/login', {
+                                                preserveState: true,
+                                                preserveScroll: true,
+                                                onSuccess: () => {
+                                                    // Flash message is handled by server
+                                                }
+                                            });
+                                        }
+                                        setIsMobileMenuOpen(false);
+                                    };
                                     return (
                                         <Link
                                             key={item.name}
@@ -213,7 +238,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                             className={`block text-sm font-medium transition-colors hover:text-primary ${
                                                 isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
                                             }`}
-                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            onClick={handleClick}
                                         >
                                             <span className="flex items-center gap-2">
                                                 {isActive && <span className="h-2 w-2 rounded-full bg-primary" />}
@@ -311,12 +336,30 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                             <h4 className="mb-4 font-semibold">Menu Utama</h4>
                             <ul className="space-y-2">
                                 <li>
-                                    <Link href="/kelas-pro" className="text-muted-foreground transition-colors hover:text-primary">
+                                    <Link 
+                                        href={isAuthenticated ? "/kelas-pro" : "/login"} 
+                                        className="text-muted-foreground transition-colors hover:text-primary"
+                                        onClick={(e) => {
+                                            if (!isAuthenticated) {
+                                                e.preventDefault();
+                                                router.visit('/login');
+                                            }
+                                        }}
+                                    >
                                         Kelas Pro
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/kelas-free" className="text-muted-foreground transition-colors hover:text-primary">
+                                    <Link 
+                                        href={isAuthenticated ? "/kelas-free" : "/login"} 
+                                        className="text-muted-foreground transition-colors hover:text-primary"
+                                        onClick={(e) => {
+                                            if (!isAuthenticated) {
+                                                e.preventDefault();
+                                                router.visit('/login');
+                                            }
+                                        }}
+                                    >
                                         Kelas Free
                                     </Link>
                                 </li>
