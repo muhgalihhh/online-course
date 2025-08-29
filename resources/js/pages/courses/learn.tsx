@@ -1,0 +1,384 @@
+import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import UserDashboardLayout from '@/layouts/user-dashboard-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { 
+    BookOpen, 
+    Clock, 
+    ChevronLeft,
+    ChevronRight,
+    PlayCircle,
+    FileText,
+    Video,
+    Download,
+    CheckCircle2,
+    Lock,
+    Award,
+    Users,
+    Star
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+interface Material {
+    id: number;
+    title: string;
+    type: 'video' | 'document' | 'quiz';
+    content_url?: string;
+    duration?: number;
+    order: number;
+}
+
+interface Chapter {
+    id: number;
+    title: string;
+    description: string;
+    order: number;
+    materials: Material[];
+}
+
+interface Course {
+    id: number;
+    title: string;
+    description: string;
+    level: string;
+    duration: number;
+    thumbnail_path?: string;
+    user_progress: number;
+    enrolled_at: string;
+    completed_at?: string;
+    chapters: Chapter[];
+    category: {
+        id: number;
+        name: string;
+    };
+    institution: {
+        id: number;
+        name: string;
+        photo_path?: string;
+    };
+}
+
+interface LearnProps {
+    course: Course;
+    completedMaterials: number[];
+    enrollment: {
+        progress: number;
+        enrolled_at: string;
+        completed_at?: string;
+    };
+}
+
+export default function Learn({ course, completedMaterials, enrollment }: LearnProps) {
+    const [selectedChapter, setSelectedChapter] = useState<Chapter>(course.chapters[0]);
+    const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(
+        selectedChapter?.materials?.[0] || null
+    );
+    const [completedMaterialsState, setCompletedMaterialsState] = useState<number[]>(completedMaterials);
+
+    const formatDate = (dateString: string) => {
+        return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
+    };
+
+    const getMaterialIcon = (type: string) => {
+        switch (type) {
+            case 'video':
+                return <Video className="h-4 w-4" />;
+            case 'document':
+                return <FileText className="h-4 w-4" />;
+            case 'quiz':
+                return <Award className="h-4 w-4" />;
+            default:
+                return <BookOpen className="h-4 w-4" />;
+        }
+    };
+
+    const handleMaterialComplete = (materialId: number) => {
+        if (!completedMaterialsState.includes(materialId)) {
+            setCompletedMaterialsState([...completedMaterialsState, materialId]);
+            // TODO: Send API request to mark material as complete
+        }
+    };
+
+    const navigateToNextMaterial = () => {
+        const currentChapterIndex = course.chapters.findIndex(ch => ch.id === selectedChapter.id);
+        const currentMaterialIndex = selectedChapter.materials.findIndex(m => m.id === selectedMaterial?.id);
+        
+        if (currentMaterialIndex < selectedChapter.materials.length - 1) {
+            // Next material in same chapter
+            setSelectedMaterial(selectedChapter.materials[currentMaterialIndex + 1]);
+        } else if (currentChapterIndex < course.chapters.length - 1) {
+            // First material of next chapter
+            const nextChapter = course.chapters[currentChapterIndex + 1];
+            setSelectedChapter(nextChapter);
+            setSelectedMaterial(nextChapter.materials[0]);
+        }
+    };
+
+    const navigateToPreviousMaterial = () => {
+        const currentChapterIndex = course.chapters.findIndex(ch => ch.id === selectedChapter.id);
+        const currentMaterialIndex = selectedChapter.materials.findIndex(m => m.id === selectedMaterial?.id);
+        
+        if (currentMaterialIndex > 0) {
+            // Previous material in same chapter
+            setSelectedMaterial(selectedChapter.materials[currentMaterialIndex - 1]);
+        } else if (currentChapterIndex > 0) {
+            // Last material of previous chapter
+            const prevChapter = course.chapters[currentChapterIndex - 1];
+            setSelectedChapter(prevChapter);
+            setSelectedMaterial(prevChapter.materials[prevChapter.materials.length - 1]);
+        }
+    };
+
+    const totalMaterials = course.chapters.reduce((sum, ch) => sum + ch.materials.length, 0);
+    const progressPercentage = totalMaterials > 0 
+        ? Math.round((completedMaterialsState.length / totalMaterials) * 100)
+        : 0;
+
+    return (
+        <UserDashboardLayout>
+            <Head title={`Belajar - ${course.title}`} />
+            
+            <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+                {/* Header */}
+                <div className="border-b bg-background/95 backdrop-blur">
+                    <div className="container mx-auto px-4 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href="/dashboard">
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
+                                        Kembali
+                                    </Link>
+                                </Button>
+                                <Separator orientation="vertical" className="h-6" />
+                                <div>
+                                    <h1 className="text-lg font-semibold">{course.title}</h1>
+                                    <p className="text-sm text-muted-foreground">
+                                        {course.category.name} • {course.institution.name}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <p className="text-sm font-medium">Progress Kelas</p>
+                                    <p className="text-sm text-muted-foreground">{progressPercentage}% Selesai</p>
+                                </div>
+                                <Progress value={progressPercentage} className="w-32" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="container mx-auto px-4 py-6">
+                    <div className="grid gap-6 lg:grid-cols-[1fr,350px]">
+                        {/* Video/Content Area */}
+                        <div className="space-y-6">
+                            {/* Main Content Card */}
+                            <Card>
+                                {selectedMaterial ? (
+                                    <>
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    {getMaterialIcon(selectedMaterial.type)}
+                                                    <CardTitle>{selectedMaterial.title}</CardTitle>
+                                                </div>
+                                                <Badge variant="outline">
+                                                    Bab {selectedChapter.order}: {selectedChapter.title}
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {selectedMaterial.type === 'video' ? (
+                                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                                                    <PlayCircle className="h-16 w-16 text-muted-foreground" />
+                                                    <p className="ml-4 text-muted-foreground">Video Player Placeholder</p>
+                                                </div>
+                                            ) : selectedMaterial.type === 'document' ? (
+                                                <div className="min-h-[400px] bg-muted rounded-lg p-8">
+                                                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                                                    <p className="text-muted-foreground">Konten dokumen akan ditampilkan di sini</p>
+                                                    {selectedMaterial.content_url && (
+                                                        <Button className="mt-4" variant="outline">
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            Download Materi
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="min-h-[400px] bg-muted rounded-lg p-8">
+                                                    <Award className="h-12 w-12 text-muted-foreground mb-4" />
+                                                    <p className="text-muted-foreground">Quiz akan ditampilkan di sini</p>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Navigation Buttons */}
+                                            <div className="flex items-center justify-between mt-6">
+                                                <Button 
+                                                    variant="outline" 
+                                                    onClick={navigateToPreviousMaterial}
+                                                    disabled={course.chapters[0].materials[0].id === selectedMaterial.id}
+                                                >
+                                                    <ChevronLeft className="mr-2 h-4 w-4" />
+                                                    Sebelumnya
+                                                </Button>
+                                                
+                                                {!completedMaterialsState.includes(selectedMaterial.id) && (
+                                                    <Button 
+                                                        variant="default"
+                                                        onClick={() => handleMaterialComplete(selectedMaterial.id)}
+                                                    >
+                                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                        Tandai Selesai
+                                                    </Button>
+                                                )}
+                                                
+                                                <Button 
+                                                    variant="outline" 
+                                                    onClick={navigateToNextMaterial}
+                                                    disabled={
+                                                        course.chapters[course.chapters.length - 1]
+                                                            .materials[course.chapters[course.chapters.length - 1].materials.length - 1]
+                                                            .id === selectedMaterial.id
+                                                    }
+                                                >
+                                                    Selanjutnya
+                                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </>
+                                ) : (
+                                    <CardContent className="py-12 text-center">
+                                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <p className="text-muted-foreground">Pilih materi untuk mulai belajar</p>
+                                    </CardContent>
+                                )}
+                            </Card>
+
+                            {/* Chapter Description */}
+                            {selectedChapter && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Tentang Bab Ini</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-muted-foreground">{selectedChapter.description}</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        {/* Sidebar */}
+                        <div className="space-y-6">
+                            {/* Course Info */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Informasi Kelas</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Level</span>
+                                        <Badge>{course.level}</Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Durasi</span>
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {course.duration} jam
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Terdaftar</span>
+                                        <span>{formatDate(enrollment.enrolled_at)}</span>
+                                    </div>
+                                    {enrollment.completed_at && (
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">Selesai</span>
+                                            <span>{formatDate(enrollment.completed_at)}</span>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Course Content */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Konten Kelas</CardTitle>
+                                    <CardDescription>
+                                        {completedMaterialsState.length} dari {totalMaterials} materi selesai
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[400px] pr-4">
+                                        <div className="space-y-4">
+                                            {course.chapters.map((chapter) => (
+                                                <div key={chapter.id}>
+                                                    <Button
+                                                        variant={selectedChapter?.id === chapter.id ? "secondary" : "ghost"}
+                                                        className="w-full justify-start mb-2"
+                                                        onClick={() => {
+                                                            setSelectedChapter(chapter);
+                                                            setSelectedMaterial(chapter.materials[0]);
+                                                        }}
+                                                    >
+                                                        <span className="font-medium">
+                                                            Bab {chapter.order}: {chapter.title}
+                                                        </span>
+                                                    </Button>
+                                                    <div className="ml-4 space-y-1">
+                                                        {chapter.materials.map((material) => {
+                                                            const isCompleted = completedMaterialsState.includes(material.id);
+                                                            const isSelected = selectedMaterial?.id === material.id;
+                                                            
+                                                            return (
+                                                                <Button
+                                                                    key={material.id}
+                                                                    variant={isSelected ? "secondary" : "ghost"}
+                                                                    size="sm"
+                                                                    className="w-full justify-start pl-4"
+                                                                    onClick={() => {
+                                                                        setSelectedChapter(chapter);
+                                                                        setSelectedMaterial(material);
+                                                                    }}
+                                                                >
+                                                                    <div className="flex items-center gap-2 w-full">
+                                                                        {isCompleted ? (
+                                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                        ) : (
+                                                                            getMaterialIcon(material.type)
+                                                                        )}
+                                                                        <span className="flex-1 text-left truncate">
+                                                                            {material.title}
+                                                                        </span>
+                                                                        {material.duration && (
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {material.duration} menit
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </Button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </UserDashboardLayout>
+    );
+}

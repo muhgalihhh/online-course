@@ -1,39 +1,70 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import UserDashboardLayout from '@/layouts/user-dashboard-layout';
-import { ArrowRight, Award, BookOpen, CloudSun, LifeBuoy, MessageSquare, PlayCircle, ShoppingCart, Star, Users, Zap } from 'lucide-react';
-import React, { useEffect } from 'react';
-import { usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+    BookOpen, 
+    Clock, 
+    GraduationCap, 
+    Star, 
+    Users,
+    Play,
+    CheckCircle,
+    ArrowRight,
+    Info,
+    Calendar,
+    Award,
+    TrendingUp
+} from 'lucide-react';
+import { Link, Head, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// --- Tipe Data (sesuai migrasi) ---
 interface Course {
     id: number;
     title: string;
-    category: string;
-    thumbnail: string;
-    rating: number;
-    students: number;
-    price: number;
-    isPro: boolean;
+    slug: string;
     description: string;
+    price: number;
+    level: string;
+    duration: number;
+    thumbnail_path?: string;
+    status: string;
+    average_rating: number;
+    total_students: number;
+    total_chapters: number;
+    user_progress: number;
+    enrolled_at: string;
+    completed_at?: string;
+    category: {
+        id: number;
+        name: string;
+    };
+    institution: {
+        id: number;
+        name: string;
+        photo_path?: string;
+    };
 }
 
-interface Review {
-    id: number;
-    name: string;
-    role: string;
-    avatar: string;
-    comment: string;
-    rating: number;
+interface HomeProps {
+    enrollments: Course[];
+    user: {
+        name: string;
+        email: string;
+        role: string;
+        created_at: string;
+    };
 }
 
-const Home: React.FC = () => {
+const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
     const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
     const { toast } = useToast();
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
     useEffect(() => {
         if (flash?.success) {
@@ -51,324 +82,358 @@ const Home: React.FC = () => {
         }
     }, [flash?.success, flash?.error]);
 
-    // --- Data Statis (Contoh) ---
-    const NAMA_PLATFORM = 'Pare EduHub'; // Ganti dengan nama platform Anda
+    const formatDate = (dateString: string) => {
+        return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
+    };
 
-    const proCourses: Course[] = [
-        {
-            id: 1,
-            title: 'Full-Stack Laravel & React Mastery',
-            category: 'Web Development',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.9,
-            students: 1342,
-            price: 750000,
-            isPro: true,
-            description: 'Bangun aplikasi web modern dari awal hingga deployment.',
-        },
-        {
-            id: 2,
-            title: 'UI/UX Design for Modern Apps',
-            category: 'Design',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.8,
-            students: 876,
-            price: 550000,
-            isPro: true,
-            description: 'Pelajari prinsip desain antarmuka yang intuitif dan menarik.',
-        },
-        {
-            id: 5,
-            title: 'Advanced DevOps with Kubernetes',
-            category: 'DevOps',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.9,
-            students: 950,
-            price: 850000,
-            isPro: true,
-            description: 'Orkestrasi dan skalabilitas aplikasi tingkat lanjut.',
-        },
-    ];
+    const getLevelBadgeVariant = (level: string) => {
+        switch (level.toLowerCase()) {
+            case 'beginner':
+                return 'default';
+            case 'intermediate':
+                return 'secondary';
+            case 'advanced':
+                return 'destructive';
+            default:
+                return 'outline';
+        }
+    };
 
-    const freeCourses: Course[] = [
-        {
-            id: 3,
-            title: 'Dasar-Dasar HTML & CSS',
-            category: 'Web Development',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.7,
-            students: 12503,
-            price: 0,
-            isPro: false,
-            description: 'Pengenalan fundamental untuk memulai karir web development.',
-        },
-        {
-            id: 4,
-            title: 'Pengenalan Copywriting',
-            category: 'Marketing',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.6,
-            students: 9870,
-            price: 0,
-            isPro: false,
-            description: 'Pelajari cara menulis teks iklan yang menjual dan efektif.',
-        },
-        {
-            id: 6,
-            title: 'Fundamental Git & GitHub',
-            category: 'Tools',
-            thumbnail: 'https://via.placeholder.com/300x180',
-            rating: 4.8,
-            students: 15000,
-            price: 0,
-            isPro: false,
-            description: 'Manajemen versi kode yang wajib dikuasai setiap developer.',
-        },
-    ];
-
-    const testimonials: Review[] = [
-        {
-            id: 1,
-            name: 'Budi Santoso',
-            role: 'Full-Stack Developer',
-            avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-            comment: `Materi di ${NAMA_PLATFORM} sangat terstruktur dan mudah diikuti. Saya berhasil mendapatkan pekerjaan impian saya setelah lulus dari sini!`,
-            rating: 5,
-        },
-        {
-            id: 2,
-            name: 'Citra Lestari',
-            role: 'UI/UX Designer',
-            avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-            comment: 'Kurikulumnya sangat relevan dengan industri saat ini. Mentornya juga sangat membantu dan responsif. Sangat direkomendasikan!',
-            rating: 5,
-        },
-        {
-            id: 3,
-            name: 'Doni Firmansyah',
-            role: 'Mahasiswa IT',
-            avatar: 'https://randomuser.me/api/portraits/men/33.jpg',
-            comment: 'Kelas gratisnya saja sudah sangat bermanfaat, apalagi kelas Pro-nya. Investasi terbaik untuk belajar skill digital.',
-            rating: 5,
-        },
-    ];
-
-    const faqs = [
-        {
-            q: 'Apa yang saya dapatkan jika membeli kelas Pro?',
-            a: 'Dengan sekali bayar, Anda mendapatkan akses seumur hidup ke SEMUA kelas Pro yang ada saat ini dan yang akan datang, materi PDF, studi kasus, grup komunitas eksklusif, dan sertifikat kelulusan.',
-        },
-        {
-            q: 'Apakah ada jaminan uang kembali?',
-            a: 'Tentu. Kami memberikan jaminan kepuasan 100% uang kembali dalam 7 hari pertama jika Anda merasa materi kami tidak sesuai dengan ekspektasi Anda.',
-        },
-        {
-            q: 'Bagaimana metode pembayarannya?',
-            a: 'Kami menerima pembayaran melalui QRIS yang didukung oleh Midtrans, sehingga Anda bisa membayar dengan mudah melalui berbagai e-wallet dan mobile banking.',
-        },
-        {
-            q: 'Apakah saya akan mendapat sertifikat?',
-            a: 'Ya, setiap siswa yang berhasil menyelesaikan kelas (baik Pro maupun Gratis) akan mendapatkan e-sertifikat yang bisa dilampirkan di profil LinkedIn atau CV Anda.',
-        },
-    ];
-
-    const CourseCard: React.FC<{ course: Course }> = ({ course }) => (
-        <Card className="flex flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
-            <CardHeader className="p-0">
-                <img src={course.thumbnail} alt={course.title} className="aspect-[16/9] w-full object-cover" />
-            </CardHeader>
-            <CardContent className="flex-grow space-y-2 p-4">
-                <Badge variant={course.isPro ? 'default' : 'secondary'}>{course.category}</Badge>
-                <h3 className="line-clamp-2 text-lg leading-tight font-bold">{course.title}</h3>
-                <div className="flex items-center gap-4 pt-1">
-                    <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{course.rating}</span>
-                        <span className="text-xs text-muted-foreground">({course.students.toLocaleString()} siswa)</span>
-                    </div>
-                </div>
-            </CardContent>
-            <CardFooter className="flex items-center justify-between p-4">
-                <p className="text-xl font-bold text-primary">{course.isPro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}</p>
-                {course.isPro ? (
-                    <Button size="sm">
-                        <ShoppingCart className="mr-2 h-4 w-4" /> Beli Kelas
-                    </Button>
-                ) : (
-                    <Button size="sm" variant="outline">
-                        <ArrowRight className="mr-2 h-4 w-4" /> Daftar Gratis
-                    </Button>
-                )}
-            </CardFooter>
-        </Card>
-    );
+    // Calculate statistics
+    const totalCourses = enrollments.length;
+    const completedCourses = enrollments.filter(c => c.user_progress === 100).length;
+    const inProgressCourses = enrollments.filter(c => c.user_progress > 0 && c.user_progress < 100).length;
+    const averageProgress = totalCourses > 0 
+        ? Math.round(enrollments.reduce((sum, c) => sum + c.user_progress, 0) / totalCourses)
+        : 0;
 
     return (
         <UserDashboardLayout>
-            {/* Hero Section */}
-            <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-20">
-                <div className="container mx-auto px-4 text-center">
-                    <Badge variant="outline" className="mb-4 px-3 py-1">
-                        <Award className="mr-2 h-4 w-4 text-yellow-500" />
-                        Platform Kursus Online Eksklusif dari {NAMA_PLATFORM}
-                    </Badge>
-                    <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-6xl">Tingkatkan Skill, Raih Karir Impian Anda</h1>
-                    <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-                        Akses ratusan kursus berkualitas dari kami, bayar sekali untuk akses semua materi Pro selamanya.
-                    </p>
-                    <div className="flex justify-center gap-4">
-                        <Button size="lg" className="px-8 py-6 text-lg">
-                            Lihat Katalog Kelas <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
-                        <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                            <PlayCircle className="mr-2 h-5 w-5" /> Coba Kelas Gratis
-                        </Button>
-                    </div>
-                </div>
-            </section>
-
-            <section className="container mx-auto -mt-8 px-4">
-                <Card className="border-2 border-primary/10 bg-card/80 shadow-lg backdrop-blur">
-                    <div className="flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
-                        <div className="flex items-center gap-3">
-                            <CloudSun className="h-8 w-8 text-blue-500" />
+            <Head title="Dashboard" />
+            
+            <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+                {/* Header Section */}
+                <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <p className="text-lg font-bold">Cuaca Jakarta</p>
-                                <p className="text-sm text-muted-foreground">Cerah Berawan, 30°C</p>
+                                <h1 className="text-3xl font-bold tracking-tight">
+                                    Selamat Datang, {user.name}!
+                                </h1>
+                                <p className="mt-2 text-muted-foreground">
+                                    Berikut adalah daftar kelas yang Anda ambil
+                                </p>
                             </div>
+                            <Button asChild>
+                                <Link href="/courses">
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Jelajahi Kelas Baru
+                                </Link>
+                            </Button>
                         </div>
-                        <div className="hidden h-10 w-px bg-border md:block" />
-                        <div className="flex items-center gap-3">
-                            <LifeBuoy className="h-8 w-8 text-red-500" />
-                            <div>
-                                <p className="text-lg font-bold">Butuh Bantuan?</p>
-                                <p className="text-sm text-muted-foreground">Hubungi kami jika butuh bantuan cepat.</p>
-                            </div>
-                        </div>
-                        <Button
-                            variant="secondary"
-                            onClick={() => window.open('https://wa.me/6281234567890?text=Halo,%20saya%20butuh%20bantuan.', '_blank')}
-                        >
-                            <MessageSquare className="mr-2 h-4 w-4" /> Hubungi via WhatsApp
-                        </Button>
-                    </div>
-                </Card>
-            </section>
 
-            {/* Kelas Pro */}
-            <section id="kelas-pro" className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="mb-2 text-center text-3xl font-bold">Kelas Profesional Unggulan</h2>
-                    <p className="mx-auto mb-8 max-w-xl text-center text-muted-foreground">
-                        Investasi terbaik untuk karir Anda. Dapatkan akses ke semua kelas Pro dengan sekali bayar.
-                    </p>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {proCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Mengapa Memilih Kami */}
-            <section id="why-us" className="bg-muted/30 py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="mb-12 text-center text-3xl font-bold">Mengapa Belajar di {NAMA_PLATFORM}?</h2>
-                    <div className="grid grid-cols-1 gap-8 text-center md:grid-cols-3">
-                        <div className="flex flex-col items-center">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                                <BookOpen className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="mb-2 text-xl font-bold">Kurikulum Standar Industri</h3>
-                            <p className="text-muted-foreground">
-                                Materi disusun oleh para ahli dan selalu diperbarui sesuai kebutuhan industri terkini.
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                                <Users className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="mb-2 text-xl font-bold">Mentor Berpengalaman</h3>
-                            <p className="text-muted-foreground">
-                                Dapatkan bimbingan langsung dari praktisi yang telah bertahun-tahun berkarir di bidangnya.
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                                <Zap className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="mb-2 text-xl font-bold">Akses Seumur Hidup</h3>
-                            <p className="text-muted-foreground">
-                                Cukup bayar sekali untuk menikmati semua kelas Pro, termasuk update dan kelas baru di masa depan.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Kelas Gratis */}
-            <section id="kelas-gratis" className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="mb-2 text-center text-3xl font-bold">Mulai Belajar dengan Kelas Gratis</h2>
-                    <p className="mx-auto mb-8 max-w-xl text-center text-muted-foreground">
-                        Cicipi materi dasar dari berbagai bidang tanpa biaya. Cukup daftar dan langsung bisa akses.
-                    </p>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {freeCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Testimoni */}
-            <section id="testimonials" className="bg-muted/30 py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="mb-2 text-center text-3xl font-bold">Apa Kata Alumni Kami?</h2>
-                    <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
-                        Kami bangga telah membantu ribuan siswa mencapai tujuan karir mereka.
-                    </p>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {testimonials.map((item) => (
-                            <Card key={item.id} className="flex flex-col p-6">
-                                <div className="flex-grow">
-                                    <div className="mb-4 flex items-center">
-                                        {[...Array(item.rating)].map((_, i) => (
-                                            <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                                        ))}
-                                    </div>
-                                    <p className="text-muted-foreground">"{item.comment}"</p>
-                                </div>
-                                <div className="mt-6 flex items-center">
-                                    <Avatar>
-                                        <AvatarImage src={item.avatar} alt={item.name} />
-                                        <AvatarFallback>{item.name.substring(0, 2)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="ml-4">
-                                        <p className="font-bold">{item.name}</p>
-                                        <p className="text-sm text-muted-foreground">{item.role}</p>
-                                    </div>
-                                </div>
+                        {/* Statistics Cards */}
+                        <div className="mt-6 grid gap-4 md:grid-cols-4">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Kelas</CardTitle>
+                                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{totalCourses}</div>
+                                    <p className="text-xs text-muted-foreground">Kelas terdaftar</p>
+                                </CardContent>
                             </Card>
-                        ))}
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Sedang Dipelajari</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{inProgressCourses}</div>
+                                    <p className="text-xs text-muted-foreground">Kelas aktif</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Selesai</CardTitle>
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{completedCourses}</div>
+                                    <p className="text-xs text-muted-foreground">Kelas diselesaikan</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Progress Rata-rata</CardTitle>
+                                    <Award className="h-4 w-4 text-yellow-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{averageProgress}%</div>
+                                    <Progress value={averageProgress} className="mt-2 h-2" />
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            {/* FAQ */}
-            <section id="faq" className="py-20">
-                <div className="container mx-auto max-w-3xl px-4">
-                    <h2 className="mb-8 text-center text-3xl font-bold">Pertanyaan yang Sering Diajukan</h2>
-                    <Accordion type="single" collapsible className="w-full">
-                        {faqs.map((faq, index) => (
-                            <AccordionItem value={`item-${index + 1}`} key={index}>
-                                <AccordionTrigger className="text-left">{faq.q}</AccordionTrigger>
-                                <AccordionContent className="text-muted-foreground">{faq.a}</AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+                {/* Content Section - Enrolled Courses */}
+                <div className="container mx-auto px-4 py-8">
+                    <h2 className="mb-6 text-2xl font-bold">Daftar Kelas yang Diambil</h2>
+                    
+                    {enrollments.length === 0 ? (
+                        <Card className="border-dashed">
+                            <CardContent className="flex flex-col items-center justify-center py-16">
+                                <div className="rounded-full bg-muted p-4">
+                                    <GraduationCap className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                                <h3 className="mt-4 text-lg font-semibold">Belum Ada Kelas</h3>
+                                <p className="mt-2 text-center text-sm text-muted-foreground">
+                                    Anda belum terdaftar di kelas manapun. 
+                                    Mulai perjalanan belajar Anda sekarang!
+                                </p>
+                                <Button asChild className="mt-6">
+                                    <Link href="/courses">
+                                        Jelajahi Kelas
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {enrollments.map((course) => (
+                                <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-lg">
+                                    {/* Course Thumbnail */}
+                                    <div className="relative aspect-video overflow-hidden bg-muted">
+                                        {course.thumbnail_path ? (
+                                            <img
+                                                src={`/storage/${course.thumbnail_path}`}
+                                                alt={course.title}
+                                                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center">
+                                                <BookOpen className="h-12 w-12 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        
+                                        {/* Progress Overlay */}
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-xs text-white">
+                                                    <span>Progress</span>
+                                                    <span>{course.user_progress}%</span>
+                                                </div>
+                                                <Progress 
+                                                    value={course.user_progress} 
+                                                    className="h-2 bg-white/20"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Completed Badge */}
+                                        {course.user_progress === 100 && (
+                                            <div className="absolute right-2 top-2">
+                                                <Badge className="gap-1 bg-green-500">
+                                                    <CheckCircle className="h-3 w-3" />
+                                                    Selesai
+                                                </Badge>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between">
+                                            <Badge variant={getLevelBadgeVariant(course.level)}>
+                                                {course.level}
+                                            </Badge>
+                                            <Badge variant="outline">
+                                                {course.category.name}
+                                            </Badge>
+                                        </div>
+                                        <CardTitle className="line-clamp-2">
+                                            {course.title}
+                                        </CardTitle>
+                                        <CardDescription className="line-clamp-2">
+                                            {course.description}
+                                        </CardDescription>
+                                    </CardHeader>
+
+                                    <CardContent className="space-y-4">
+                                        {/* Institution */}
+                                        <div className="flex items-center gap-2">
+                                            {course.institution.photo_path ? (
+                                                <img
+                                                    src={`/storage/${course.institution.photo_path}`}
+                                                    alt={course.institution.name}
+                                                    className="h-6 w-6 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                                                    <GraduationCap className="h-3 w-3" />
+                                                </div>
+                                            )}
+                                            <span className="text-sm text-muted-foreground">
+                                                {course.institution.name}
+                                            </span>
+                                        </div>
+
+                                        {/* Stats */}
+                                        <div className="grid grid-cols-3 gap-2 text-sm">
+                                            <div className="flex items-center gap-1">
+                                                <Star className="h-3 w-3 text-yellow-500" />
+                                                <span>{course.average_rating.toFixed(1)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Users className="h-3 w-3 text-muted-foreground" />
+                                                <span>{course.total_students}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <BookOpen className="h-3 w-3 text-muted-foreground" />
+                                                <span>{course.total_chapters} Bab</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Enrollment Date */}
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Calendar className="h-3 w-3" />
+                                            <span>Terdaftar: {formatDate(course.enrolled_at)}</span>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-2">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        className="flex-1"
+                                                        onClick={() => setSelectedCourse(course)}
+                                                    >
+                                                        <Info className="mr-2 h-4 w-4" />
+                                                        Detail
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="max-w-2xl">
+                                                    <DialogHeader>
+                                                        <DialogTitle>{course.title}</DialogTitle>
+                                                        <DialogDescription>
+                                                            Informasi lengkap tentang kelas ini
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="space-y-4">
+                                                        {/* Thumbnail */}
+                                                        {course.thumbnail_path && (
+                                                            <div className="aspect-video overflow-hidden rounded-lg">
+                                                                <img
+                                                                    src={`/storage/${course.thumbnail_path}`}
+                                                                    alt={course.title}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Details */}
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <h4 className="font-semibold">Deskripsi</h4>
+                                                                <p className="text-sm text-muted-foreground">{course.description}</p>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <h4 className="font-semibold">Kategori</h4>
+                                                                    <p className="text-sm text-muted-foreground">{course.category.name}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-semibold">Level</h4>
+                                                                    <Badge variant={getLevelBadgeVariant(course.level)}>
+                                                                        {course.level}
+                                                                    </Badge>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <h4 className="font-semibold">Institusi</h4>
+                                                                    <p className="text-sm text-muted-foreground">{course.institution.name}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-semibold">Durasi</h4>
+                                                                    <p className="text-sm text-muted-foreground">{course.duration} jam</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-3 gap-4">
+                                                                <div>
+                                                                    <h4 className="font-semibold">Rating</h4>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Star className="h-4 w-4 text-yellow-500" />
+                                                                        <span className="text-sm">{course.average_rating.toFixed(1)}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-semibold">Total Siswa</h4>
+                                                                    <p className="text-sm text-muted-foreground">{course.total_students}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-semibold">Total Bab</h4>
+                                                                    <p className="text-sm text-muted-foreground">{course.total_chapters}</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div>
+                                                                <h4 className="font-semibold">Progress Anda</h4>
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center justify-between text-sm">
+                                                                        <span>Kemajuan</span>
+                                                                        <span>{course.user_progress}%</span>
+                                                                    </div>
+                                                                    <Progress value={course.user_progress} />
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <h4 className="font-semibold">Tanggal Terdaftar</h4>
+                                                                    <p className="text-sm text-muted-foreground">{formatDate(course.enrolled_at)}</p>
+                                                                </div>
+                                                                {course.completed_at && (
+                                                                    <div>
+                                                                        <h4 className="font-semibold">Tanggal Selesai</h4>
+                                                                        <p className="text-sm text-muted-foreground">{formatDate(course.completed_at)}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* Action Button in Modal */}
+                                                        <Button asChild className="w-full">
+                                                            <Link href={`/courses/${course.id}/learn`}>
+                                                                <Play className="mr-2 h-4 w-4" />
+                                                                {course.user_progress > 0 ? 'Lanjutkan Belajar' : 'Mulai Belajar'}
+                                                            </Link>
+                                                        </Button>
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+                                            
+                                            <Button asChild size="sm" className="flex-1">
+                                                <Link href={`/courses/${course.id}/learn`}>
+                                                    <Play className="mr-2 h-4 w-4" />
+                                                    {course.user_progress > 0 ? 'Lanjutkan' : 'Mulai'} Belajar
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            </section>
+            </div>
         </UserDashboardLayout>
     );
 };

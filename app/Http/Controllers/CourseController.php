@@ -201,4 +201,50 @@ class CourseController extends Controller
             'course' => $course
         ]);
     }
+
+    /**
+     * Display the learning page for a course
+     */
+    public function learn($id)
+    {
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login untuk mengakses halaman belajar.');
+        }
+
+        $course = Course::with(['category', 'institution', 'chapters' => function($query) {
+            $query->orderBy('order');
+        }, 'chapters.materials' => function($query) {
+            $query->orderBy('order');
+        }])
+        ->findOrFail($id);
+
+        // Check if user is enrolled
+        $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+            ->where('course_id', $course->id)
+            ->first();
+
+        if (!$enrollment) {
+            return redirect()->route('courses.show', $course->id)
+                ->with('error', 'Anda harus terdaftar di kursus ini untuk mengaksesnya.');
+        }
+
+        // Get user progress
+        $course->user_progress = $enrollment->progress;
+        $course->enrolled_at = $enrollment->enrolled_at;
+        $course->completed_at = $enrollment->completed_at;
+
+        // Get completed materials for this user
+        $completedMaterials = \App\Models\UserMaterialProgress::where('user_id', auth()->id())
+            ->whereIn('material_id', $course->chapters->flatMap->materials->pluck('id'))
+            ->pluck('material_id')
+            ->toArray();
+
+        return Inertia::render('courses/learn', [
+            'course' => $course,
+            'completedMaterials' => $completedMaterials,
+            'enrollment' => $enrollment
+        ]);
+    }
 }
