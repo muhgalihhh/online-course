@@ -47,6 +47,7 @@ Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, '
 // Course enrollment (requires authentication)
 Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
+    Route::get('/courses/{id}/learn', [\App\Http\Controllers\CourseController::class, 'learn'])->name('courses.learn');
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
     
