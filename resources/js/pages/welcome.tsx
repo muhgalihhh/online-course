@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import WeatherWidget from '@/components/weather-widget';
-import LiveChatWidget from '@/components/live-chat-widget';
 import CustomAlert from '@/components/custom-alert';
 import { 
     BookOpen, 
@@ -541,9 +540,6 @@ export default function Welcome() {
                 type={alertState.type}
                 onAction={alertState.onAction}
             />
-            
-            {/* Live Chat Widget */}
-            <LiveChatWidget />
         </GuestLayout>
     );
 }

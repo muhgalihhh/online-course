@@ -3,6 +3,7 @@ import AdminSidebar from '@/components/admin-sidebar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Toaster } from '@/components/ui/toaster';
+import LiveChatWidget from '@/components/live-chat-widget';
 import { useToastNotifications } from '@/hooks/use-toast-notifications';
 import { User } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -65,6 +66,7 @@ export default function AdminSidebarLayout({ children, header }: AdminSidebarLay
                 </div>
             </div>
             <Toaster />
+            <LiveChatWidget />
         </>
     );
 }
