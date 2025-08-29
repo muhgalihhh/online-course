@@ -7,13 +7,16 @@ Route::get('/', function () {
     // Fetch institution data for contact info
     $institution = \App\Models\Institution::first();
 
+    // Fetch all categories for display
+    $categories = \App\Models\Category::withCount('courses')->get();
+
     // Fetch top courses for the welcome page
     $topCourses = \App\Models\Course::with(['category', 'institution', 'reviews'])
         ->where('status', 'published')
         ->withAvg('reviews', 'rating')
         ->withCount('enrollments')
         ->orderBy('enrollments_count', 'desc')
-        ->limit(3)
+        ->limit(6)
         ->get();
 
     // Add computed properties
@@ -30,6 +33,7 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
         'topCourses' => $topCourses,
         'institution' => $institution,
+        'categories' => $categories,
     ]);
 })->name('home');
 
@@ -40,13 +44,24 @@ Route::get('/kelas-pro', [\App\Http\Controllers\CourseController::class, 'pro'])
 Route::get('/kelas-free', [\App\Http\Controllers\CourseController::class, 'free'])->name('courses.free');
 Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, 'institutions'])->name('institutions.index');
 
+// Course enrollment (requires authentication)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
+});
+
 // Static pages
 Route::get('/tentang', function () {
-    return Inertia::render('tentang');
+    // Fetch institution data for about page
+    $institution = \App\Models\Institution::first();
+    
+    return Inertia::render('tentang', [
+        'institution' => $institution
+    ]);
 })->name('about');
 
+// Redirect old contact route to about page
 Route::get('/kontak', function () {
-    return Inertia::render('kontak');
+    return redirect()->route('about');
 })->name('contact');
 
 // Dashboard untuk semua user yang login
