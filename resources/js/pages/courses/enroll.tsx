@@ -52,48 +52,88 @@ export default function EnrollCourse({ course }: PageProps) {
         type: 'info'
     });
 
-    const handleEnrollment = () => {
-        if (course.is_pro) {
-            // For pro courses, redirect to payment
+    const handleEnrollment = async () => {
+        if (!course.is_pro) {
+            setIsProcessing(true);
             setAlertState({
                 open: true,
-                title: 'Pembayaran Diperlukan',
-                description: 'Kursus ini adalah kursus berbayar. Anda akan diarahkan ke halaman pembayaran.',
-                type: 'info',
-                onAction: () => {
-                    // In a real app, this would go to payment processing
-                    setIsProcessing(true);
-                    setTimeout(() => {
-                        setAlertState({
-                            open: true,
-                            title: 'Pendaftaran Berhasil',
-                            description: 'Selamat! Anda telah berhasil mendaftar di kursus ini.',
-                            type: 'success',
-                            onAction: () => {
-                                router.visit(`/courses/${course.id}`);
-                            }
-                        });
-                        setIsProcessing(false);
-                    }, 2000);
-                }
+                title: 'Pendaftaran Berhasil',
+                description: 'Selamat! Anda telah berhasil mendaftar di kursus gratis ini.',
+                type: 'success',
+                onAction: () => router.visit(`/courses/${course.id}`)
             });
-        } else {
-            // For free courses, enroll directly
+            setIsProcessing(false);
+            return;
+        }
+
+        try {
             setIsProcessing(true);
-            setTimeout(() => {
-                setAlertState({
-                    open: true,
-                    title: 'Pendaftaran Berhasil',
-                    description: 'Selamat! Anda telah berhasil mendaftar di kursus gratis ini.',
-                    type: 'success',
-                    onAction: () => {
-                        router.visit(`/courses/${course.id}`);
-                    }
-                });
-                setIsProcessing(false);
-            }, 1000);
+            const response = await fetch(route('payments.courses.create', { id: course.id }), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+                },
+                body: JSON.stringify({ payment_method: null })
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || 'Gagal membuat transaksi.');
+            }
+
+            const data = await response.json();
+
+            // Prefer Snap redirect URL, fallback to snap.js
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+                return;
+            }
+
+            // Use Snap.js popup if available
+            await ensureSnapJsLoaded(data.client_key, data.is_production);
+
+            const snap: any = (window as any).snap;
+            if (!snap) throw new Error('Midtrans Snap tidak tersedia.');
+
+            snap.pay(data.snap_token, {
+                onSuccess: function() { router.visit(`/courses/${course.id}`); },
+                onPending: function() { router.visit(`/courses/${course.id}`); },
+                onError: function() {
+                    setAlertState({
+                        open: true,
+                        title: 'Pembayaran Gagal',
+                        description: 'Terjadi kesalahan saat memproses pembayaran.',
+                        type: 'error'
+                    });
+                },
+                onClose: function() { /* user closed popup */ }
+            });
+        } catch (error: any) {
+            setAlertState({
+                open: true,
+                title: 'Gagal Memulai Pembayaran',
+                description: error?.message || 'Silakan coba lagi.',
+                type: 'error'
+            });
+        } finally {
+            setIsProcessing(false);
         }
     };
+
+    async function ensureSnapJsLoaded(clientKey: string, isProduction: boolean) {
+        const existing = document.querySelector('script[src*="snap.js"]');
+        if (existing) return;
+        await new Promise<void>((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = (isProduction
+                ? 'https://app.midtrans.com/snap/snap.js'
+                : 'https://app.sandbox.midtrans.com/snap/snap.js') + `?client-key=${clientKey}`;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Gagal memuat Midtrans Snap.'));
+            document.body.appendChild(script);
+        });
+    }
 
     const benefits = [
         'Akses seumur hidup ke semua materi kursus',
