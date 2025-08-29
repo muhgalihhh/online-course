@@ -12,24 +12,33 @@ class UserController extends Controller
         $user = auth()->user();
         
         // Get user's enrolled courses with progress
-        $enrollments = \App\Models\Enrollment::with(['course' => function($query) {
+        $enrollmentsQuery = \App\Models\Enrollment::with(['course' => function($query) {
             $query->with(['category', 'institution', 'chapters'])
                 ->where('status', 'published')
                 ->withAvg('reviews', 'rating')
                 ->withCount(['enrollments', 'chapters']);
         }])
-        ->where('user_id', $user->id)
-        ->orderBy('enrolled_at', 'desc')
-        ->get()
-        ->map(function ($enrollment) {
+        ->where('user_id', $user->id);
+        
+        // Check if enrolled_at column exists and order accordingly
+        try {
+            $enrollments = $enrollmentsQuery->orderBy('enrolled_at', 'desc')->get();
+        } catch (\Exception $e) {
+            // If enrolled_at doesn't exist, use created_at
+            $enrollments = $enrollmentsQuery->orderBy('created_at', 'desc')->get();
+        }
+        
+        $enrollments = $enrollments->map(function ($enrollment) {
             $course = $enrollment->course;
             if ($course) {
                 $course->average_rating = $course->reviews_avg_rating ?? 0;
                 $course->total_students = $course->enrollments_count;
                 $course->total_chapters = $course->chapters_count;
-                $course->user_progress = $enrollment->progress;
-                $course->enrolled_at = $enrollment->enrolled_at;
-                $course->completed_at = $enrollment->completed_at;
+                
+                // Safely access columns that might not exist
+                $course->user_progress = $enrollment->progress ?? 0;
+                $course->enrolled_at = $enrollment->enrolled_at ?? $enrollment->created_at;
+                $course->completed_at = $enrollment->completed_at ?? null;
             }
             return $course;
         })
@@ -53,24 +62,33 @@ class UserController extends Controller
         $user = auth()->user();
         
         // Get user's enrolled courses with progress
-        $enrollments = \App\Models\Enrollment::with(['course' => function($query) {
+        $enrollmentsQuery = \App\Models\Enrollment::with(['course' => function($query) {
             $query->with(['category', 'institution', 'chapters'])
                 ->where('status', 'published')
                 ->withAvg('reviews', 'rating')
                 ->withCount(['enrollments', 'chapters']);
         }])
-        ->where('user_id', $user->id)
-        ->orderBy('enrolled_at', 'desc')
-        ->get()
-        ->map(function ($enrollment) {
+        ->where('user_id', $user->id);
+        
+        // Check if enrolled_at column exists and order accordingly
+        try {
+            $enrollments = $enrollmentsQuery->orderBy('enrolled_at', 'desc')->get();
+        } catch (\Exception $e) {
+            // If enrolled_at doesn't exist, use created_at
+            $enrollments = $enrollmentsQuery->orderBy('created_at', 'desc')->get();
+        }
+        
+        $enrollments = $enrollments->map(function ($enrollment) {
             $course = $enrollment->course;
             if ($course) {
                 $course->average_rating = $course->reviews_avg_rating ?? 0;
                 $course->total_students = $course->enrollments_count;
                 $course->total_chapters = $course->chapters_count;
-                $course->user_progress = $enrollment->progress;
-                $course->enrolled_at = $enrollment->enrolled_at;
-                $course->completed_at = $enrollment->completed_at;
+                
+                // Safely access columns that might not exist
+                $course->user_progress = $enrollment->progress ?? 0;
+                $course->enrolled_at = $enrollment->enrolled_at ?? $enrollment->created_at;
+                $course->completed_at = $enrollment->completed_at ?? null;
             }
             return $course;
         })
