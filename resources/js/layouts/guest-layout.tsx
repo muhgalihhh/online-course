@@ -2,14 +2,30 @@ import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { Button } from '@/components/ui/button';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
     BookOpen,
     GraduationCap,
     Menu,
     X,
     User,
+    Settings,
+    LogOut,
+    ShoppingBag,
+    Heart,
+    History,
+    CreditCard,
+    HelpCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
 import { usePage } from '@inertiajs/react';
 
@@ -37,6 +53,19 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     const { user, isAuthenticated } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
 
+    const handleLogout = () => {
+        router.post('/logout');
+    };
+
+    const getInitials = (name: string) => {
+        return name
+            ?.split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2) || 'U';
+    };
+
     // Function to check if a link is active
     const isActiveLink = (href: string) => {
         if (href === '/') {
@@ -49,6 +78,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
         { name: 'Beranda', href: '/' },
         { name: 'Kelas Pro', href: '/kelas-pro' },
         { name: 'Kelas Free', href: '/kelas-free' },
+        ...(isAuthenticated ? [{ name: 'Kelas Anda', href: '/my-courses' }] : []),
         { name: 'Tentang Kami', href: '/tentang' },
     ];
 
@@ -92,11 +122,61 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                         <div className="hidden items-center space-x-4 md:flex">
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
-                            {isAuthenticated ? (
-                                <Button size="sm" className="gap-2">
-                                    <User className="h-4 w-4" />
-                                    <Link href="/dashboard">Masuk</Link>
-                                </Button>
+                            {isAuthenticated && user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={user.profile_photo_url} alt={user.name} />
+                                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                            </Avatar>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{user.name}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">
+                                                    {user.email}
+                                                </p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/dashboard" className="cursor-pointer">
+                                                <User className="mr-2 h-4 w-4" />
+                                                <span>Dashboard</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/my-courses" className="cursor-pointer">
+                                                <BookOpen className="mr-2 h-4 w-4" />
+                                                <span>Kelas Saya</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/user/profile" className="cursor-pointer">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                <span>Pengaturan</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/help" className="cursor-pointer">
+                                                <HelpCircle className="mr-2 h-4 w-4" />
+                                                <span>Bantuan</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem 
+                                            onClick={handleLogout}
+                                            className="cursor-pointer text-destructive focus:text-destructive"
+                                        >
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Keluar</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             ) : (
                                 <>
                                     <Button variant="outline" size="sm">
@@ -143,11 +223,44 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                     );
                                 })}
                                 <div className="space-y-4 border-t pt-4">
-                                    {isAuthenticated ? (
-                                        <Button size="sm" className="w-full justify-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            <Link href="/dashboard">Masuk</Link>
-                                        </Button>
+                                    {isAuthenticated && user ? (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-3 px-2 py-1">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={user.profile_photo_url} alt={user.name} />
+                                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium">{user.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Link href="/dashboard" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                    <User className="h-4 w-4" />
+                                                    Dashboard
+                                                </Link>
+                                                <Link href="/my-courses" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                    <BookOpen className="h-4 w-4" />
+                                                    Kelas Saya
+                                                </Link>
+                                                <Link href="/user/profile" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                    <Settings className="h-4 w-4" />
+                                                    Pengaturan
+                                                </Link>
+                                                <Link href="/help" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                    <HelpCircle className="h-4 w-4" />
+                                                    Bantuan
+                                                </Link>
+                                                <button 
+                                                    onClick={handleLogout}
+                                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                                                >
+                                                    <LogOut className="h-4 w-4" />
+                                                    Keluar
+                                                </button>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="flex gap-2">
                                             <Button variant="outline" size="sm" className="flex-1">

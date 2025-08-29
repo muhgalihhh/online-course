@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import AuthLayout from '@/layouts/auth-layout';
+import GuestLayout from '@/layouts/guest-layout';
 
 export default function Register() {
     const { toast } = useToast();
@@ -16,8 +16,18 @@ export default function Register() {
     const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
     
     return (
-        <AuthLayout title="Buat Akun Baru" description="Masukkan detail Anda untuk membuat akun di platform Pare EduHub">
+        <GuestLayout>
             <Head title="Daftar" />
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-md space-y-8">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold tracking-tight">Buat Akun Baru</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Masukkan detail Anda untuk membuat akun di platform Pare EduHub
+                        </p>
+                    </div>
+
+                    <div className="mt-8 bg-card rounded-lg border shadow-sm p-6">
             <Form
                 method="post"
                 action={route('register')}
@@ -214,6 +224,9 @@ export default function Register() {
                     );
                 }}
             </Form>
-        </AuthLayout>
+                    </div>
+                </div>
+            </div>
+        </GuestLayout>
     );
 }
