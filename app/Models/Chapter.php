@@ -40,4 +40,20 @@ class Chapter extends Model
     {
         return $this->hasMany(CourseMaterial::class);
     }
+
+    /**
+     * Progress records for this chapter.
+     */
+    public function progress(): HasMany
+    {
+        return $this->hasMany(ChapterProgress::class);
+    }
+
+    /**
+     * Get progress for a specific user.
+     */
+    public function getUserProgress($userId)
+    {
+        return $this->progress()->where('user_id', $userId)->first();
+    }
 }

@@ -39,4 +39,33 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    /**
+     * Get the chapter progress for this enrollment.
+     */
+    public function chapterProgress()
+    {
+        return $this->hasMany(ChapterProgress::class);
+    }
+
+    /**
+     * Calculate and update progress based on completed chapters.
+     */
+    public function updateProgress()
+    {
+        $totalChapters = $this->course->chapters()->count();
+        
+        if ($totalChapters > 0) {
+            $completedChapters = $this->chapterProgress()
+                ->where('is_completed', true)
+                ->count();
+            
+            $progress = round(($completedChapters / $totalChapters) * 100);
+            
+            $this->update([
+                'progress' => $progress,
+                'completed_at' => $progress === 100 ? now() : null,
+            ]);
+        }
+    }
 }

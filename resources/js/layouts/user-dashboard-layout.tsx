@@ -65,8 +65,6 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     const navigationItems = [
         { name: 'Dashboard', href: '/dashboard' },
         { name: 'Kelas Saya', href: '/my-courses' },
-        { name: 'Kelas Pro', href: '/kelas-pro' },
-        { name: 'Kelas Free', href: '/kelas-free' },
         { name: 'Tentang Kami', href: '/tentang' },
     ];
 
@@ -145,52 +143,15 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
-                                        <Link href="/profile" className="cursor-pointer">
+                                        <Link href="/user/profile" className="cursor-pointer">
                                             <User className="mr-2 h-4 w-4" />
                                             <span>Profile</span>
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/my-courses" className="cursor-pointer">
+                                        <Link href="/user/my-courses" className="cursor-pointer">
                                             <BookOpen className="mr-2 h-4 w-4" />
                                             <span>Kelas Saya</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/purchases" className="cursor-pointer">
-                                            <ShoppingBag className="mr-2 h-4 w-4" />
-                                            <span>Pembelian</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/wishlist" className="cursor-pointer">
-                                            <Heart className="mr-2 h-4 w-4" />
-                                            <span>Wishlist</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/history" className="cursor-pointer">
-                                            <History className="mr-2 h-4 w-4" />
-                                            <span>Riwayat</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/settings" className="cursor-pointer">
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            <span>Pengaturan</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/billing" className="cursor-pointer">
-                                            <CreditCard className="mr-2 h-4 w-4" />
-                                            <span>Tagihan</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/help" className="cursor-pointer">
-                                            <HelpCircle className="mr-2 h-4 w-4" />
-                                            <span>Bantuan</span>
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -253,28 +214,12 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                                 
                                 <div className="space-y-2 border-t pt-4">
                                     <Link
-                                        href="/profile"
+                                        href="/user/profile"
                                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         <User className="h-4 w-4" />
                                         Profile
-                                    </Link>
-                                    <Link
-                                        href="/purchases"
-                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                    >
-                                        <ShoppingBag className="h-4 w-4" />
-                                        Pembelian
-                                    </Link>
-                                    <Link
-                                        href="/settings"
-                                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                    >
-                                        <Settings className="h-4 w-4" />
-                                        Pengaturan
                                     </Link>
                                     <button
                                         onClick={() => {
@@ -331,18 +276,8 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/my-courses" className="text-muted-foreground transition-colors hover:text-primary">
+                                    <Link href="/user/my-courses" className="text-muted-foreground transition-colors hover:text-primary">
                                         Kelas Saya
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link href="/kelas-pro" className="text-muted-foreground transition-colors hover:text-primary">
-                                        Kelas Pro
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link href="/kelas-free" className="text-muted-foreground transition-colors hover:text-primary">
-                                        Kelas Free
                                     </Link>
                                 </li>
                                 <li>

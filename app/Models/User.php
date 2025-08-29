@@ -132,4 +132,12 @@ class User extends Authenticatable
     {
         return ucfirst($this->role);
     }
+
+    /**
+     * Get the chapter progress for the user.
+     */
+    public function chapterProgress()
+    {
+        return $this->hasMany(ChapterProgress::class);
+    }
 }
