@@ -20,17 +20,19 @@ function LoginFormContent({
     processing,
     errors,
     canResetPassword,
+    submitCount,
 }: {
     processing: boolean;
     errors: { email?: string; password?: string; [key: string]: string | undefined };
     canResetPassword: boolean;
+    submitCount: number;
 }) {
     const { toast } = useToast();
-    const [hasShownToast, setHasShownToast] = useState(false);
+    const [lastSubmitCount, setLastSubmitCount] = useState(0);
 
     useEffect(() => {
-        // Handle different error scenarios
-        if (Object.keys(errors).length > 0 && !hasShownToast) {
+        // Show toast when there are errors and this is a new submission
+        if (Object.keys(errors).length > 0 && submitCount > lastSubmitCount) {
             let toastTitle = 'Login Gagal';
             let toastDescription = 'Terjadi kesalahan saat login.';
             
@@ -60,14 +62,11 @@ function LoginFormContent({
                 title: toastTitle,
                 description: toastDescription,
             });
-            setHasShownToast(true);
+            
+            // Update last submit count
+            setLastSubmitCount(submitCount);
         }
-
-        // Reset the flag when errors are cleared
-        if (Object.keys(errors).length === 0) {
-            setHasShownToast(false);
-        }
-    }, [errors, toast, hasShownToast]);
+    }, [errors, submitCount, toast, lastSubmitCount]);
 
     return (
         <div className="space-y-6">
@@ -158,12 +157,24 @@ function LoginFormContent({
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
+    const [submitCount, setSubmitCount] = useState(0);
+    
     return (
         <AuthLayout title="Masuk ke Akun Anda" description="Masukkan email dan password Anda untuk masuk ke platform Pare EduHub">
             <Head title="Masuk" />
 
-            <Form method="post" action={route('login')} resetOnSuccess={['password']} className="space-y-6">
-                {({ processing, errors }) => <LoginFormContent processing={processing} errors={errors} canResetPassword={canResetPassword} />}
+            <Form 
+                method="post" 
+                action={route('login')} 
+                resetOnSuccess={['password']} 
+                className="space-y-6"
+                onBefore={() => {
+                    // Increment submit count when form is submitted
+                    setSubmitCount(prev => prev + 1);
+                    return true;
+                }}
+            >
+                {({ processing, errors }) => <LoginFormContent processing={processing} errors={errors} canResetPassword={canResetPassword} submitCount={submitCount} />}
             </Form>
 
             {status && (
