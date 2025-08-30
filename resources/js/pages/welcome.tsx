@@ -172,7 +172,15 @@ export default function Welcome() {
 
         // For free courses, directly enroll without payment
         if (!course.is_pro && course.price === 0) {
-            router.post(`/courses/${course.id}/enroll-free`);
+            router.post(`/courses/${course.id}/enroll-free`, {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Redirect will be handled by the controller
+                },
+                onError: (errors) => {
+                    console.error('Enrollment error:', errors);
+                }
+            });
         } else {
             // Navigate to enrollment/payment page for pro courses
             router.visit(`/courses/${course.id}/enroll`);
