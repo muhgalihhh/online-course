@@ -90,7 +90,13 @@ class PaymentController extends Controller
             $courseId = $transaction->transactionable_id;
             $user = $transaction->user;
             if ($user && !$user->courses()->where('course_id', $courseId)->exists()) {
-                $user->courses()->attach($courseId, ['created_at' => now(), 'updated_at' => now()]);
+                // Buat enrollment dengan metadata awal yang konsisten dengan free-enroll
+                \App\Models\Enrollment::create([
+                    'user_id' => $user->id,
+                    'course_id' => $courseId,
+                    'enrolled_at' => now(),
+                    'progress' => 0,
+                ]);
             }
         }
 

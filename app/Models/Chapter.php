@@ -42,6 +42,15 @@ class Chapter extends Model
     }
 
     /**
+     * Alias relationship agar dapat diakses sebagai 'materials' pada JSON.
+     * Digunakan oleh halaman belajar yang mengharapkan properti 'materials'.
+     */
+    public function materials(): HasMany
+    {
+        return $this->hasMany(CourseMaterial::class);
+    }
+
+    /**
      * Progress records for this chapter.
      */
     public function progress(): HasMany

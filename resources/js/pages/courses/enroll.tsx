@@ -53,16 +53,25 @@ export default function EnrollCourse({ course }: PageProps) {
     });
 
     const handleEnrollment = async () => {
-        if (!course.is_pro) {
-            setIsProcessing(true);
-            setAlertState({
-                open: true,
-                title: 'Pendaftaran Berhasil',
-                description: 'Selamat! Anda telah berhasil mendaftar di kursus gratis ini.',
-                type: 'success',
-                onAction: () => router.visit(`/courses/${course.id}`)
-            });
-            setIsProcessing(false);
+        // Free course: call backend enroll-free to create Enrollment properly
+        if (!course.is_pro || course.price === 0) {
+            try {
+                setIsProcessing(true);
+                await router.post(`/courses/${course.id}/enroll-free`, {}, {
+                    preserveScroll: true,
+                    onSuccess: () => router.visit(`/courses/${course.id}/learn`),
+                    onError: (errors) => {
+                        setAlertState({
+                            open: true,
+                            title: 'Gagal Mendaftar',
+                            description: 'Terjadi kesalahan saat mendaftar kursus gratis.',
+                            type: 'error'
+                        });
+                    }
+                });
+            } finally {
+                setIsProcessing(false);
+            }
             return;
         }
 
@@ -97,7 +106,7 @@ export default function EnrollCourse({ course }: PageProps) {
             if (!snap) throw new Error('Midtrans Snap tidak tersedia.');
 
             snap.pay(data.snap_token, {
-                onSuccess: function() { router.visit(`/courses/${course.id}`); },
+                onSuccess: function() { router.visit(`/courses/${course.id}/learn`); },
                 onPending: function() { router.visit(`/courses/${course.id}`); },
                 onError: function() {
                     setAlertState({

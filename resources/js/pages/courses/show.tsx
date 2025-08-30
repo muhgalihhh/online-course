@@ -277,11 +277,14 @@ export default function CourseShow() {
                                         {course.is_pro && (
                                             <p className="text-sm text-muted-foreground">Harga sudah termasuk pajak</p>
                                         )}
+                                        {isEnrolled && (
+                                            <p className="mt-2 text-sm text-green-600">Anda sudah terdaftar di kursus ini</p>
+                                        )}
                                     </div>
 
                                     {isEnrolled ? (
                                         <Button size="lg" className="w-full" asChild>
-                                            <Link href={`/user/courses/${course.id}`}>
+                                            <Link href={`/courses/${course.id}/learn`}>
                                                 Lanjutkan Belajar
                                             </Link>
                                         </Button>

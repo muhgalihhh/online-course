@@ -11,10 +11,20 @@ Route::get('/', function () {
     $categories = \App\Models\Category::withCount('courses')->get();
 
     // Fetch top courses for the welcome page
-    $topCourses = \App\Models\Course::with(['category', 'institution', 'reviews'])
+    $topCoursesQuery = \App\Models\Course::with(['category', 'institution', 'reviews'])
         ->where('status', 'published')
         ->withAvg('reviews', 'rating')
-        ->withCount('enrollments')
+        ->withCount('enrollments');
+
+    if (auth()->check()) {
+        $topCoursesQuery->withCount([
+            'enrollments as is_enrolled' => function ($q) {
+                $q->where('user_id', auth()->id());
+            }
+        ]);
+    }
+
+    $topCourses = $topCoursesQuery
         ->orderBy('enrollments_count', 'desc')
         ->limit(6)
         ->get();
@@ -24,6 +34,7 @@ Route::get('/', function () {
         $course->average_rating = $course->reviews_avg_rating ?? 0;
         $course->total_reviews = $course->reviews->count();
         $course->total_students = $course->enrollments_count;
+        $course->is_enrolled = (bool) ($course->is_enrolled ?? false);
     });
 
     return Inertia::render('welcome', [
