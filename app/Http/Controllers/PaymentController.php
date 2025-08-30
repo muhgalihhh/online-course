@@ -41,6 +41,35 @@ class PaymentController extends Controller
             ], 409);
         }
 
+        // Check for existing pending transaction
+        $existingTransaction = Transaction::where('user_id', $user->id)
+            ->where('transactionable_id', $courseId)
+            ->where('transactionable_type', Course::class)
+            ->whereIn('status', ['pending', 'processing'])
+            ->first();
+
+        if ($existingTransaction) {
+            // Check actual status from Midtrans
+            $statusInfo = $this->midtrans->getTransactionStatus($existingTransaction->midtrans_order_id);
+            
+            // If transaction is expired or cancelled, allow creating new one
+            if ($statusInfo && in_array($statusInfo['status'], ['expired', 'cancelled', 'failed'])) {
+                // Mark old transaction as expired/cancelled
+                $existingTransaction->update(['status' => $statusInfo['status']]);
+            } else {
+                // Transaction still valid, return existing token
+                return response()->json([
+                    'order_id' => $existingTransaction->midtrans_order_id,
+                    'snap_token' => $existingTransaction->payment_details['snap_token'] ?? null,
+                    'redirect_url' => $existingTransaction->payment_details['redirect_url'] ?? null,
+                    'client_key' => (string) config('midtrans.client_key'),
+                    'is_production' => (bool) config('midtrans.is_production'),
+                    'enabled_pay_button' => (bool) config('midtrans.enable_pay_button'),
+                    'existing_transaction' => true,
+                ]);
+            }
+        }
+
         $result = $this->midtrans->createCourseTransaction($user, $course, $request->string('payment_method')->toString());
 
         return response()->json([
@@ -159,13 +188,30 @@ class PaymentController extends Controller
             ->first();
 
         $snapToken = null;
+        $transactionExpired = false;
+        
         if ($existingTransaction) {
-            // Get snap token for existing transaction
-            try {
-                $snapToken = $this->midtrans->getSnapToken($existingTransaction->midtrans_order_id);
-            } catch (\Exception $e) {
-                // If can't get token, create new transaction
+            // Check actual status from Midtrans
+            $statusInfo = $this->midtrans->getTransactionStatus($existingTransaction->midtrans_order_id);
+            
+            if ($statusInfo && in_array($statusInfo['status'], ['expired', 'cancelled', 'failed'])) {
+                // Transaction expired or failed
+                $transactionExpired = true;
                 $existingTransaction = null;
+            } else {
+                // Get snap token for existing transaction
+                try {
+                    $snapToken = $this->midtrans->getSnapToken($existingTransaction->midtrans_order_id);
+                    if (!$snapToken) {
+                        // Can't get token, mark as expired
+                        $transactionExpired = true;
+                        $existingTransaction = null;
+                    }
+                } catch (\Exception $e) {
+                    // If can't get token, mark as expired
+                    $transactionExpired = true;
+                    $existingTransaction = null;
+                }
             }
         }
 
@@ -176,6 +222,7 @@ class PaymentController extends Controller
             'clientKey' => (string) config('midtrans.client_key'),
             'isProduction' => (bool) config('midtrans.is_production'),
             'isAlreadyEnrolled' => false,
+            'transactionExpired' => $transactionExpired,
         ]);
     }
 
@@ -191,6 +238,14 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($transaction) {
+                // Check and update transaction status from Midtrans for pending transactions
+                if (in_array($transaction->status, ['pending', 'processing'])) {
+                    $statusInfo = $this->midtrans->getTransactionStatus($transaction->midtrans_order_id);
+                    if ($statusInfo) {
+                        $transaction->status = $statusInfo['status'];
+                    }
+                }
+                
                 // Add course details if transactionable is a course
                 if ($transaction->transactionable_type === Course::class) {
                     $transaction->course = $transaction->transactionable;
@@ -235,17 +290,14 @@ class PaymentController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Only allow cancellation of pending transactions
-        if (!in_array($transaction->status, ['pending', 'processing'])) {
+        // Only allow cancellation of pending/processing/expired transactions
+        if (!in_array($transaction->status, ['pending', 'processing', 'expired'])) {
             return response()->json([
                 'message' => 'Transaksi ini tidak dapat dibatalkan.',
             ], 422);
         }
 
-        // Update transaction status to cancelled
-        $transaction->update(['status' => 'cancelled']);
-
-        // Try to cancel in Midtrans as well (optional, non-blocking)
+        // Try to cancel in Midtrans first
         try {
             $this->midtrans->cancelTransaction($orderId);
         } catch (\Exception $e) {
@@ -256,8 +308,43 @@ class PaymentController extends Controller
             ]);
         }
 
+        // Delete the transaction record completely to allow new transaction
+        $transaction->delete();
+
         return response()->json([
-            'message' => 'Transaksi berhasil dibatalkan.',
+            'message' => 'Transaksi berhasil dihapus. Anda dapat membuat transaksi baru.',
+            'deleted' => true,
+        ]);
+    }
+
+    /**
+     * Check transaction status from Midtrans
+     */
+    public function checkTransactionStatus(Request $request, string $orderId): JsonResponse
+    {
+        $user = $request->user();
+        
+        $transaction = Transaction::where('midtrans_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Get status from Midtrans
+        $statusInfo = $this->midtrans->getTransactionStatus($orderId);
+        
+        if (!$statusInfo) {
+            return response()->json([
+                'message' => 'Tidak dapat mengecek status transaksi',
+                'status' => $transaction->status,
+            ], 500);
+        }
+
+        return response()->json([
+            'order_id' => $orderId,
+            'status' => $statusInfo['status'],
+            'midtrans_status' => $statusInfo['midtrans_status'],
+            'payment_type' => $statusInfo['payment_type'],
+            'transaction_time' => $statusInfo['transaction_time'],
+            'is_expired' => in_array($statusInfo['status'], ['expired', 'cancelled', 'failed']),
         ]);
     }
 }

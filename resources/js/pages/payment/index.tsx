@@ -21,9 +21,10 @@ interface PaymentPageProps {
     clientKey: string;
     isProduction: boolean;
     isAlreadyEnrolled?: boolean;
+    transactionExpired?: boolean;
 }
 
-export default function PaymentPage({ course, transaction: initialTransaction, snapToken: initialSnapToken, clientKey, isProduction, isAlreadyEnrolled = false }: PaymentPageProps) {
+export default function PaymentPage({ course, transaction: initialTransaction, snapToken: initialSnapToken, clientKey, isProduction, isAlreadyEnrolled = false, transactionExpired = false }: PaymentPageProps) {
     const { auth } = usePage().props as any;
     const [isLoading, setIsLoading] = useState(false);
     const [transaction, setTransaction] = useState<Transaction | undefined>(initialTransaction);
@@ -58,7 +59,11 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
         if (!isAlreadyEnrolled && !transaction && !snapToken && course.is_pro && course.price > 0) {
             createTransaction();
         }
-    }, [isAlreadyEnrolled]);
+        // Also create new transaction if previous one expired
+        if (transactionExpired && !isAlreadyEnrolled && course.is_pro && course.price > 0) {
+            createTransaction();
+        }
+    }, [isAlreadyEnrolled, transactionExpired]);
 
     // Embed Snap payment when token is available
     useEffect(() => {
@@ -84,6 +89,16 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
             }
 
             const data = await response.json();
+            
+            // Check if using existing transaction or new one
+            if (data.existing_transaction) {
+                // Using existing transaction
+                toast.info('Menggunakan transaksi yang sudah ada');
+            } else {
+                // New transaction created
+                toast.success('Transaksi baru berhasil dibuat');
+            }
+            
             setSnapToken(data.snap_token);
             
             // Create a temporary transaction object
@@ -211,7 +226,14 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                     {/* Status Message */}
                                     <div className="mb-6 p-4 rounded-lg bg-gray-50 flex items-center gap-3">
                                         {getStatusIcon()}
-                                        <span className="text-sm">{getStatusMessage()}</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm">{getStatusMessage()}</span>
+                                            {transactionExpired && (
+                                                <p className="text-xs text-orange-600 mt-1">
+                                                    Transaksi sebelumnya telah expired. Membuat transaksi baru...
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Midtrans Snap Embed Container or Success Message */}

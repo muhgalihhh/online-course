@@ -108,6 +108,60 @@ class MidtransService
         }
     }
 
+    /**
+     * Get transaction status from Midtrans and update local database
+     */
+    public function getTransactionStatus(string $orderId): ?array
+    {
+        try {
+            $status = \Midtrans\Transaction::status($orderId);
+            
+            // Map Midtrans status to our local status
+            $transactionStatus = $status->transaction_status ?? '';
+            $fraudStatus = $status->fraud_status ?? '';
+            
+            $localStatus = match ($transactionStatus) {
+                'capture' => $fraudStatus === 'challenge' ? 'pending' : 'completed',
+                'settlement' => 'completed',
+                'pending' => 'pending',
+                'deny' => 'failed',
+                'expire' => 'expired',
+                'cancel' => 'cancelled',
+                default => 'pending',
+            };
+            
+            // Update local transaction if exists
+            $transaction = Transaction::where('midtrans_order_id', $orderId)->first();
+            if ($transaction) {
+                $details = $transaction->payment_details ?? [];
+                $details['last_status_check'] = $status;
+                $details['last_check_at'] = now()->toISOString();
+                
+                $transaction->update([
+                    'status' => $localStatus,
+                    'payment_details' => $details,
+                    'payment_method' => $transaction->payment_method ?: ($status->payment_type ?? null),
+                ]);
+            }
+            
+            return [
+                'order_id' => $orderId,
+                'status' => $localStatus,
+                'midtrans_status' => $transactionStatus,
+                'fraud_status' => $fraudStatus,
+                'payment_type' => $status->payment_type ?? null,
+                'gross_amount' => $status->gross_amount ?? null,
+                'transaction_time' => $status->transaction_time ?? null,
+            ];
+        } catch (\Exception $e) {
+            \Log::warning('Failed to get transaction status from Midtrans', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
     private function resolveEnabledPayments(?string $preferredPaymentMethod): array
     {
         $methods = array_map('strtolower', (array) config('midtrans.payment_methods'));
