@@ -9,11 +9,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Toggle } from '@/components/ui/toggle';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
     BookOpen, 
     Clock, 
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
     PlayCircle,
     FileText,
     Video,
@@ -26,7 +34,16 @@ import {
     Youtube,
     List,
     Menu,
-    X
+    X,
+    MoreVertical,
+    Share2,
+    Bookmark,
+    MessageSquare,
+    AlertCircle,
+    Trophy,
+    Target,
+    PanelLeftClose,
+    PanelLeft
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -94,6 +111,11 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
         const saved = localStorage.getItem('learn-sidebar-open');
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [expandedChapters, setExpandedChapters] = useState<number[]>(() => {
+        // Start with current chapter expanded
+        return selectedChapter ? [selectedChapter.id] : [];
+    });
+    const [isLoading, setIsLoading] = useState(false);
 
     // Save sidebar state to localStorage whenever it changes
     useEffect(() => {
@@ -222,22 +244,34 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
     return (
         <UserDashboardLayout>
             <Head title={`Belajar - ${course.title}`} />
+            <TooltipProvider>
             
             <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
                 {/* Header */}
                 <div className="border-b bg-background/95 backdrop-blur">
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                                 {/* Desktop Sidebar Toggle */}
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    className="hidden lg:flex"
-                                    onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                                >
-                                    <Menu className="h-5 w-5" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon"
+                                            className="hidden lg:flex"
+                                            onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                                        >
+                                            {isDesktopSidebarOpen ? (
+                                                <PanelLeftClose className="h-5 w-5" />
+                                            ) : (
+                                                <PanelLeft className="h-5 w-5" />
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {isDesktopSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}
+                                    </TooltipContent>
+                                </Tooltip>
                                 <Button variant="ghost" size="sm" asChild>
                                     <Link href="/dashboard">
                                         <ChevronLeft className="mr-2 h-4 w-4" />
@@ -411,146 +445,223 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                 <div className="flex h-[calc(100vh-73px)]">
                     {/* Desktop Sidebar */}
                     <div className={`
-                        hidden lg:block bg-background border-r transition-all duration-300 overflow-hidden
-                        ${isDesktopSidebarOpen ? 'w-[350px] xl:w-[380px]' : 'w-0'}
+                        hidden lg:block bg-card border-r shadow-lg transition-all duration-300 overflow-hidden
+                        ${isDesktopSidebarOpen ? 'w-[350px] xl:w-[400px]' : 'w-0'}
                     `}>
-                        <div className="h-full flex flex-col">
+                        <div className="h-full flex flex-col bg-gradient-to-b from-background to-muted/20">
                             {/* Sidebar Header */}
-                            <div className="p-6 border-b">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-lg font-semibold">Daftar Materi</h3>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon"
-                                        className="lg:hidden"
-                                        onClick={() => setIsDesktopSidebarOpen(false)}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                            <div className="p-6 border-b bg-background/80 backdrop-blur">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-primary/10 rounded-lg">
+                                            <BookOpen className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold">Daftar Materi</h3>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem>
+                                                <Share2 className="mr-2 h-4 w-4" />
+                                                Bagikan Kelas
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Bookmark className="mr-2 h-4 w-4" />
+                                                Simpan Progress
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem>
+                                                <MessageSquare className="mr-2 h-4 w-4" />
+                                                Diskusi
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    {completedMaterialsState.length} dari {totalMaterials} materi selesai
-                                </p>
-                                <Progress value={progressPercentage} />
+                                
+                                {/* Progress Card */}
+                                <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Trophy className="h-4 w-4 text-primary" />
+                                                <span className="text-sm font-medium">Progress Belajar</span>
+                                            </div>
+                                            <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                                {progressPercentage}%
+                                            </Badge>
+                                        </div>
+                                        <Progress value={progressPercentage} className="h-2" />
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            {completedMaterialsState.length} dari {totalMaterials} materi selesai
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             </div>
                             
                             {/* Sidebar Content */}
                             <ScrollArea className="flex-1">
-                                        <div className="px-6 pb-4">
+                                        <div className="p-4 space-y-2">
                                             {course.chapters.map((chapter, chapterIndex) => {
                                                 const chapterMaterials = chapter.materials;
                                                 const completedInChapter = chapterMaterials.filter(m => 
                                                     completedMaterialsState.includes(m.id)
                                                 ).length;
                                                 const isCurrentChapter = selectedChapter?.id === chapter.id;
+                                                const isExpanded = expandedChapters.includes(chapter.id);
                                                 
                                                 return (
-                                                    <div key={chapter.id} className="mb-4">
+                                                    <Collapsible 
+                                                        key={chapter.id}
+                                                        open={isExpanded}
+                                                        onOpenChange={(open) => {
+                                                            setExpandedChapters(prev => 
+                                                                open 
+                                                                    ? [...prev, chapter.id]
+                                                                    : prev.filter(id => id !== chapter.id)
+                                                            );
+                                                        }}
+                                                    >
                                                         {/* Chapter Header */}
-                                                        <div 
-                                                            className={`
-                                                                flex items-center justify-between p-3 rounded-lg cursor-pointer
-                                                                transition-colors mb-2
-                                                                ${isCurrentChapter 
-                                                                    ? 'bg-primary/10 border border-primary/20' 
-                                                                    : 'hover:bg-muted/50'
-                                                                }
-                                                            `}
-                                                            onClick={() => {
-                                                                setSelectedChapter(chapter);
-                                                                setSelectedMaterial(chapter.materials[0]);
-                                                            }}
-                                                        >
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className={`
-                                                                        w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                                                                        ${isCurrentChapter 
-                                                                            ? 'bg-primary text-primary-foreground' 
-                                                                            : 'bg-muted-foreground/20 text-muted-foreground'
-                                                                        }
-                                                                    `}>
-                                                                        {chapter.order}
+                                                        <CollapsibleTrigger asChild>
+                                                            <Card 
+                                                                className={`
+                                                                    w-full p-4 cursor-pointer transition-all duration-200 mb-2
+                                                                    ${isCurrentChapter 
+                                                                        ? 'bg-primary/10 border-primary/30 shadow-md' 
+                                                                        : 'hover:bg-muted/50 hover:shadow-sm'
+                                                                    }
+                                                                `}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`
+                                                                            w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all
+                                                                            ${isCurrentChapter 
+                                                                                ? 'bg-primary text-primary-foreground shadow-lg' 
+                                                                                : 'bg-muted text-muted-foreground'
+                                                                            }
+                                                                        `}>
+                                                                            {chapter.order}
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                                                                                {chapter.title}
+                                                                                {isCurrentChapter && (
+                                                                                    <Badge variant="secondary" className="text-xs">
+                                                                                        Sedang Dipelajari
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </h4>
+                                                                            <div className="flex items-center gap-4 mt-1">
+                                                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                                    <Target className="h-3 w-3" />
+                                                                                    {chapterMaterials.length} materi
+                                                                                </span>
+                                                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                                    <CheckCircle2 className="h-3 w-3" />
+                                                                                    {completedInChapter} selesai
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex-1">
-                                                                        <h4 className="font-semibold text-sm">{chapter.title}</h4>
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            {completedInChapter}/{chapterMaterials.length} materi selesai
-                                                                        </p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {completedInChapter === chapterMaterials.length && (
+                                                                            <Tooltip>
+                                                                                <TooltipTrigger>
+                                                                                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                                                                                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                                                                                        Selesai
+                                                                                    </Badge>
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent>
+                                                                                    Bab ini sudah selesai
+                                                                                </TooltipContent>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            {completedInChapter === chapterMaterials.length && (
-                                                                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                                            )}
-                                                        </div>
+                                                            </Card>
+                                                        </CollapsibleTrigger>
                                                         
                                                         {/* Materials List */}
-                                                        {isCurrentChapter && (
-                                                            <div className="ml-10 space-y-1">
+                                                        <CollapsibleContent className="transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                                                            <div className="ml-12 space-y-2 mt-2">
                                                                 {chapter.materials.map((material, materialIndex) => {
                                                                     const isCompleted = completedMaterialsState.includes(material.id);
                                                                     const isSelected = selectedMaterial?.id === material.id;
                                                                     
                                                                     return (
-                                                                        <div
+                                                                        <Card
                                                                             key={material.id}
                                                                             className={`
-                                                                                flex items-center gap-3 p-2 rounded-md cursor-pointer
-                                                                                transition-all duration-200
+                                                                                p-3 cursor-pointer transition-all duration-200
                                                                                 ${isSelected 
-                                                                                    ? 'bg-secondary shadow-sm border border-secondary-foreground/10' 
-                                                                                    : 'hover:bg-muted/50'
+                                                                                    ? 'bg-secondary border-primary/30 shadow-sm' 
+                                                                                    : 'hover:bg-muted/50 hover:shadow-sm border-transparent'
                                                                                 }
                                                                             `}
                                                                             onClick={() => {
+                                                                                setSelectedChapter(chapter);
                                                                                 setSelectedMaterial(material);
                                                                             }}
                                                                         >
-                                                                            {/* Status Icon */}
-                                                                            <div className="flex-shrink-0">
-                                                                                {isCompleted ? (
-                                                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                                                ) : isSelected ? (
-                                                                                    <PlayCircle className="h-4 w-4 text-primary" />
-                                                                                ) : (
-                                                                                    <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
-                                                                                )}
+                                                                            <div className="flex items-center gap-3">
+                                                                                {/* Status Icon */}
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger>
+                                                                                        <div className="flex-shrink-0">
+                                                                                            {isCompleted ? (
+                                                                                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                                                                            ) : isSelected ? (
+                                                                                                <PlayCircle className="h-5 w-5 text-primary animate-pulse" />
+                                                                                            ) : (
+                                                                                                <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent>
+                                                                                        {isCompleted ? 'Selesai' : isSelected ? 'Sedang dipelajari' : 'Belum dimulai'}
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                                
+                                                                                {/* Material Icon with Type */}
+                                                                                <div className={`p-2 rounded-lg ${getMaterialTypeColor(material.type).replace('text-', 'bg-').replace('700', '100').replace('400', '900/20')}`}>
+                                                                                    {getMaterialIcon(material.type)}
+                                                                                </div>
+                                                                                
+                                                                                {/* Material Info */}
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className={`
+                                                                                        text-sm font-medium
+                                                                                        ${isCompleted ? 'text-muted-foreground line-through' : ''}
+                                                                                    `}>
+                                                                                        {material.title}
+                                                                                    </p>
+                                                                                    <p className="text-xs text-muted-foreground">
+                                                                                        {getMaterialTypeLabel(material.type)}
+                                                                                    </p>
+                                                                                </div>
+                                                                                
+                                                                                {/* Action Icons */}
+                                                                                <div className="flex items-center gap-1">
+                                                                                    {isSelected && (
+                                                                                        <Badge variant="default" className="text-xs">
+                                                                                            Aktif
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
-                                                                            
-                                                                            {/* Material Icon */}
-                                                                            <div className="flex-shrink-0">
-                                                                                {getMaterialIcon(material.type)}
-                                                                            </div>
-                                                                            
-                                                                            {/* Material Info */}
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className={`
-                                                                                    text-sm truncate
-                                                                                    ${isSelected ? 'font-medium' : ''}
-                                                                                    ${isCompleted ? 'text-muted-foreground line-through' : ''}
-                                                                                `}>
-                                                                                    {material.title}
-                                                                                </p>
-                                                                            </div>
-                                                                            
-                                                                            {/* Material Type Badge */}
-                                                                            <Badge 
-                                                                                variant="secondary" 
-                                                                                className={`text-xs px-2 py-0 ${getMaterialTypeColor(material.type)}`}
-                                                                            >
-                                                                                {getMaterialTypeLabel(material.type)}
-                                                                            </Badge>
-                                                                        </div>
+                                                                        </Card>
                                                                     );
                                                                 })}
                                                             </div>
-                                                        )}
-                                                        
-                                                        {chapterIndex < course.chapters.length - 1 && (
-                                                            <Separator className="mt-4" />
-                                                        )}
-                                                    </div>
+                                                        </CollapsibleContent>
+                                                    </Collapsible>
                                                 );
                                             })}
                                         </div>
@@ -692,9 +803,19 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                         </CardContent>
                                     </>
                                 ) : (
-                                    <CardContent className="py-12 text-center">
-                                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <p className="text-muted-foreground">Pilih materi untuk mulai belajar</p>
+                                    <CardContent className="py-12">
+                                        <Alert className="border-dashed">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertDescription className="text-center">
+                                                <div className="mt-4">
+                                                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                                    <p className="text-lg font-medium mb-2">Belum ada materi yang dipilih</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Pilih materi dari daftar di samping untuk mulai belajar
+                                                    </p>
+                                                </div>
+                                            </AlertDescription>
+                                        </Alert>
                                     </CardContent>
                                 )}
                             </Card>
@@ -715,6 +836,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                     </div>
                 </div>
             </div>
+            </TooltipProvider>
         </UserDashboardLayout>
     );
 }
