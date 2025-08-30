@@ -65,6 +65,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
     
+    // Payment routes
+    Route::get('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'showPaymentPage'])
+        ->name('payments.show');
+    Route::get('/api/transactions', [\App\Http\Controllers\PaymentController::class, 'getUserTransactions'])
+        ->name('api.transactions');
+    Route::get('/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'showTransaction'])
+        ->name('transactions.show');
+    
     // My Courses route (redirects based on role)
     Route::get('/my-courses', function () {
         $user = auth()->user();

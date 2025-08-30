@@ -8,6 +8,8 @@ use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class PaymentController extends Controller
 {
@@ -114,6 +116,102 @@ class PaymentController extends Controller
             'cancel' => 'cancelled',
             default => 'pending',
         };
+    }
+
+    /**
+     * Show payment page with embedded Midtrans Snap
+     */
+    public function showPaymentPage(Request $request, int $courseId): Response
+    {
+        $course = Course::with(['category', 'institution'])
+            ->where('status', 'published')
+            ->findOrFail($courseId);
+        
+        $user = $request->user();
+
+        // Check if course is free
+        if (!$course->is_pro || (int) $course->price <= 0) {
+            return redirect()->route('courses.show', $courseId)
+                ->with('error', 'Kursus ini gratis. Tidak memerlukan pembayaran.');
+        }
+
+        // Check if already enrolled
+        $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
+        if ($alreadyEnrolled) {
+            return redirect()->route('courses.learn', $courseId)
+                ->with('info', 'Anda sudah terdaftar di kursus ini.');
+        }
+
+        // Check for existing pending transaction
+        $existingTransaction = Transaction::where('user_id', $user->id)
+            ->where('transactionable_id', $courseId)
+            ->where('transactionable_type', Course::class)
+            ->whereIn('status', ['pending', 'processing'])
+            ->first();
+
+        $snapToken = null;
+        if ($existingTransaction) {
+            // Get snap token for existing transaction
+            try {
+                $snapToken = $this->midtrans->getSnapToken($existingTransaction->midtrans_order_id);
+            } catch (\Exception $e) {
+                // If can't get token, create new transaction
+                $existingTransaction = null;
+            }
+        }
+
+        return Inertia::render('payment/index', [
+            'course' => $course,
+            'transaction' => $existingTransaction,
+            'snapToken' => $snapToken,
+            'clientKey' => (string) config('midtrans.client_key'),
+            'isProduction' => (bool) config('midtrans.is_production'),
+        ]);
+    }
+
+    /**
+     * Get user transactions
+     */
+    public function getUserTransactions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        $transactions = Transaction::with(['transactionable'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($transaction) {
+                // Add course details if transactionable is a course
+                if ($transaction->transactionable_type === Course::class) {
+                    $transaction->course = $transaction->transactionable;
+                }
+                return $transaction;
+            });
+
+        return response()->json($transactions);
+    }
+
+    /**
+     * Show transaction detail page
+     */
+    public function showTransaction(Request $request, string $orderId): Response
+    {
+        $user = $request->user();
+        
+        $transaction = Transaction::with(['transactionable'])
+            ->where('midtrans_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // If transaction is for a course, redirect to payment page
+        if ($transaction->transactionable_type === Course::class) {
+            return redirect()->route('payments.show', $transaction->transactionable_id);
+        }
+
+        // For other types, show generic transaction page
+        return Inertia::render('payment/transaction', [
+            'transaction' => $transaction,
+        ]);
     }
 }
 

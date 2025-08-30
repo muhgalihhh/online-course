@@ -209,6 +209,11 @@ class CourseController extends Controller
                 ->with('info', 'Anda sudah terdaftar di kursus ini.');
         }
 
+        // If course is pro/paid, redirect to payment page
+        if ($course->is_pro && $course->price > 0) {
+            return redirect()->route('payments.show', $course->id);
+        }
+
         return Inertia::render('courses/enroll', [
             'course' => $course
         ]);
