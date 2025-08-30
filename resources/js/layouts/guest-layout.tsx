@@ -27,6 +27,8 @@ import {
 import React, { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
+import { Toaster } from '@/components/ui/toaster';
+import { useToastNotifications } from '@/hooks/use-toast-notifications';
 
 interface Institution {
     id: number;
@@ -51,6 +53,9 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, isAuthenticated } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
+    
+    // Initialize toast notifications
+    useToastNotifications();
 
     const handleLogout = () => {
         router.post('/logout');
@@ -420,6 +425,9 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                     </div>
                 </div>
             </footer>
+            
+            {/* Toast Notifications */}
+            <Toaster />
         </div>
     );
 };
