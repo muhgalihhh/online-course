@@ -60,6 +60,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/courses/{id}/enroll-free', [\App\Http\Controllers\CourseController::class, 'enrollFree'])->name('courses.enroll-free');
     Route::get('/courses/{id}/learn', [\App\Http\Controllers\CourseController::class, 'learn'])->name('courses.learn');
+    Route::post('/courses/{course}/chapters/{chapter}/complete', [\App\Http\Controllers\CourseController::class, 'completeChapter'])
+        ->name('courses.chapters.complete');
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
     

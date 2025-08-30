@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { 
     BookOpen, 
     Clock, 
@@ -19,9 +20,11 @@ import {
     Download,
     CheckCircle2,
     Lock,
-    Award,
     Users,
-    Star
+    Star,
+    Image as ImageIcon,
+    Youtube,
+    List
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -29,9 +32,9 @@ import { id } from 'date-fns/locale';
 interface Material {
     id: number;
     title: string;
-    type: 'video' | 'document' | 'quiz';
-    content_url?: string;
-    duration?: number;
+    type: 'pdf' | 'image' | 'video_local' | 'video_youtube';
+    file_path?: string | null;
+    youtube_url?: string | null;
     order: number;
 }
 
@@ -81,28 +84,60 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
         selectedChapter?.materials?.[0] || null
     );
     const [completedMaterialsState, setCompletedMaterialsState] = useState<number[]>(completedMaterials);
+    const [enrollmentState, setEnrollmentState] = useState(enrollment);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const formatDate = (dateString: string) => {
         return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
     };
 
-    const getMaterialIcon = (type: string) => {
+    const getMaterialIcon = (type: Material['type']) => {
         switch (type) {
-            case 'video':
+            case 'video_youtube':
+                return <Youtube className="h-4 w-4" />;
+            case 'video_local':
                 return <Video className="h-4 w-4" />;
-            case 'document':
+            case 'pdf':
                 return <FileText className="h-4 w-4" />;
-            case 'quiz':
-                return <Award className="h-4 w-4" />;
+            case 'image':
+                return <ImageIcon className="h-4 w-4" />;
             default:
                 return <BookOpen className="h-4 w-4" />;
         }
     };
 
-    const handleMaterialComplete = (materialId: number) => {
-        if (!completedMaterialsState.includes(materialId)) {
-            setCompletedMaterialsState([...completedMaterialsState, materialId]);
-            // TODO: Send API request to mark material as complete
+    const handleMaterialComplete = async (materialId: number) => {
+        if (completedMaterialsState.includes(materialId) || !selectedChapter) return;
+        const nextCompleted = [...completedMaterialsState, materialId];
+        setCompletedMaterialsState(nextCompleted);
+
+        const chapterMaterialIds = selectedChapter.materials.map((m) => m.id);
+        const allCompleted = chapterMaterialIds.every((id) => nextCompleted.includes(id));
+        if (allCompleted) {
+            try {
+                const response = await fetch(route('courses.chapters.complete', { course: course.id, chapter: selectedChapter.id }), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data.completedMaterials)) {
+                        setCompletedMaterialsState(data.completedMaterials);
+                    }
+                    if (data.enrollment) {
+                        setEnrollmentState({
+                            ...enrollmentState,
+                            progress: data.enrollment.progress,
+                            completed_at: data.enrollment.completed_at,
+                        });
+                    }
+                }
+            } catch (error) {
+                // ignore errors; UI already optimistic
+            }
         }
     };
 
@@ -165,7 +200,69 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="lg:hidden">
+                                    <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                                        <SheetTrigger asChild>
+                                            <Button variant="outline" size="sm">
+                                                <List className="mr-2 h-4 w-4" />
+                                                Daftar Materi
+                                            </Button>
+                                        </SheetTrigger>
+                                        <SheetContent side="left" className="w-80">
+                                            <SheetHeader>
+                                                <SheetTitle>Konten Kelas</SheetTitle>
+                                            </SheetHeader>
+                                            <div className="px-2 py-2">
+                                                <div className="space-y-4">
+                                                    {course.chapters.map((chapter) => (
+                                                        <div key={chapter.id}>
+                                                            <Button
+                                                                variant={selectedChapter?.id === chapter.id ? 'secondary' : 'ghost'}
+                                                                className="w-full justify-start mb-2"
+                                                                onClick={() => {
+                                                                    setSelectedChapter(chapter);
+                                                                    setSelectedMaterial(chapter.materials[0] || null);
+                                                                    setIsSidebarOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className="font-medium">Bab {chapter.order}: {chapter.title}</span>
+                                                            </Button>
+                                                            <div className="ml-4 space-y-1">
+                                                                {chapter.materials.map((material) => {
+                                                                    const isCompleted = completedMaterialsState.includes(material.id);
+                                                                    const isSelected = selectedMaterial?.id === material.id;
+                                                                    return (
+                                                                        <Button
+                                                                            key={material.id}
+                                                                            variant={isSelected ? 'secondary' : 'ghost'}
+                                                                            size="sm"
+                                                                            className="w-full justify-start pl-4"
+                                                                            onClick={() => {
+                                                                                setSelectedChapter(chapter);
+                                                                                setSelectedMaterial(material);
+                                                                                setIsSidebarOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            <div className="flex items-center gap-2 w-full">
+                                                                                {isCompleted ? (
+                                                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                                ) : (
+                                                                                    getMaterialIcon(material.type)
+                                                                                )}
+                                                                                <span className="flex-1 text-left truncate">{material.title}</span>
+                                                                            </div>
+                                                                        </Button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </SheetContent>
+                                    </Sheet>
+                                </div>
                                 <div className="text-right">
                                     <p className="text-sm font-medium">Progress Kelas</p>
                                     <p className="text-sm text-muted-foreground">{progressPercentage}% Selesai</p>
@@ -197,26 +294,62 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            {selectedMaterial.type === 'video' ? (
-                                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                                                    <PlayCircle className="h-16 w-16 text-muted-foreground" />
-                                                    <p className="ml-4 text-muted-foreground">Video Player Placeholder</p>
+                                            {selectedMaterial.type === 'video_youtube' ? (
+                                                <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                                                    {selectedMaterial.youtube_url ? (
+                                                        <iframe
+                                                            className="w-full h-full"
+                                                            src={selectedMaterial.youtube_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                                                            title={selectedMaterial.title}
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                            allowFullScreen
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Youtube className="h-12 w-12 text-muted-foreground" />
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            ) : selectedMaterial.type === 'document' ? (
-                                                <div className="min-h-[400px] bg-muted rounded-lg p-8">
-                                                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                                                    <p className="text-muted-foreground">Konten dokumen akan ditampilkan di sini</p>
-                                                    {selectedMaterial.content_url && (
-                                                        <Button className="mt-4" variant="outline">
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            Download Materi
+                                            ) : selectedMaterial.type === 'video_local' ? (
+                                                <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                                                    {selectedMaterial.file_path ? (
+                                                        <video className="w-full h-full" src={selectedMaterial.file_path} controls />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Video className="h-12 w-12 text-muted-foreground" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : selectedMaterial.type === 'pdf' ? (
+                                                <div className="min-h-[400px] bg-muted rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <FileText className="h-5 w-5" />
+                                                        <span>Dokumen PDF</span>
+                                                    </div>
+                                                    {selectedMaterial.file_path ? (
+                                                        <iframe className="w-full h-[70vh] rounded" src={selectedMaterial.file_path} />
+                                                    ) : (
+                                                        <p className="text-muted-foreground">Dokumen tidak tersedia.</p>
+                                                    )}
+                                                    {selectedMaterial.file_path && (
+                                                        <Button className="mt-4" variant="outline" asChild>
+                                                            <a href={selectedMaterial.file_path} target="_blank" rel="noopener noreferrer">
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                Download PDF
+                                                            </a>
                                                         </Button>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="min-h-[400px] bg-muted rounded-lg p-8">
-                                                    <Award className="h-12 w-12 text-muted-foreground mb-4" />
-                                                    <p className="text-muted-foreground">Quiz akan ditampilkan di sini</p>
+                                                <div className="min-h-[300px] bg-muted rounded-lg p-4 flex items-center justify-center">
+                                                    {selectedMaterial.file_path ? (
+                                                        <img src={selectedMaterial.file_path} alt={selectedMaterial.title} className="max-h-[70vh] rounded" />
+                                                    ) : (
+                                                        <div className="text-center text-muted-foreground">
+                                                            <ImageIcon className="mx-auto h-12 w-12 mb-2" />
+                                                            Gambar tidak tersedia.
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             
