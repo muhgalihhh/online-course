@@ -319,10 +319,14 @@ class CourseController extends Controller
         $course->enrolled_at = $enrollment->enrolled_at;
         $course->completed_at = $enrollment->completed_at;
 
-        // Get completed materials for this user
-        $completedMaterials = \App\Models\UserMaterialProgress::where('user_id', auth()->id())
-            ->whereIn('material_id', $course->chapters->flatMap->materials->pluck('id'))
-            ->pluck('material_id')
+        // Get completed materials for this user based on completed chapters
+        $completedChapterIds = \App\Models\ChapterProgress::where('user_id', auth()->id())
+            ->where('enrollment_id', $enrollment->id)
+            ->where('is_completed', true)
+            ->pluck('chapter_id');
+
+        $completedMaterials = \App\Models\CourseMaterial::whereIn('chapter_id', $completedChapterIds)
+            ->pluck('id')
             ->toArray();
 
         return Inertia::render('courses/learn', [
