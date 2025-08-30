@@ -274,6 +274,23 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                     );
                                 })}
                                 <div className="space-y-4 border-t pt-4">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="w-full justify-start relative"
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            toggleCart();
+                                        }}
+                                    >
+                                        <ShoppingCart className="mr-2 h-4 w-4" />
+                                        Keranjang
+                                        {pendingCount > 0 && (
+                                            <Badge variant="outline" className="ml-auto bg-yellow-500 text-white border-yellow-500">
+                                                {pendingCount}
+                                            </Badge>
+                                        )}
+                                    </Button>
                                     {isAuthenticated && user ? (
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-3 px-2 py-1">
@@ -449,7 +466,19 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
             
             {/* Toast Notifications */}
             <Toaster />
+            
+            {/* Cart Sidebar */}
+            <CartSidebar />
         </div>
+    );
+};
+
+// Main component that provides cart context
+const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
+    return (
+        <CartProvider>
+            <GuestLayoutContent>{children}</GuestLayoutContent>
+        </CartProvider>
     );
 };
 
