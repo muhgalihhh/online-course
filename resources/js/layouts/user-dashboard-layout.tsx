@@ -64,7 +64,7 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
 
     const navigationItems = [
         { name: 'Dashboard', href: '/dashboard' },
-        { name: 'Kelas Saya', href: '/my-courses' },
+        { name: 'Kelas Saya', href: '/user/my-courses' },
         { name: 'Tentang Kami', href: '/tentang' },
     ];
 

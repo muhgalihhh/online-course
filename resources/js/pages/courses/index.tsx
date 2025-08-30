@@ -101,12 +101,17 @@ export default function CoursesIndex() {
         router.get('/courses', newFilters, { preserveState: true });
     };
 
-    const handleBookCourse = (courseId: number, isPro: boolean) => {
+    const handleBookCourse = (course: Course) => {
         if (!isAuthenticated) {
             setShowLoginDialog(true);
         } else {
-            // Navigate to enrollment/payment page
-            router.visit(`/courses/${courseId}/enroll`);
+            // For free courses, directly enroll without payment
+            if (!course.is_pro && course.price === 0) {
+                router.post(`/courses/${course.id}/enroll-free`);
+            } else {
+                // Navigate to enrollment/payment page for pro courses
+                router.visit(`/courses/${course.id}/enroll`);
+            }
         }
     };
 
@@ -171,7 +176,7 @@ export default function CoursesIndex() {
                         <Button 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => handleBookCourse(course.id, course.is_pro)}
+                            onClick={() => handleBookCourse(course)}
                         >
                             {course.is_pro ? 'Pesan' : 'Ikuti'}
                         </Button>
@@ -234,7 +239,7 @@ export default function CoursesIndex() {
                                 </Button>
                                 <Button 
                                     size="sm"
-                                    onClick={() => handleBookCourse(course.id, course.is_pro)}
+                                    onClick={() => handleBookCourse(course)}
                                 >
                                     {course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus'}
                                 </Button>
