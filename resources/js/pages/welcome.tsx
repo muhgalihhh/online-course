@@ -144,7 +144,7 @@ export default function Welcome() {
         { label: "Rating Rata-rata", value: "4.9", icon: <Star className="h-4 w-4" /> }
     ];
 
-    const handleEnrollCourse = (courseId: number, isPro: boolean) => {
+    const handleEnrollCourse = (course: any) => {
         // Check if user is logged in
         if (!isAuthenticated) {
             setAlertState({
@@ -170,8 +170,13 @@ export default function Welcome() {
             return;
         }
 
-        // Navigate to enrollment/payment page
-        router.visit(`/courses/${courseId}/enroll`);
+        // For free courses, directly enroll without payment
+        if (!course.is_pro && course.price === 0) {
+            router.post(`/courses/${course.id}/enroll-free`);
+        } else {
+            // Navigate to enrollment/payment page for pro courses
+            router.visit(`/courses/${course.id}/enroll`);
+        }
     };
 
     const benefits = [
@@ -245,7 +250,7 @@ export default function Welcome() {
                         <Button 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => handleEnrollCourse(course.id, course.is_pro)}
+                            onClick={() => handleEnrollCourse(course)}
                         >
                             {course.is_pro ? 'Pesan' : 'Ikuti'}
                         </Button>

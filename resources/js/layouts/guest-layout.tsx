@@ -77,7 +77,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
         { name: 'Beranda', href: '/', requiresAuth: false },
         { name: 'Kelas Pro', href: '/kelas-pro', requiresAuth: false },
         { name: 'Kelas Free', href: '/kelas-free', requiresAuth: false },
-        { name: 'Kelas Anda', href: isAuthenticated ? '/my-courses' : '/dashboard', requiresAuth: false },
+        { name: 'Kelas Anda', href: isAuthenticated ? '/user/my-courses' : '/dashboard', requiresAuth: false },
         { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
     ];
 
@@ -161,7 +161,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link href="/my-courses" className="cursor-pointer">
+                                            <Link href="/user/my-courses" className="cursor-pointer">
                                                 <BookOpen className="mr-2 h-4 w-4" />
                                                 <span>Kelas Saya</span>
                                             </Link>
@@ -265,7 +265,7 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
                                                     <User className="h-4 w-4" />
                                                     Dashboard
                                                 </Link>
-                                                <Link href="/my-courses" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                <Link href="/user/my-courses" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
                                                     <BookOpen className="h-4 w-4" />
                                                     Kelas Saya
                                                 </Link>

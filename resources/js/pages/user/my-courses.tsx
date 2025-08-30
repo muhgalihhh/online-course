@@ -1,4 +1,4 @@
-import GuestLayout from '@/layouts/guest-layout';
+import UserDashboardLayout from '@/layouts/user-dashboard-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -20,11 +20,10 @@ import { id } from 'date-fns/locale';
 interface Course {
     id: number;
     title: string;
-    slug: string;
     description: string;
     price: number;
-    level: string;
-    duration: number;
+    is_pro: boolean;
+    thumbnail?: string;
     thumbnail_path?: string;
     status: string;
     average_rating: number;
@@ -40,7 +39,7 @@ interface Course {
     institution: {
         id: number;
         name: string;
-        photo_path?: string;
+        photo?: string;
     };
 }
 
@@ -53,18 +52,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
         return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
     };
 
-    const getLevelBadgeVariant = (level: string) => {
-        switch (level.toLowerCase()) {
-            case 'beginner':
-                return 'default';
-            case 'intermediate':
-                return 'secondary';
-            case 'advanced':
-                return 'destructive';
-            default:
-                return 'outline';
-        }
-    };
+
 
     const getProgressColor = (progress: number) => {
         if (progress >= 80) return 'bg-green-500';
@@ -73,7 +61,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
     };
 
     return (
-        <GuestLayout>
+        <UserDashboardLayout>
             <Head title="Kelas Saya" />
             
             <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -129,9 +117,9 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                 <Card key={course.id} className="group overflow-hidden transition-all hover:shadow-lg">
                                     {/* Course Thumbnail */}
                                     <div className="relative aspect-video overflow-hidden bg-muted">
-                                        {course.thumbnail_path ? (
+                                        {course.thumbnail || course.thumbnail_path ? (
                                             <img
-                                                src={`/storage/${course.thumbnail_path}`}
+                                                src={course.thumbnail || `/storage/${course.thumbnail_path}`}
                                                 alt={course.title}
                                                 className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                             />
@@ -168,8 +156,8 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
 
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
-                                            <Badge variant={getLevelBadgeVariant(course.level)}>
-                                                {course.level}
+                                            <Badge variant={course.is_pro ? "default" : "secondary"}>
+                                                {course.is_pro ? "Pro" : "Free"}
                                             </Badge>
                                             <Badge variant="outline">
                                                 {course.category.name}
@@ -186,9 +174,9 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                     <CardContent className="space-y-4">
                                         {/* Institution */}
                                         <div className="flex items-center gap-2">
-                                            {course.institution.photo_path ? (
+                                            {course.institution.photo ? (
                                                 <img
-                                                    src={`/storage/${course.institution.photo_path}`}
+                                                    src={course.institution.photo}
                                                     alt={course.institution.name}
                                                     className="h-6 w-6 rounded-full object-cover"
                                                 />
@@ -238,6 +226,6 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                     )}
                 </div>
             </div>
-        </GuestLayout>
+        </UserDashboardLayout>
     );
 }
