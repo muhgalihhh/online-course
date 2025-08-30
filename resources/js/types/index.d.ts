@@ -87,11 +87,17 @@ export interface Review {
 export interface Transaction {
     id: number;
     user_id: number;
-    course_id: number;
+    transactionable_id: number;
+    transactionable_type: string;
+    midtrans_order_id: string;
     amount: number;
-    status: 'pending' | 'completed' | 'failed';
+    payment_method: string | null;
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+    payment_details: any | null;
     created_at: string;
     updated_at: string;
+    course?: Course;
+    transactionable?: Course | any;
 }
 
 export interface Enrollment {

@@ -3,7 +3,9 @@ import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { TransactionsSidebar } from '@/components/transactions-sidebar';
 
 interface UserMenuContentProps {
     user: User;
@@ -11,10 +13,16 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const [showTransactions, setShowTransactions] = useState(false);
 
     const handleLogout = () => {
         cleanup();
         router.flushAll();
+    };
+
+    const handleTransactionsClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setShowTransactions(true);
     };
 
     return (
@@ -26,6 +34,10 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={handleTransactionsClick}>
+                    <FileText className="mr-2" />
+                    Transaksi
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link className="block w-full" href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
                         <Settings className="mr-2" />
@@ -40,6 +52,13 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     Log out
                 </Link>
             </DropdownMenuItem>
+            
+            {/* Transactions Sidebar */}
+            <TransactionsSidebar 
+                open={showTransactions} 
+                onOpenChange={setShowTransactions}
+                userId={user.id}
+            />
         </>
     );
 }
