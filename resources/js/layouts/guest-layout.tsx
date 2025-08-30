@@ -1,6 +1,9 @@
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { Button } from '@/components/ui/button';
+import { CartProvider, useCart } from '@/contexts/cart-context';
+import { CartSidebar } from '@/components/cart-sidebar';
+import { Badge } from '@/components/ui/badge';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,6 +22,7 @@ import {
     Settings,
     LogOut,
     ShoppingBag,
+    ShoppingCart,
     Heart,
     History,
     CreditCard,
@@ -49,13 +53,17 @@ interface GuestLayoutProps {
     children: React.ReactNode;
 }
 
-const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
+// Inner component that uses cart context
+const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, isAuthenticated } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
+    const { toggleCart, getPendingCount } = useCart();
     
     // Initialize toast notifications
     useToastNotifications();
+    
+    const pendingCount = getPendingCount();
 
     const handleLogout = () => {
         router.post('/logout');
@@ -137,6 +145,19 @@ const GuestLayout: React.FC<GuestLayoutProps> = ({ children }) => {
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="relative h-9 w-9 p-0"
+                                onClick={toggleCart}
+                            >
+                                <ShoppingCart className="h-4 w-4" />
+                                {pendingCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                        {pendingCount}
+                                    </span>
+                                )}
+                            </Button>
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
                             {isAuthenticated && user ? (
