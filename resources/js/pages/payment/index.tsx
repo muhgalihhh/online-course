@@ -214,8 +214,28 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                         <span className="text-sm">{getStatusMessage()}</span>
                                     </div>
 
-                                    {/* Midtrans Snap Embed Container */}
-                                    {isLoading ? (
+                                    {/* Midtrans Snap Embed Container or Success Message */}
+                                    {isAlreadyEnrolled ? (
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                                            <h3 className="text-lg font-semibold mb-2">Pembayaran Sudah Berhasil</h3>
+                                            <p className="text-gray-600 text-center mb-6">
+                                                Anda sudah melakukan pembayaran untuk kursus ini dan sudah terdaftar.
+                                            </p>
+                                            <Button 
+                                                onClick={() => router.visit(route('courses.learn', course.id))}
+                                                className="mb-3"
+                                            >
+                                                Mulai Belajar
+                                            </Button>
+                                            <Button 
+                                                variant="outline"
+                                                onClick={() => router.visit(route('courses.show', course.id))}
+                                            >
+                                                Kembali ke Detail Kursus
+                                            </Button>
+                                        </div>
+                                    ) : isLoading ? (
                                         <div className="flex items-center justify-center py-12">
                                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                             <span className="ml-3">Memuat form pembayaran...</span>

@@ -223,5 +223,42 @@ class PaymentController extends Controller
             'transaction' => $transaction,
         ]);
     }
+
+    /**
+     * Cancel/delete a pending transaction
+     */
+    public function cancelTransaction(Request $request, string $orderId): JsonResponse
+    {
+        $user = $request->user();
+        
+        $transaction = Transaction::where('midtrans_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Only allow cancellation of pending transactions
+        if (!in_array($transaction->status, ['pending', 'processing'])) {
+            return response()->json([
+                'message' => 'Transaksi ini tidak dapat dibatalkan.',
+            ], 422);
+        }
+
+        // Update transaction status to cancelled
+        $transaction->update(['status' => 'cancelled']);
+
+        // Try to cancel in Midtrans as well (optional, non-blocking)
+        try {
+            $this->midtrans->cancelTransaction($orderId);
+        } catch (\Exception $e) {
+            // Log but don't fail the request
+            Log::warning('Failed to cancel transaction in Midtrans', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Transaksi berhasil dibatalkan.',
+        ]);
+    }
 }
 
