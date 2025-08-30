@@ -20,10 +20,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/', function () {
         return redirect()->route('admin.dashboard');
     });
-    
+
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [AdminController::class, 'export'])->name('dashboard.export');
-    
+
 
     // User Management
     Route::resource('users', AdminUserController::class);
@@ -40,9 +40,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/institutions/edit', [AdminInstitutionController::class, 'edit'])->name('institutions.edit');
     Route::patch('/institutions', [AdminInstitutionController::class, 'update'])->name('institutions.update');
 
-    // Transaction Management
-    Route::resource('transactions', AdminTransactionController::class)->except(['create', 'store', 'edit', 'update']);
-    Route::patch('/transactions/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])->name('transactions.update-status');
+    // Transaction Management (Read-only)
+    Route::resource('transactions', AdminTransactionController::class)->only(['index', 'show']);
 
     // Chapter Management
     Route::resource('chapters', AdminChapterController::class);

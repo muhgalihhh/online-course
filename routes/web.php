@@ -31,11 +31,16 @@ Route::get('/', function () {
 
     // Add computed properties
     $topCourses->each(function ($course) {
-        $course->average_rating = $course->reviews_avg_rating ?? 0;
+        $course->average_rating = (float) ($course->reviews_avg_rating ?? 0);
         $course->total_reviews = $course->reviews->count();
         $course->total_students = $course->enrollments_count;
         $course->is_enrolled = (bool) ($course->is_enrolled ?? false);
     });
+
+    // Calculate real statistics from database
+    $totalCourses = \App\Models\Course::where('status', 'published')->count();
+    $totalStudents = \App\Models\Enrollment::distinct('user_id')->count();
+    $averageRating = \App\Models\CourseReview::avg('rating') ?? 0;
 
     return Inertia::render('welcome', [
         'canLogin' => Route::has('login'),
@@ -45,6 +50,11 @@ Route::get('/', function () {
         'topCourses' => $topCourses,
         'institution' => $institution,
         'categories' => $categories,
+        'stats' => [
+            'total_courses' => $totalCourses,
+            'total_students' => $totalStudents,
+            'average_rating' => round($averageRating, 1)
+        ]
     ]);
 })->name('home');
 
@@ -64,43 +74,65 @@ Route::middleware(['auth'])->group(function () {
         ->name('courses.chapters.complete');
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
-    
+
+    // Review routes
+    Route::post('/reviews/institution', [\App\Http\Controllers\ReviewController::class, 'storeInstitutionReview'])
+        ->name('reviews.institution.store');
+    Route::post('/reviews/course/{course}', [\App\Http\Controllers\ReviewController::class, 'storeCourseReview'])
+        ->name('reviews.course.store');
+
     // Payment routes
     Route::get('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'showPaymentPage'])
         ->name('payments.show');
-    Route::get('/api/transactions', [\App\Http\Controllers\PaymentController::class, 'getUserTransactions'])
-        ->name('api.transactions');
     Route::get('/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'showTransaction'])
         ->name('transactions.show');
-    Route::delete('/api/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'cancelTransaction'])
-        ->name('api.transactions.cancel');
-    Route::get('/api/transactions/{orderId}/status', [\App\Http\Controllers\PaymentController::class, 'checkTransactionStatus'])
-        ->name('api.transactions.status');
-    
+
     // My Courses route (redirects based on role)
     Route::get('/my-courses', function () {
         $user = auth()->user();
-        
+
         if ($user->isAdmin()) {
             // Admins don't have enrolled courses, redirect to courses management
             return redirect()->route('admin.courses.index');
         }
-        
+
         return redirect()->route('user.my-courses');
     })->name('my-courses');
 });
 
-// Midtrans webhook (no auth)
+// Midtrans webhook (no auth, but with signature verification)
 Route::post('/payments/midtrans/webhook', [\App\Http\Controllers\PaymentController::class, 'handleMidtransWebhook'])
+    ->middleware('midtrans.webhook')
     ->name('payments.midtrans.webhook');
 
 // Static pages
 Route::get('/tentang', function () {
     // Fetch institution data for about page
     $institution = \App\Models\Institution::first();
-    
+
+    // Calculate real statistics from database
+    $totalCourses = \App\Models\Course::where('status', 'published')->count();
+    $totalStudents = \App\Models\Enrollment::distinct('user_id')->count();
+    $averageRating = \App\Models\CourseReview::avg('rating') ?? 0;
+    $satisfactionRate = 98; // You can calculate this from reviews or user feedback later
+
+    // Fetch institution reviews
+    $institutionReviews = \App\Models\Review::with(['user'])
+        ->where('institution_id', $institution->id ?? 1)
+        ->where('status', 'approved')
+        ->orderBy('created_at', 'desc')
+        ->limit(10)
+        ->get();
+
     return Inertia::render('tentang', [
-        'institution' => $institution
+        'institution' => $institution,
+        'reviews' => $institutionReviews,
+        'stats' => [
+            'total_students' => $totalStudents,
+            'total_courses' => $totalCourses,
+            'satisfaction_rate' => $satisfactionRate,
+            'average_rating' => round($averageRating, 1)
+        ]
     ]);
 })->name('about');
 

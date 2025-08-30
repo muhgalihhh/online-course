@@ -21,9 +21,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'role',
         'profile_photo_path',
+        'bio',
+        'birth_date',
+        'gender',
+        'city',
     ];
 
     /**
@@ -64,6 +69,34 @@ class User extends Authenticatable
     public function courses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'enrollments');
+    }
+
+    /**
+     * Enrollments that belong to the user.
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Check if user is enrolled in a specific course
+     */
+    public function isEnrolledIn(int $courseId): bool
+    {
+        return $this->enrollments()
+            ->where('course_id', $courseId)
+            ->exists();
+    }
+
+    /**
+     * Get enrollment for a specific course
+     */
+    public function getEnrollmentFor(int $courseId): ?Enrollment
+    {
+        return $this->enrollments()
+            ->where('course_id', $courseId)
+            ->first();
     }
 
     /**

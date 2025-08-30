@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Category;
 use App\Models\Institution;
+use App\Models\CourseReview;
+use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -46,7 +48,7 @@ class CourseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -55,7 +57,7 @@ class CourseController extends Controller
         switch ($sortBy) {
             case 'popular':
                 $query->withCount('enrollments')
-                      ->orderBy('enrollments_count', 'desc');
+                    ->orderBy('enrollments_count', 'desc');
                 break;
             case 'price_low':
                 $query->orderBy('price', 'asc');
@@ -65,7 +67,7 @@ class CourseController extends Controller
                 break;
             case 'rating':
                 $query->withAvg('reviews', 'rating')
-                      ->orderBy('reviews_avg_rating', 'desc');
+                    ->orderBy('reviews_avg_rating', 'desc');
                 break;
             default: // latest
                 $query->orderBy('created_at', 'desc');
@@ -76,7 +78,7 @@ class CourseController extends Controller
 
         // Add computed properties to each course
         $courses->through(function ($course) {
-            $course->average_rating = $course->reviews->avg('rating') ?? 0;
+            $course->average_rating = (float) ($course->reviews->avg('rating') ?? 0);
             $course->total_reviews = $course->reviews->count();
             $course->total_students = $course->enrollments()->count();
             $course->is_enrolled = (bool) ($course->is_enrolled ?? false);
@@ -113,7 +115,7 @@ class CourseController extends Controller
         }
 
         // Calculate statistics
-        $course->average_rating = $course->reviews->avg('rating') ?? 0;
+        $course->average_rating = (float) ($course->reviews->avg('rating') ?? 0);
         $course->total_reviews = $course->reviews->count();
         $course->total_students = $course->enrollments()->count();
         $course->total_chapters = $course->chapters->count();
@@ -138,7 +140,7 @@ class CourseController extends Controller
             ->get();
 
         $relatedCourses->each(function ($relatedCourse) {
-            $relatedCourse->average_rating = $relatedCourse->reviews->avg('rating') ?? 0;
+            $relatedCourse->average_rating = (float) ($relatedCourse->reviews->avg('rating') ?? 0);
             $relatedCourse->total_reviews = $relatedCourse->reviews->count();
             $relatedCourse->total_students = $relatedCourse->enrollments()->count();
         });
@@ -175,12 +177,25 @@ class CourseController extends Controller
      */
     public function institutions(Request $request)
     {
-        $institutions = Institution::withCount(['courses' => function ($query) {
-            $query->where('status', 'published');
-        }])->paginate(12);
+        $institutions = Institution::withCount([
+            'courses' => function ($query) {
+                $query->where('status', 'published');
+            }
+        ])->paginate(12);
+
+        // Calculate real statistics from database
+        $totalCourses = Course::where('status', 'published')->count();
+        $totalStudents = \App\Models\Enrollment::distinct('user_id')->count();
+        $averageRating = \App\Models\CourseReview::avg('rating') ?? 0;
 
         return Inertia::render('institutions/index', [
-            'institutions' => $institutions
+            'institutions' => $institutions,
+            'stats' => [
+                'total_institutions' => $institutions->total(),
+                'total_courses' => $totalCourses,
+                'total_students' => $totalStudents,
+                'average_rating' => round($averageRating, 1)
+            ]
         ]);
     }
 
@@ -225,7 +240,7 @@ class CourseController extends Controller
     public function enrollFree($id)
     {
         \Log::info('enrollFree method called', ['course_id' => $id, 'user_id' => auth()->id()]);
-        
+
         $course = Course::with(['category', 'institution'])->findOrFail($id);
 
         // Check if course is published
@@ -268,7 +283,7 @@ class CourseController extends Controller
                     'enrolled_at' => now(),
                     'progress' => 0,
                 ]);
-                
+
                 \Log::info('Enrollment created successfully', [
                     'enrollment_id' => $enrollment->id,
                     'user_id' => auth()->id(),
@@ -285,7 +300,7 @@ class CourseController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()->route('courses.show', $course->id)
                 ->with('error', 'Terjadi kesalahan saat mendaftar. Silakan coba lagi. Error: ' . $e->getMessage());
         }
@@ -302,12 +317,17 @@ class CourseController extends Controller
                 ->with('error', 'Silakan login untuk mengakses halaman belajar.');
         }
 
-        $course = Course::with(['category', 'institution', 'chapters' => function($query) {
-            $query->orderBy('order');
-        }, 'chapters.materials' => function($query) {
-            $query->orderBy('order');
-        }])
-        ->findOrFail($id);
+        $course = Course::with([
+            'category',
+            'institution',
+            'chapters' => function ($query) {
+                $query->orderBy('order');
+            },
+            'chapters.materials' => function ($query) {
+                $query->orderBy('order');
+            }
+        ])
+            ->findOrFail($id);
 
         // Check if user is enrolled
         $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())

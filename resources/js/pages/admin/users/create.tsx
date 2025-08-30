@@ -1,5 +1,3 @@
-// resources/js/pages/admin/users/create.tsx
-
 import { ErrorMessage } from '@/components/error-message';
 import { FormActions } from '@/components/form-actions';
 import { PageHeader } from '@/components/page-header';
@@ -8,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useInitials } from '@/hooks/use-initials';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -19,6 +18,11 @@ export default function UserCreate() {
     const { data, setData, post, processing, errors } = useForm<{
         name: string;
         email: string;
+        phone: string;
+        bio: string;
+        birth_date: string;
+        gender: string;
+        city: string;
         password: string;
         password_confirmation: string;
         role: string;
@@ -26,6 +30,11 @@ export default function UserCreate() {
     }>({
         name: '',
         email: '',
+        phone: '',
+        bio: '',
+        birth_date: '',
+        gender: '',
+        city: '',
         password: '',
         password_confirmation: '',
         role: 'user',
@@ -72,14 +81,8 @@ export default function UserCreate() {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex items-center space-x-4">
                                 <Avatar className="h-20 w-20">
-                                    <AvatarImage 
-                                        src={preview || undefined} 
-                                        alt={data.name || 'User'}
-                                        className="object-cover"
-                                    />
-                                    <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
-                                        {getInitials(data.name || 'User')}
-                                    </AvatarFallback>
+                                    <AvatarImage src={preview || undefined} alt={data.name || 'User'} className="object-cover" />
+                                    <AvatarFallback className="bg-blue-100 text-lg text-blue-600">{getInitials(data.name || 'User')}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 space-y-2">
                                     <Label htmlFor="profile_photo_path">Foto Profil (Opsional)</Label>
@@ -117,6 +120,75 @@ export default function UserCreate() {
                                     className={errors.email ? 'border-red-500' : ''}
                                 />
                                 {errors.email && <ErrorMessage message={errors.email} />}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Nomor Telepon (Opsional)</Label>
+                                    <Input
+                                        id="phone"
+                                        value={data.phone}
+                                        onChange={(e) => setData('phone', e.target.value)}
+                                        placeholder="Masukkan nomor telepon"
+                                        className={errors.phone ? 'border-red-500' : ''}
+                                    />
+                                    {errors.phone && <ErrorMessage message={errors.phone} />}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="city">Kota (Opsional)</Label>
+                                    <Input
+                                        id="city"
+                                        value={data.city}
+                                        onChange={(e) => setData('city', e.target.value)}
+                                        placeholder="Masukkan kota"
+                                        className={errors.city ? 'border-red-500' : ''}
+                                    />
+                                    {errors.city && <ErrorMessage message={errors.city} />}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="birth_date">Tanggal Lahir (Opsional)</Label>
+                                    <Input
+                                        id="birth_date"
+                                        type="date"
+                                        value={data.birth_date}
+                                        onChange={(e) => setData('birth_date', e.target.value)}
+                                        className={errors.birth_date ? 'border-red-500' : ''}
+                                    />
+                                    {errors.birth_date && <ErrorMessage message={errors.birth_date} />}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="gender">Jenis Kelamin (Opsional)</Label>
+                                    <Select value={data.gender} onValueChange={(value) => setData('gender', value)}>
+                                        <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                                            <SelectValue placeholder="Pilih jenis kelamin" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="">Tidak ditentukan</SelectItem>
+                                            <SelectItem value="male">Laki-laki</SelectItem>
+                                            <SelectItem value="female">Perempuan</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.gender && <ErrorMessage message={errors.gender} />}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="bio">Bio (Opsional)</Label>
+                                <Textarea
+                                    id="bio"
+                                    value={data.bio}
+                                    onChange={(e) => setData('bio', e.target.value)}
+                                    placeholder="Tulis bio singkat..."
+                                    rows={3}
+                                    className={errors.bio ? 'border-red-500' : ''}
+                                />
+                                {errors.bio && <ErrorMessage message={errors.bio} />}
+                                <p className="text-sm text-gray-500">Maksimal 500 karakter</p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

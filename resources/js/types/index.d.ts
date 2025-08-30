@@ -2,13 +2,18 @@ import { PageProps as InertiaPageProps } from '@inertiajs/inertia-react';
 import { AxiosInstance } from 'axios';
 import { route as ziggyRoute } from 'ziggy-js';
 
-// User Interface dengan penambahan role dan profile photo
+// User Interface dengan penambahan role dan profile fields
 export interface User {
     id: number;
     name: string;
     email: string;
     email_verified_at: string | null;
-    role: 'user' | 'admin';
+    phone: string | null;
+    bio: string | null;
+    birth_date: string | null;
+    gender: 'male' | 'female' | null;
+    city: string | null;
+    role: 'admin' | 'user';
     profile_photo_path: string | null;
     profile_photo_url: string;
 }
@@ -48,6 +53,20 @@ export interface Course {
     status: string;
     created_at: string;
     updated_at: string;
+    // Computed properties added by controllers
+    average_rating: number;
+    total_reviews: number;
+    total_students: number;
+    is_enrolled?: boolean;
+    // For course detail pages
+    category?: { id: number; name: string };
+    institution?: { id: number; name: string };
+    chapters?: Chapter[];
+    // For enrolled courses
+    user_progress?: number;
+    enrolled_at?: string;
+    completed_at?: string | null;
+    total_chapters?: number;
 }
 
 export interface Chapter {

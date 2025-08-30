@@ -22,10 +22,10 @@ class TransactionController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('midtrans_order_id', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -43,7 +43,7 @@ class TransactionController extends Controller
         if ($request->filled('amount_min')) {
             $query->where('amount', '>=', $request->get('amount_min'));
         }
-        
+
         if ($request->filled('amount_max')) {
             $query->where('amount', '<=', $request->get('amount_max'));
         }
@@ -52,7 +52,7 @@ class TransactionController extends Controller
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->get('date_from'));
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->get('date_to'));
         }
@@ -78,34 +78,5 @@ class TransactionController extends Controller
         return Inertia::render('admin/transactions/show', [
             'transaction' => $transaction->load(['user', 'transactionable']),
         ]);
-    }
-
-    /**
-     * Update status transaksi dan handle enrollment otomatis.
-     */
-    public function updateStatus(Request $request, Transaction $transaction)
-    {
-        $validated = $request->validate([
-            'status' => 'required|in:pending,completed,failed,cancelled',
-        ]);
-
-        $oldStatus = $transaction->status;
-        $transaction->update($validated);
-
-        // Jika status berubah menjadi completed dan transaksinya untuk course
-        if ($validated['status'] === 'completed' && $oldStatus !== 'completed') {
-            if ($transaction->transactionable_type === 'App\\Models\\Course') {
-                $user = $transaction->user;
-                $course = $transaction->transactionable;
-                
-                // Pastikan user belum terdaftar di kursus
-                if ($user && $course && !$user->courses()->where('course_id', $course->id)->exists()) {
-                    $user->courses()->attach($course->id, ['created_at' => now(), 'updated_at' => now()]);
-                }
-            }
-        }
-
-        return redirect()->route('admin.transactions.show', $transaction)
-            ->with('success', 'Status transaksi berhasil diperbarui.');
     }
 }

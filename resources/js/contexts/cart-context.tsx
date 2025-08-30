@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { router } from '@inertiajs/react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface Transaction {
     id: number;
@@ -51,7 +50,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setIsLoading(true);
             const response = await fetch('/api/transactions', {
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'include',
@@ -59,19 +58,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('Raw transactions data:', data); // Debug log
                 setTransactions(data);
-                
+
                 // Convert transactions to cart items
                 const items: CartItem[] = data
-                    .filter((t: Transaction) => t.course)
+                    .filter((t: Transaction) => {
+                        const hasEligibleCourse = t.course && t.course.id;
+                        console.log('Transaction filter check:', {
+                            id: t.id,
+                            status: t.status,
+                            hasCourse: !!t.course,
+                            hasEligibleCourse,
+                        }); // Debug log
+                        return hasEligibleCourse;
+                    })
                     .map((t: Transaction) => {
                         // Map expired status to failed for display
                         let displayStatus = t.status as CartItem['status'];
                         if (displayStatus === 'expired') {
                             displayStatus = 'failed';
                         }
-                        
-                        return {
+
+                        const cartItem = {
                             id: t.course!.id,
                             title: t.course!.title,
                             price: t.course!.price,
@@ -79,9 +88,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
                             status: displayStatus,
                             transaction: t,
                         };
+
+                        console.log('Created cart item:', cartItem); // Debug log
+                        return cartItem;
                     });
-                
+
+                console.log('Final cart items:', items); // Debug log
                 setCartItems(items);
+            } else {
+                console.error('API response not ok:', response.status, response.statusText);
             }
         } catch (error) {
             console.error('Failed to load transactions:', error);
@@ -108,13 +123,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const getTotalAmount = () => {
-        return cartItems
-            .filter(item => item.status === 'pending')
-            .reduce((total, item) => total + item.price, 0);
+        return cartItems.filter((item) => item.status === 'pending').reduce((total, item) => total + item.price, 0);
     };
 
     const getPendingCount = () => {
-        return cartItems.filter(item => item.status === 'pending').length;
+        return cartItems.filter((item) => item.status === 'pending').length;
     };
 
     const value: CartContextType = {

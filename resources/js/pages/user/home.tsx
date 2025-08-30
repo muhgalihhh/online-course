@@ -287,7 +287,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                         <div className="grid grid-cols-3 gap-2 text-sm">
                                             <div className="flex items-center gap-1">
                                                 <Star className="h-3 w-3 text-yellow-500" />
-                                                <span>{course.average_rating.toFixed(1)}</span>
+                                                <span>{(course.average_rating || 0).toFixed(1)}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Users className="h-3 w-3 text-muted-foreground" />
@@ -374,7 +374,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                     <h4 className="font-semibold">Rating</h4>
                                                                     <div className="flex items-center gap-1">
                                                                         <Star className="h-4 w-4 text-yellow-500" />
-                                                                        <span className="text-sm">{course.average_rating.toFixed(1)}</span>
+                                                                        <span className="text-sm">{(course.average_rating || 0).toFixed(1)}</span>
                                                                     </div>
                                                                 </div>
                                                                 <div>

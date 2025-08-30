@@ -194,7 +194,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                         <div className="grid grid-cols-3 gap-2 text-sm">
                                             <div className="flex items-center gap-1">
                                                 <Star className="h-3 w-3 text-yellow-500" />
-                                                <span>{course.average_rating.toFixed(1)}</span>
+                                                <span>{(course.average_rating || 0).toFixed(1)}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Users className="h-3 w-3 text-muted-foreground" />

@@ -17,6 +17,19 @@ class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     /**
+     * Handle the incoming request.
+     */
+    public function handle(Request $request, \Closure $next): Response
+    {
+        // Skip Inertia processing for API routes
+        if ($request->is('api/*')) {
+            return $next($request);
+        }
+
+        return parent::handle($request, $next);
+    }
+
+    /**
      * Determine the current asset version.
      */
     public function version(Request $request): string|null

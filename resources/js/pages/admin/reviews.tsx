@@ -1,16 +1,28 @@
 // resources/js/pages/admin/reviews.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/pagination';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from '@/hooks/use-toast';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps, type PaginatedData } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { MessageSquare, Star, Filter, Search, Eye, Trash2, ThumbsUp, ThumbsDown, Flag } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Eye, Filter, Flag, MessageSquare, Search, Star, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -25,7 +37,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Review {
-    id: number;
+    id: string; // Changed from number to string to support prefixed IDs
+    original_id?: number; // Optional original ID for backend operations
     rating: number;
     comment: string;
     status: 'approved' | 'pending' | 'rejected';
@@ -44,25 +57,126 @@ interface Review {
 
 interface ReviewsProps extends PageProps {
     reviews: PaginatedData<Review>;
+    filters?: {
+        search?: string;
+        status?: string;
+        rating_min?: string;
+        rating_max?: string;
+        review_type?: string;
+        date_from?: string;
+        date_to?: string;
+        sort_by?: string;
+        sort_order?: string;
+    };
+    statistics?: {
+        total_reviews: number;
+        average_rating: number;
+        pending_reviews: number;
+        approved_reviews: number;
+        rejected_reviews: number;
+    };
 }
 
-export default function Reviews({ reviews }: ReviewsProps) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [typeFilter, setTypeFilter] = useState('all');
-    const { patch, delete: destroy } = useForm();
+export default function Reviews({ reviews, filters = {}, statistics }: ReviewsProps) {
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
+    const [typeFilter, setTypeFilter] = useState(filters.review_type || 'all');
+    const [ratingFilter, setRatingFilter] = useState('all');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
 
-    const handleStatusChange = (reviewId: number, newStatus: string) => {
-        patch(route('admin.reviews.update-status', reviewId), {
-            data: { status: newStatus },
+    // Filter reviews based on local state untuk UI yang responsive
+    const filteredReviews = reviews.data.filter((review) => {
+        const matchesSearch =
+            review.comment.toLowerCase().includes(searchTerm.toLowerCase()) || review.user.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || review.status === statusFilter;
+        const matchesType = typeFilter === 'all' || review.reviewable.type === typeFilter;
+        const matchesRating = ratingFilter === 'all' || review.rating.toString() === ratingFilter;
+
+        return matchesSearch && matchesStatus && matchesType && matchesRating;
+    });
+
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+
+        if (searchTerm) params.set('search', searchTerm);
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        if (typeFilter !== 'all') params.set('review_type', typeFilter);
+
+        router.get(route('admin.reviews'), Object.fromEntries(params), {
+            preserveState: true,
+            preserveScroll: true,
         });
     };
 
-    const handleDeleteReview = (reviewId: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus review ini?')) {
-            destroy(route('admin.reviews.destroy', reviewId));
+    const handleStatusChange = (reviewId: string, newStatus: string) => {
+        router.patch(
+            route('admin.reviews.update-status', reviewId),
+            {
+                status: newStatus,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast({
+                        title: 'Status berhasil diperbarui',
+                        description: `Review telah ${newStatus === 'approved' ? 'disetujui' : newStatus === 'rejected' ? 'ditolak' : 'diubah ke menunggu'}.`,
+                    });
+                    // Refresh halaman untuk mendapat data terbaru
+                    router.reload({ only: ['reviews'] });
+                },
+                onError: () => {
+                    toast({
+                        title: 'Gagal memperbarui status',
+                        description: 'Terjadi kesalahan saat memperbarui status review.',
+                        variant: 'destructive',
+                    });
+                },
+            },
+        );
+    };
+
+    const confirmDelete = (reviewId: string) => {
+        setReviewToDelete(reviewId);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteReview = () => {
+        if (reviewToDelete) {
+            router.delete(route('admin.reviews.destroy', reviewToDelete), {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    setDeleteDialogOpen(false);
+                    setReviewToDelete(null);
+                    toast({
+                        title: 'Review berhasil dihapus',
+                        description: 'Review telah dihapus dari sistem.',
+                    });
+                    // Refresh halaman untuk mendapat data terbaru
+                    router.reload({ only: ['reviews'] });
+                },
+                onError: () => {
+                    toast({
+                        title: 'Gagal menghapus review',
+                        description: 'Terjadi kesalahan saat menghapus review.',
+                        variant: 'destructive',
+                    });
+                },
+            });
         }
     };
+
+    // Menghitung statistik dari data real (gunakan dari backend jika ada, fallback ke frontend calculation)
+    const totalReviews = statistics?.total_reviews || reviews.total || filteredReviews.length;
+    const averageRating =
+        statistics?.average_rating ||
+        (filteredReviews.length > 0
+            ? (filteredReviews.reduce((sum: number, review: Review) => sum + review.rating, 0) / filteredReviews.length).toFixed(1)
+            : 0);
+    const pendingReviews = statistics?.pending_reviews || filteredReviews.filter((review: Review) => review.status === 'pending').length;
+    const approvedReviews = statistics?.approved_reviews || filteredReviews.filter((review: Review) => review.status === 'approved').length;
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
@@ -103,12 +217,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
 
     const renderStars = (rating: number) => {
         return Array.from({ length: 5 }, (_, i) => (
-            <Star
-                key={i}
-                className={`h-4 w-4 ${
-                    i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                }`}
-            />
+            <Star key={i} className={`h-4 w-4 ${i < rating ? 'fill-current text-yellow-400' : 'text-gray-300'}`} />
         ));
     };
 
@@ -120,9 +229,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Kelola Reviews</h1>
-                    <p className="text-muted-foreground">
-                        Kelola ulasan kursus dan institusi dari pengguna
-                    </p>
+                    <p className="text-muted-foreground">Kelola ulasan kursus dan institusi dari pengguna</p>
                 </div>
             </div>
 
@@ -139,11 +246,12 @@ export default function Reviews({ reviews }: ReviewsProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Cari Review</label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
-                                    placeholder="Cari berdasarkan komentar..."
+                                    placeholder="Cari berdasarkan komentar atau nama pengguna..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     className="pl-10"
                                 />
                             </div>
@@ -151,7 +259,14 @@ export default function Reviews({ reviews }: ReviewsProps) {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Status</label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select
+                                value={statusFilter}
+                                onValueChange={(value) => {
+                                    setStatusFilter(value);
+                                    // Auto search ketika filter berubah
+                                    setTimeout(handleSearch, 100);
+                                }}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -166,7 +281,14 @@ export default function Reviews({ reviews }: ReviewsProps) {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Tipe</label>
-                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                            <Select
+                                value={typeFilter}
+                                onValueChange={(value) => {
+                                    setTypeFilter(value);
+                                    // Auto search ketika filter berubah
+                                    setTimeout(handleSearch, 100);
+                                }}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -180,7 +302,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Rating</label>
-                            <Select>
+                            <Select value={ratingFilter} onValueChange={setRatingFilter}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Semua Rating" />
                                 </SelectTrigger>
@@ -195,6 +317,14 @@ export default function Reviews({ reviews }: ReviewsProps) {
                             </Select>
                         </div>
                     </div>
+
+                    {/* Tombol Search Manual */}
+                    <div className="mt-4 flex justify-end">
+                        <Button onClick={handleSearch} className="flex items-center gap-2">
+                            <Search className="h-4 w-4" />
+                            Cari
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -203,7 +333,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5" />
-                        Daftar Reviews ({reviews.data.length})
+                        Daftar Reviews ({filteredReviews.length})
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -220,7 +350,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {reviews.data.map((review) => (
+                            {filteredReviews.map((review: Review) => (
                                 <TableRow key={review.id}>
                                     <TableCell>
                                         <div>
@@ -239,36 +369,38 @@ export default function Reviews({ reviews }: ReviewsProps) {
                                     <TableCell>
                                         <div className="flex items-center gap-1">
                                             {renderStars(review.rating)}
-                                            <span className="text-sm text-muted-foreground ml-1">
-                                                ({review.rating}/5)
-                                            </span>
+                                            <span className="ml-1 text-sm text-muted-foreground">({review.rating}/5)</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="max-w-xs">
-                                            <p className="text-sm line-clamp-2">{review.comment}</p>
+                                            <p className="line-clamp-2 text-sm">{review.comment}</p>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Select
-                                            value={review.status}
-                                            onValueChange={(value) => handleStatusChange(review.id, value)}
-                                        >
-                                            <SelectTrigger className="w-32">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="pending">Menunggu</SelectItem>
-                                                <SelectItem value="approved">Disetujui</SelectItem>
-                                                <SelectItem value="rejected">Ditolak</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={getStatusBadgeVariant(review.status)}>{getStatusLabel(review.status)}</Badge>
+                                            <Select
+                                                value={review.status}
+                                                onValueChange={(value) => handleStatusChange(review.id, value)}
+                                                disabled={router.processing}
+                                            >
+                                                <SelectTrigger className="w-32">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="pending">Menunggu</SelectItem>
+                                                    <SelectItem value="approved">Disetujui</SelectItem>
+                                                    <SelectItem value="rejected">Ditolak</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         {new Date(review.created_at).toLocaleDateString('id-ID', {
                                             day: 'numeric',
                                             month: 'short',
-                                            year: 'numeric'
+                                            year: 'numeric',
                                         })}
                                     </TableCell>
                                     <TableCell>
@@ -276,13 +408,44 @@ export default function Reviews({ reviews }: ReviewsProps) {
                                             <Button variant="outline" size="sm">
                                                 <Eye className="h-4 w-4" />
                                             </Button>
-                                            <Button 
-                                                variant="destructive" 
-                                                size="sm"
-                                                onClick={() => handleDeleteReview(review.id)}
+                                            <AlertDialog
+                                                open={deleteDialogOpen && reviewToDelete === review.id}
+                                                onOpenChange={(open) => {
+                                                    if (!open) {
+                                                        setDeleteDialogOpen(false);
+                                                        setReviewToDelete(null);
+                                                    }
+                                                }}
                                             >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => confirmDelete(review.id)}
+                                                        disabled={router.processing}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Hapus Review</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Apakah Anda yakin ingin menghapus review ini? Tindakan ini tidak dapat dibatalkan.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel disabled={router.processing}>Batal</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={handleDeleteReview}
+                                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                            disabled={router.processing}
+                                                        >
+                                                            {router.processing ? 'Menghapus...' : 'Hapus'}
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -306,10 +469,8 @@ export default function Reviews({ reviews }: ReviewsProps) {
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1,247</div>
-                        <p className="text-xs text-muted-foreground">
-                            <span className="text-green-600">+12%</span> from last month
-                        </p>
+                        <div className="text-2xl font-bold">{totalReviews.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Total ulasan dari pengguna</p>
                     </CardContent>
                 </Card>
 
@@ -319,79 +480,52 @@ export default function Reviews({ reviews }: ReviewsProps) {
                         <Star className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">4.2</div>
-                        <div className="flex items-center gap-1 mt-1">
-                            {renderStars(4)}
-                        </div>
+                        <div className="text-2xl font-bold">{typeof averageRating === 'string' ? averageRating : averageRating.toFixed(1)}</div>
+                        <div className="mt-1 flex items-center gap-1">{renderStars(Math.round(Number(averageRating)))}</div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
+                        <CardTitle className="text-sm font-medium">Reviews Menunggu</CardTitle>
                         <ThumbsUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">23</div>
-                        <p className="text-xs text-muted-foreground">
-                            Menunggu moderasi
-                        </p>
+                        <div className="text-2xl font-bold">{pendingReviews}</div>
+                        <p className="text-xs text-muted-foreground">Menunggu moderasi</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Reported Reviews</CardTitle>
+                        <CardTitle className="text-sm font-medium">Reviews Disetujui</CardTitle>
                         <Flag className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">5</div>
-                        <p className="text-xs text-muted-foreground">
-                            Perlu investigasi
-                        </p>
+                        <div className="text-2xl font-bold">{approvedReviews}</div>
+                        <p className="text-xs text-muted-foreground">Sudah disetujui</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Recent Activity */}
+            {/* Info Box */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Aktivitas Review Terbaru</CardTitle>
+                    <CardTitle>Informasi Kelola Reviews</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4 p-3 border rounded-lg">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <ThumbsUp className="h-4 w-4 text-green-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">Review disetujui</p>
-                                <p className="text-xs text-muted-foreground">Review untuk "React Fundamentals" telah disetujui</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground">2 menit yang lalu</span>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-3 border rounded-lg">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <ThumbsDown className="h-4 w-4 text-red-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">Review ditolak</p>
-                                <p className="text-xs text-muted-foreground">Review untuk "Node.js Backend" telah ditolak</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground">1 jam yang lalu</span>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-3 border rounded-lg">
-                            <div className="p-2 bg-yellow-100 rounded-lg">
-                                <Flag className="h-4 w-4 text-yellow-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">Review dilaporkan</p>
-                                <p className="text-xs text-muted-foreground">Review untuk "UI/UX Design" telah dilaporkan</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground">3 jam yang lalu</span>
-                        </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>
+                            • <strong>Pending:</strong> Review baru yang perlu dimoderasi
+                        </p>
+                        <p>
+                            • <strong>Approved:</strong> Review yang telah disetujui dan akan ditampilkan
+                        </p>
+                        <p>
+                            • <strong>Rejected:</strong> Review yang ditolak karena melanggar ketentuan
+                        </p>
+                        <p>• Gunakan filter untuk mencari review berdasarkan status, tipe, atau kata kunci</p>
+                        <p>• Klik mata untuk melihat detail, atau tong sampah untuk menghapus review</p>
                     </div>
                 </CardContent>
             </Card>

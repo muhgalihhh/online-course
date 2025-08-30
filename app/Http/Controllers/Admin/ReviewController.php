@@ -22,16 +22,16 @@ class ReviewController extends Controller
 
         // Build institution reviews query
         $institutionQuery = Review::with(['user', 'institution:id,name']);
-        
+
         // Apply filters to institution reviews
         if ($request->filled('search')) {
             $search = $request->get('search');
             $institutionQuery->where(function ($q) use ($search) {
                 $q->where('comment', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -62,7 +62,8 @@ class ReviewController extends Controller
             $institutionReviews = $institutionQuery->get()
                 ->map(function ($r) {
                     return [
-                        'id' => $r->id,
+                        'id' => 'institution_' . $r->id, // Add prefix for unique keys
+                        'original_id' => $r->id, // Keep original ID for backend operations
                         'rating' => $r->rating,
                         'comment' => $r->comment,
                         'status' => $r->status,
@@ -89,10 +90,10 @@ class ReviewController extends Controller
             $search = $request->get('search');
             $courseQuery->where(function ($q) use ($search) {
                 $q->where('comment', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -123,7 +124,8 @@ class ReviewController extends Controller
             $courseReviews = $courseQuery->get()
                 ->map(function ($r) {
                     return [
-                        'id' => $r->id,
+                        'id' => 'course_' . $r->id, // Add prefix for unique keys
+                        'original_id' => $r->id, // Keep original ID for backend operations
                         'rating' => $r->rating,
                         'comment' => $r->comment,
                         'status' => $r->status,
@@ -147,7 +149,7 @@ class ReviewController extends Controller
         // Sort
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        
+
         if ($sortOrder === 'asc') {
             $merged = $merged->sortBy($sortBy)->values();
         } else {
@@ -171,26 +173,47 @@ class ReviewController extends Controller
         return Inertia::render('admin/reviews', [
             'reviews' => $paginator,
             'filters' => $request->only(['search', 'status', 'rating_min', 'rating_max', 'review_type', 'date_from', 'date_to', 'sort_by', 'sort_order']),
+            'statistics' => [
+                'total_reviews' => $total,
+                'average_rating' => $merged->count() > 0 ? round($merged->avg('rating'), 1) : 0,
+                'pending_reviews' => $merged->where('status', 'pending')->count(),
+                'approved_reviews' => $merged->where('status', 'approved')->count(),
+                'rejected_reviews' => $merged->where('status', 'rejected')->count(),
+            ]
         ]);
     }
 
     /**
      * Update status review berdasarkan ID. Mendeteksi tipe otomatis.
      */
-    public function updateStatus(Request $request, int $review)
+    public function updateStatus(Request $request, string $review)
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
         ]);
 
-        $model = CourseReview::find($review);
-        if ($model) {
+        // Parse the prefixed ID
+        if (str_starts_with($review, 'course_')) {
+            $realId = (int) str_replace('course_', '', $review);
+            $model = CourseReview::findOrFail($realId);
             $model->update(['status' => $validated['status']]);
             $message = 'Status review kursus berhasil diperbarui.';
-        } else {
-            $model = Review::findOrFail($review);
+        } elseif (str_starts_with($review, 'institution_')) {
+            $realId = (int) str_replace('institution_', '', $review);
+            $model = Review::findOrFail($realId);
             $model->update(['status' => $validated['status']]);
             $message = 'Status review institusi berhasil diperbarui.';
+        } else {
+            // Fallback for old format (try both models)
+            $model = CourseReview::find($review);
+            if ($model) {
+                $model->update(['status' => $validated['status']]);
+                $message = 'Status review kursus berhasil diperbarui.';
+            } else {
+                $model = Review::findOrFail($review);
+                $model->update(['status' => $validated['status']]);
+                $message = 'Status review institusi berhasil diperbarui.';
+            }
         }
 
         return redirect()->route('admin.reviews')
@@ -200,16 +223,30 @@ class ReviewController extends Controller
     /**
      * Hapus review berdasarkan ID. Mendeteksi tipe otomatis.
      */
-    public function destroy(int $review)
+    public function destroy(string $review)
     {
-        $model = CourseReview::find($review);
-        if ($model) {
+        // Parse the prefixed ID
+        if (str_starts_with($review, 'course_')) {
+            $realId = (int) str_replace('course_', '', $review);
+            $model = CourseReview::findOrFail($realId);
             $model->delete();
             $message = 'Review kursus berhasil dihapus.';
-        } else {
-            $model = Review::findOrFail($review);
+        } elseif (str_starts_with($review, 'institution_')) {
+            $realId = (int) str_replace('institution_', '', $review);
+            $model = Review::findOrFail($realId);
             $model->delete();
             $message = 'Review institusi berhasil dihapus.';
+        } else {
+            // Fallback for old format (try both models)
+            $model = CourseReview::find($review);
+            if ($model) {
+                $model->delete();
+                $message = 'Review kursus berhasil dihapus.';
+            } else {
+                $model = Review::findOrFail($review);
+                $model->delete();
+                $message = 'Review institusi berhasil dihapus.';
+            }
         }
 
         return redirect()->route('admin.reviews')

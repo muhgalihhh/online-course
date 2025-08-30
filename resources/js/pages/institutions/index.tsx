@@ -1,20 +1,11 @@
-import GuestLayout from '@/layouts/guest-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-    Building, 
-    BookOpen,
-    Users,
-    Award,
-    MapPin,
-    Phone,
-    Mail,
-    Globe,
-    ChevronLeft,
-    ChevronRight
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import GuestLayout from '@/layouts/guest-layout';
 import { Link, router, usePage } from '@inertiajs/react';
+import { BookOpen, Building, ChevronLeft, ChevronRight, Globe, Mail, MapPin, Phone } from 'lucide-react';
+
+import { PageProps } from '@/types';
 
 interface Institution {
     id: number;
@@ -28,44 +19,52 @@ interface Institution {
     courses_count: number;
 }
 
-interface PageProps {
-    institutions: {
-        data: Institution[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        from: number;
-        to: number;
-        links: Array<{
-            url: string | null;
-            label: string;
-            active: boolean;
-        }>;
-    };
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
 }
 
 export default function InstitutionsIndex() {
-    const { institutions } = usePage<PageProps>().props;
+    const { institutions, stats } = usePage<
+        PageProps<{
+            institutions: {
+                data: Institution[];
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+                from: number;
+                to: number;
+                links: Array<{
+                    url: string | null;
+                    label: string;
+                    active: boolean;
+                }>;
+            };
+            stats: {
+                total_institutions: number;
+                total_courses: number;
+                total_students: number;
+                average_rating: number;
+            };
+        }>
+    >().props;
 
     const InstitutionCard = ({ institution }: { institution: Institution }) => (
-        <Card className="overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg h-full">
+        <Card className="h-full overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
             <CardHeader className="pb-4">
                 <div className="flex items-start gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         {institution.photo ? (
-                            <img 
-                                src={institution.photo} 
-                                alt={institution.name}
-                                className="h-full w-full rounded-lg object-cover"
-                            />
+                            <img src={institution.photo} alt={institution.name} className="h-full w-full rounded-lg object-cover" />
                         ) : (
                             <Building className="h-8 w-8" />
                         )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg line-clamp-2">{institution.name}</CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
+                    <div className="min-w-0 flex-1">
+                        <CardTitle className="line-clamp-2 text-lg">{institution.name}</CardTitle>
+                        <div className="mt-1 flex items-center gap-2">
                             <Badge variant="secondary" className="gap-1">
                                 <BookOpen className="h-3 w-3" />
                                 {institution.courses_count} Kursus
@@ -75,17 +74,13 @@ export default function InstitutionsIndex() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-3">
-                {institution.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                        {institution.description}
-                    </p>
-                )}
-                
+                {institution.description && <p className="line-clamp-3 text-sm text-muted-foreground">{institution.description}</p>}
+
                 <div className="space-y-2 text-sm">
                     {institution.address && (
                         <div className="flex items-start gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <span className="text-muted-foreground line-clamp-2">{institution.address}</span>
+                            <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                            <span className="line-clamp-2 text-muted-foreground">{institution.address}</span>
                         </div>
                     )}
                     {institution.phone && (
@@ -97,18 +92,13 @@ export default function InstitutionsIndex() {
                     {institution.email && (
                         <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground truncate">{institution.email}</span>
+                            <span className="truncate text-muted-foreground">{institution.email}</span>
                         </div>
                     )}
                     {institution.website && (
                         <div className="flex items-center gap-2">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <a 
-                                href={institution.website} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline truncate"
-                            >
+                            <a href={institution.website} target="_blank" rel="noopener noreferrer" className="truncate text-primary hover:underline">
                                 {institution.website}
                             </a>
                         </div>
@@ -117,9 +107,7 @@ export default function InstitutionsIndex() {
 
                 <div className="pt-3">
                     <Button size="sm" className="w-full" asChild>
-                        <Link href={`/courses?institution=${institution.id}`}>
-                            Lihat Kursus
-                        </Link>
+                        <Link href={`/courses?institution=${institution.id}`}>Lihat Kursus</Link>
                     </Button>
                 </div>
             </CardContent>
@@ -132,13 +120,13 @@ export default function InstitutionsIndex() {
             <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-12">
                 <div className="container mx-auto px-4">
                     <div className="text-center">
-                        <div className="flex items-center justify-center mb-4">
+                        <div className="mb-4 flex items-center justify-center">
                             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                                 <Building className="h-8 w-8" />
                             </div>
                         </div>
-                        <h1 className="text-3xl font-bold mb-4">Katalog Lembaga</h1>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
+                        <h1 className="mb-4 text-3xl font-bold">Katalog Lembaga</h1>
+                        <p className="mx-auto max-w-2xl text-muted-foreground">
                             Temukan lembaga pendidikan terpercaya yang menyediakan berbagai kursus berkualitas
                         </p>
                     </div>
@@ -146,30 +134,30 @@ export default function InstitutionsIndex() {
             </section>
 
             {/* Stats Section */}
-            <section className="py-8 border-b">
+            <section className="border-b py-8">
                 <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         <Card className="border-0 shadow-sm">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-primary">{institutions.total}+</div>
+                                <div className="text-2xl font-bold text-primary">{stats.total_institutions}+</div>
                                 <p className="text-sm text-muted-foreground">Lembaga Terdaftar</p>
                             </CardContent>
                         </Card>
                         <Card className="border-0 shadow-sm">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-primary">500+</div>
+                                <div className="text-2xl font-bold text-primary">{stats.total_courses}+</div>
                                 <p className="text-sm text-muted-foreground">Total Kursus</p>
                             </CardContent>
                         </Card>
                         <Card className="border-0 shadow-sm">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-primary">50K+</div>
+                                <div className="text-2xl font-bold text-primary">{stats.total_students.toLocaleString()}+</div>
                                 <p className="text-sm text-muted-foreground">Siswa Aktif</p>
                             </CardContent>
                         </Card>
                         <Card className="border-0 shadow-sm">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-primary">4.8</div>
+                                <div className="text-2xl font-bold text-primary">{stats.average_rating}</div>
                                 <p className="text-sm text-muted-foreground">Rating Rata-rata</p>
                             </CardContent>
                         </Card>
@@ -189,7 +177,7 @@ export default function InstitutionsIndex() {
                     {institutions.data.length > 0 ? (
                         <>
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {institutions.data.map((institution) => (
+                                {institutions.data.map((institution: Institution) => (
                                     <InstitutionCard key={institution.id} institution={institution} />
                                 ))}
                             </div>
@@ -198,7 +186,7 @@ export default function InstitutionsIndex() {
                             {institutions.last_page > 1 && (
                                 <div className="mt-8 flex justify-center">
                                     <div className="flex gap-1">
-                                        {institutions.links.map((link, index) => {
+                                        {institutions.links.map((link: PaginationLink, index: number) => {
                                             if (link.label === '&laquo; Previous') {
                                                 return (
                                                     <Button
@@ -226,7 +214,11 @@ export default function InstitutionsIndex() {
                                                 );
                                             }
                                             if (link.label === '...') {
-                                                return <span key={index} className="px-3 py-1">...</span>;
+                                                return (
+                                                    <span key={index} className="px-3 py-1">
+                                                        ...
+                                                    </span>
+                                                );
                                             }
                                             return (
                                                 <Button
@@ -246,11 +238,9 @@ export default function InstitutionsIndex() {
                     ) : (
                         <Card className="p-12">
                             <CardContent className="text-center">
-                                <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">Tidak ada lembaga ditemukan</h3>
-                                <p className="text-muted-foreground">
-                                    Lembaga akan segera ditambahkan
-                                </p>
+                                <Building className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                <h3 className="mb-2 text-lg font-semibold">Tidak ada lembaga ditemukan</h3>
+                                <p className="text-muted-foreground">Lembaga akan segera ditambahkan</p>
                             </CardContent>
                         </Card>
                     )}

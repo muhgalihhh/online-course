@@ -17,6 +17,7 @@ use Inertia\Inertia;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
@@ -37,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'auth' => \App\Http\Middleware\EnsureAuthenticated::class,
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'midtrans.webhook' => \App\Http\Middleware\VerifyMidtransWebhook::class,
+            'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
         ]);
         $middleware->redirectGuestsTo('/login');
 
@@ -92,17 +95,17 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e instanceof ValidationException) {
                 return null; // Return null to let Laravel handle it normally
             }
-            
+
             // Don't handle AuthenticationException - it has its own handler above
             if ($e instanceof AuthenticationException) {
                 return null;
             }
-            
+
             // Don't handle HttpException - it has its own handler above
             if ($e instanceof HttpException) {
                 return null;
             }
-            
+
             // Only handle actual server errors (500) for unexpected exceptions
             if ($request->wantsJson() || $request->inertia()) {
                 // In production, don't expose internal errors
@@ -120,7 +123,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($exception instanceof ValidationException) {
                 return $response;
             }
-            
+
             // List of error codes we have custom pages for
             $customErrorPages = [403, 404, 419, 500, 503];
             $statusCode = $response->getStatusCode();
@@ -131,7 +134,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($statusCode === 422) {
                     return $response;
                 }
-                
+
                 // Handle 419 (CSRF token mismatch) specially
                 if ($statusCode === 419) {
                     return Inertia::render('errors/419', [

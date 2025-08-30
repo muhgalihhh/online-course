@@ -22,14 +22,17 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userId = $this->route('user')->id ?? null;
-        
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $userId . '|max:255',
-            'password' => ['nullable', 'confirmed', Password::min(8)],
-            'role' => 'required|in:admin,user',
-            'profile_photo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $this->user->id],
+            'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone,' . $this->user->id],
+            'bio' => ['nullable', 'string', 'max:500'],
+            'birth_date' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'role' => ['required', 'in:admin,user'],
+            'profile_photo_path' => ['nullable', 'string'],
         ];
     }
 
@@ -41,6 +44,11 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'nama lengkap',
             'email' => 'alamat email',
+            'phone' => 'nomor telepon',
+            'bio' => 'bio',
+            'birth_date' => 'tanggal lahir',
+            'gender' => 'jenis kelamin',
+            'city' => 'kota',
             'password' => 'kata sandi',
             'role' => 'peran pengguna',
             'profile_photo_path' => 'foto profil',
