@@ -30,7 +30,7 @@ interface Course {
     slug: string;
     description: string;
     price: number;
-    level: string;
+    level?: string;
     duration: number;
     thumbnail_path?: string;
     status: string;
@@ -86,7 +86,10 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
         return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
     };
 
-    const getLevelBadgeVariant = (level: string) => {
+    const getLevelBadgeVariant = (level: string | undefined | null) => {
+        if (!level) {
+            return 'outline'; // Default variant for undefined/null levels
+        }
         switch (level.toLowerCase()) {
             case 'beginner':
                 return 'default';
@@ -247,7 +250,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
                                             <Badge variant={getLevelBadgeVariant(course.level)}>
-                                                {course.level}
+                                                {course.level || 'Semua Level'}
                                             </Badge>
                                             <Badge variant="outline">
                                                 {course.category.name}
@@ -350,7 +353,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                 <div>
                                                                     <h4 className="font-semibold">Level</h4>
                                                                     <Badge variant={getLevelBadgeVariant(course.level)}>
-                                                                        {course.level}
+                                                                        {course.level || 'Semua Level'}
                                                                     </Badge>
                                                                 </div>
                                                             </div>
