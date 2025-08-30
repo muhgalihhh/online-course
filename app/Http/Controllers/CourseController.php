@@ -335,4 +335,56 @@ class CourseController extends Controller
             'enrollment' => $enrollment
         ]);
     }
+
+    /**
+     * Mark a chapter as completed for the current user and enrollment.
+     */
+    public function completeChapter($courseId, $chapterId)
+    {
+        if (!auth()->check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $course = Course::with('chapters')->findOrFail($courseId);
+        $chapter = $course->chapters()->where('id', $chapterId)->firstOrFail();
+
+        $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+            ->where('course_id', $course->id)
+            ->firstOrFail();
+
+        // Find or create progress record for this chapter
+        $progress = \App\Models\ChapterProgress::firstOrCreate(
+            [
+                'user_id' => auth()->id(),
+                'chapter_id' => $chapter->id,
+                'enrollment_id' => $enrollment->id,
+            ],
+            [
+                'is_completed' => false,
+            ]
+        );
+
+        if (!$progress->is_completed) {
+            $progress->markAsCompleted();
+        }
+
+        // Recalculate completed materials by completed chapters
+        $completedChapterIds = \App\Models\ChapterProgress::where('user_id', auth()->id())
+            ->where('enrollment_id', $enrollment->id)
+            ->where('is_completed', true)
+            ->pluck('chapter_id');
+
+        $completedMaterials = \App\Models\CourseMaterial::whereIn('chapter_id', $completedChapterIds)
+            ->pluck('id')
+            ->toArray();
+
+        return response()->json([
+            'message' => 'Chapter marked as completed',
+            'enrollment' => [
+                'progress' => $enrollment->progress,
+                'completed_at' => $enrollment->completed_at,
+            ],
+            'completedMaterials' => $completedMaterials,
+        ]);
+    }
 }
