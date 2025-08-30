@@ -28,6 +28,8 @@ import {
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { useAuth } from '@/hooks/use-auth';
+import { Toaster } from '@/components/ui/toaster';
+import { useToastNotifications } from '@/hooks/use-toast-notifications';
 import { usePage } from '@inertiajs/react';
 
 interface Institution {
@@ -53,6 +55,9 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
+    
+    // Initialize toast notifications
+    useToastNotifications();
 
     // Function to check if a link is active
     const isActiveLink = (href: string) => {
@@ -339,6 +344,9 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
 
             {/* Live Chat Widget - Only for Users */}
             <LiveChatWidget />
+            
+            {/* Toast Notifications */}
+            <Toaster />
         </div>
     );
 };
