@@ -49,6 +49,7 @@ interface Course {
     average_rating: number;
     total_reviews: number;
     total_students: number;
+    is_enrolled?: boolean;
 }
 
 interface Category {
@@ -190,13 +191,21 @@ export default function CoursesIndex() {
                                 Lihat Detail
                             </Link>
                         </Button>
-                        <Button 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => handleBookCourse(course)}
-                        >
-                            {course.is_pro ? 'Pesan' : 'Ikuti'}
-                        </Button>
+                        {course.is_enrolled ? (
+                            <Button size="sm" className="flex-1" asChild>
+                                <Link href={`/courses/${course.id}/learn`}>
+                                    Lanjutkan Belajar
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => handleBookCourse(course)}
+                            >
+                                {course.is_pro ? 'Pesan' : 'Ikuti'}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </CardContent>
@@ -254,12 +263,20 @@ export default function CoursesIndex() {
                                         Lihat Detail
                                     </Link>
                                 </Button>
-                                <Button 
-                                    size="sm"
-                                    onClick={() => handleBookCourse(course)}
-                                >
-                                    {course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus'}
-                                </Button>
+                                {course.is_enrolled ? (
+                                    <Button size="sm" asChild>
+                                        <Link href={`/courses/${course.id}/learn`}>
+                                            Lanjutkan Belajar
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        size="sm"
+                                        onClick={() => handleBookCourse(course)}
+                                    >
+                                        {course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -18,6 +18,15 @@ class CourseController extends Controller
         $query = Course::with(['category', 'institution', 'reviews'])
             ->where('status', 'published');
 
+        // Include current user's enrollment status efficiently
+        if (auth()->check()) {
+            $query->withCount([
+                'enrollments as is_enrolled' => function ($q) {
+                    $q->where('user_id', auth()->id());
+                }
+            ]);
+        }
+
         // Filter by category
         if ($request->has('category') && $request->category) {
             $query->where('category_id', $request->category);
@@ -70,6 +79,7 @@ class CourseController extends Controller
             $course->average_rating = $course->reviews->avg('rating') ?? 0;
             $course->total_reviews = $course->reviews->count();
             $course->total_students = $course->enrollments()->count();
+            $course->is_enrolled = (bool) ($course->is_enrolled ?? false);
             return $course;
         });
 
@@ -195,7 +205,7 @@ class CourseController extends Controller
         }
 
         if ($isEnrolled) {
-            return redirect()->route('courses.show', $course->id)
+            return redirect()->route('courses.learn', $course->id)
                 ->with('info', 'Anda sudah terdaftar di kursus ini.');
         }
 

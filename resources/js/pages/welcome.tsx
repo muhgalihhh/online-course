@@ -61,6 +61,7 @@ interface Course {
     average_rating: number;
     total_reviews: number;
     total_students: number;
+    is_enrolled?: boolean;
 }
 
 interface Institution {
@@ -255,13 +256,21 @@ export default function Welcome() {
                                 Detail
                             </Link>
                         </Button>
-                        <Button 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => handleEnrollCourse(course)}
-                        >
-                            {course.is_pro ? 'Pesan' : 'Ikuti'}
-                        </Button>
+                        {course.is_enrolled ? (
+                            <Button size="sm" className="flex-1" asChild>
+                                <Link href={`/courses/${course.id}/learn`}>
+                                    Lanjutkan Belajar
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => handleEnrollCourse(course)}
+                            >
+                                {course.is_pro ? 'Pesan' : 'Ikuti'}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </CardContent>
