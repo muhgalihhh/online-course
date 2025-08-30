@@ -1,6 +1,8 @@
 import AppLogo from '@/components/app-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CartProvider, useCart } from '@/contexts/cart-context';
+import { CartSidebar } from '@/components/cart-sidebar';
 import {
     Bell,
     BookOpen,
@@ -26,9 +28,11 @@ interface UserLayoutProps {
     children: React.ReactNode;
 }
 
-const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
+// Inner component that uses cart context
+const UserLayoutContent: React.FC<UserLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const page = usePage();
+    const { toggleCart, getPendingCount } = useCart();
     
     // Function to check if the current route is active
     const isActiveRoute = (href: string) => {
@@ -50,7 +54,10 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
         { name: 'Contact', href: '/kontak' },
     ];
 
+    const pendingCount = getPendingCount();
+
     return (
+        <>
         <div className="min-h-screen bg-background">
             {/* Header */}
             <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -94,8 +101,18 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
                             <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
                                 <Bell className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="relative h-9 w-9 p-0"
+                                onClick={toggleCart}
+                            >
                                 <ShoppingCart className="h-4 w-4" />
+                                {pendingCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                        {pendingCount}
+                                    </span>
+                                )}
                             </Button>
                             <div className="h-6 w-px bg-border" />
                             <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
@@ -134,6 +151,23 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
                                     <Button variant="ghost" size="sm" className="w-full justify-start">
                                         <Search className="mr-2 h-4 w-4" />
                                         Search Courses
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="w-full justify-start relative"
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            toggleCart();
+                                        }}
+                                    >
+                                        <ShoppingCart className="mr-2 h-4 w-4" />
+                                        Keranjang
+                                        {pendingCount > 0 && (
+                                            <Badge variant="outline" className="ml-auto bg-yellow-500 text-white border-yellow-500">
+                                                {pendingCount}
+                                            </Badge>
+                                        )}
                                     </Button>
                                     <Button variant="ghost" size="sm" className="w-full justify-start">
                                         <User className="mr-2 h-4 w-4" />
@@ -269,6 +303,20 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
                 </div>
             </footer>
         </div>
+        
+        {/* Cart Sidebar */}
+        <CartSidebar />
+        </>
     );
 };
+
+// Main component that provides cart context
+const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
+    return (
+        <CartProvider>
+            <UserLayoutContent>{children}</UserLayoutContent>
+        </CartProvider>
+    );
+};
+
 export default UserLayout;

@@ -1,7 +1,10 @@
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import LiveChatWidget from '@/components/live-chat-widget';
+import { CartProvider, useCart } from '@/contexts/cart-context';
+import { CartSidebar } from '@/components/cart-sidebar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,6 +23,7 @@ import {
     Settings,
     LogOut,
     ShoppingBag,
+    ShoppingCart,
     Heart,
     History,
     CreditCard,
@@ -51,13 +55,17 @@ interface UserDashboardLayoutProps {
     children: React.ReactNode;
 }
 
-const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) => {
+// Inner component that uses cart context
+const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
+    const { toggleCart, getPendingCount } = useCart();
     
     // Initialize toast notifications
     useToastNotifications();
+    
+    const pendingCount = getPendingCount();
 
     // Function to check if a link is active
     const isActiveLink = (href: string) => {
@@ -124,6 +132,19 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="relative h-9 w-9 p-0"
+                                onClick={toggleCart}
+                            >
+                                <ShoppingCart className="h-4 w-4" />
+                                {pendingCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                        {pendingCount}
+                                    </span>
+                                )}
+                            </Button>
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
                             
@@ -218,6 +239,21 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                                 })}
                                 
                                 <div className="space-y-2 border-t pt-4">
+                                    <button
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            toggleCart();
+                                        }}
+                                        className="flex w-full items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                                    >
+                                        <ShoppingCart className="h-4 w-4" />
+                                        <span>Keranjang</span>
+                                        {pendingCount > 0 && (
+                                            <Badge variant="outline" className="ml-auto bg-yellow-500 text-white border-yellow-500 text-xs">
+                                                {pendingCount}
+                                            </Badge>
+                                        )}
+                                    </button>
                                     <Link
                                         href="/user/profile"
                                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
@@ -347,7 +383,19 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
             
             {/* Toast Notifications */}
             <Toaster />
+            
+            {/* Cart Sidebar */}
+            <CartSidebar />
         </div>
+    );
+};
+
+// Main component that provides cart context
+const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) => {
+    return (
+        <CartProvider>
+            <UserDashboardLayoutContent>{children}</UserDashboardLayoutContent>
+        </CartProvider>
     );
 };
 
