@@ -20,18 +20,23 @@ interface PaymentPageProps {
     snapToken?: string;
     clientKey: string;
     isProduction: boolean;
+    isAlreadyEnrolled?: boolean;
 }
 
-export default function PaymentPage({ course, transaction: initialTransaction, snapToken: initialSnapToken, clientKey, isProduction }: PaymentPageProps) {
+export default function PaymentPage({ course, transaction: initialTransaction, snapToken: initialSnapToken, clientKey, isProduction, isAlreadyEnrolled = false }: PaymentPageProps) {
     const { auth } = usePage().props as any;
     const [isLoading, setIsLoading] = useState(false);
     const [transaction, setTransaction] = useState<Transaction | undefined>(initialTransaction);
     const [snapToken, setSnapToken] = useState<string | undefined>(initialSnapToken);
     const snapContainerRef = useRef<HTMLDivElement>(null);
-    const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'>('pending');
+    const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'>(
+        isAlreadyEnrolled ? 'completed' : 'pending'
+    );
 
-    // Load Midtrans Snap script
+    // Load Midtrans Snap script (only if not already enrolled)
     useEffect(() => {
+        if (isAlreadyEnrolled) return;
+
         const snapSrcUrl = isProduction
             ? 'https://app.midtrans.com/snap/snap.js'
             : 'https://app.sandbox.midtrans.com/snap/snap.js';
@@ -46,14 +51,14 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
         return () => {
             document.body.removeChild(script);
         };
-    }, [clientKey, isProduction]);
+    }, [clientKey, isProduction, isAlreadyEnrolled]);
 
-    // Create transaction if not exists
+    // Create transaction if not exists (skip if already enrolled)
     useEffect(() => {
-        if (!transaction && !snapToken && course.is_pro && course.price > 0) {
+        if (!isAlreadyEnrolled && !transaction && !snapToken && course.is_pro && course.price > 0) {
             createTransaction();
         }
-    }, []);
+    }, [isAlreadyEnrolled]);
 
     // Embed Snap payment when token is available
     useEffect(() => {
@@ -159,6 +164,9 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
     };
 
     const getStatusMessage = () => {
+        if (isAlreadyEnrolled) {
+            return 'Anda sudah terdaftar di kursus ini. Pembayaran telah berhasil dilakukan sebelumnya.';
+        }
         switch (paymentStatus) {
             case 'completed':
                 return 'Pembayaran berhasil! Anda akan diarahkan ke halaman kursus...';

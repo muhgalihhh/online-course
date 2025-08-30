@@ -26,9 +26,11 @@ class PaymentController extends Controller
         $course = Course::query()->where('status', 'published')->findOrFail($courseId);
         $user = $request->user();
 
+        // Prevent free courses from being added to cart/payment
         if (!$course->is_pro || (int) $course->price <= 0) {
             return response()->json([
                 'message' => 'Kursus ini gratis. Tidak memerlukan pembayaran.',
+                'is_free' => true,
             ], 422);
         }
 
@@ -129,17 +131,24 @@ class PaymentController extends Controller
         
         $user = $request->user();
 
-        // Check if course is free
+        // Check if course is free - redirect to show page
         if (!$course->is_pro || (int) $course->price <= 0) {
             return redirect()->route('courses.show', $courseId)
                 ->with('error', 'Kursus ini gratis. Tidak memerlukan pembayaran.');
         }
 
-        // Check if already enrolled
+        // Check if already enrolled (payment completed)
         $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
         if ($alreadyEnrolled) {
-            return redirect()->route('courses.learn', $courseId)
-                ->with('info', 'Anda sudah terdaftar di kursus ini.');
+            // Show payment page with success status
+            return Inertia::render('payment/index', [
+                'course' => $course,
+                'transaction' => null,
+                'snapToken' => null,
+                'clientKey' => (string) config('midtrans.client_key'),
+                'isProduction' => (bool) config('midtrans.is_production'),
+                'isAlreadyEnrolled' => true,
+            ]);
         }
 
         // Check for existing pending transaction
@@ -166,6 +175,7 @@ class PaymentController extends Controller
             'snapToken' => $snapToken,
             'clientKey' => (string) config('midtrans.client_key'),
             'isProduction' => (bool) config('midtrans.is_production'),
+            'isAlreadyEnrolled' => false,
         ]);
     }
 
