@@ -136,5 +136,23 @@ class MidtransService
 
         return (string) Str::uuid();
     }
+
+    /**
+     * Cancel transaction in Midtrans
+     */
+    public function cancelTransaction(string $orderId): bool
+    {
+        try {
+            $result = \Midtrans\Transaction::cancel($orderId);
+            return isset($result->status_code) && $result->status_code == '200';
+        } catch (\Exception $e) {
+            // Log the error but don't throw
+            \Log::warning('Failed to cancel transaction in Midtrans', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }
 

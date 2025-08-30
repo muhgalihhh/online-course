@@ -72,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('api.transactions');
     Route::get('/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'showTransaction'])
         ->name('transactions.show');
+    Route::delete('/api/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'cancelTransaction'])
+        ->name('api.transactions.cancel');
     
     // My Courses route (redirects based on role)
     Route::get('/my-courses', function () {
