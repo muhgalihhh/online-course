@@ -107,9 +107,8 @@ export function CartSidebar() {
     };
 
     const handleContinuePayment = (item: any) => {
-        if (item.transaction?.midtrans_order_id) {
-            router.visit(`/transactions/${item.transaction.midtrans_order_id}`);
-        } else if (item.id) {
+        // Always navigate to the payment page for the course
+        if (item.id) {
             router.visit(`/payments/courses/${item.id}`);
         }
     };
@@ -139,9 +138,14 @@ export function CartSidebar() {
             });
 
             if (response.ok) {
-                toast.success('Transaksi berhasil dibatalkan');
+                const result = await response.json();
+                if (result.deleted) {
+                    toast.success('Transaksi berhasil dihapus. Anda dapat membuat transaksi baru.');
+                } else {
+                    toast.success('Transaksi berhasil dibatalkan');
+                }
                 // Reload transactions to update the list
-                loadTransactions();
+                await loadTransactions();
             } else {
                 const error = await response.json();
                 toast.error(error.message || 'Gagal membatalkan transaksi');
@@ -158,7 +162,7 @@ export function CartSidebar() {
 
     const pendingItems = cartItems.filter(item => item.status === 'pending');
     const completedItems = cartItems.filter(item => item.status === 'completed');
-    const failedItems = cartItems.filter(item => item.status === 'failed' || item.status === 'cancelled');
+    const failedItems = cartItems.filter(item => item.status === 'failed' || item.status === 'cancelled' || item.status === 'expired');
 
     return (
         <>
@@ -334,11 +338,11 @@ export function CartSidebar() {
                                 </div>
                             )}
 
-                            {/* Failed/Cancelled Transactions */}
+                            {/* Failed/Cancelled/Expired Transactions */}
                             {failedItems.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-sm mb-3 text-red-700">
-                                        Pembayaran Gagal ({failedItems.length})
+                                        Pembayaran Gagal/Expired ({failedItems.length})
                                     </h3>
                                     <div className="space-y-3">
                                         {failedItems.map((item) => (
@@ -367,7 +371,8 @@ export function CartSidebar() {
                                                     <div className="flex items-center gap-1 mt-1">
                                                         {getStatusIcon(item.status)}
                                                         <span className="text-xs text-red-600">
-                                                            {item.status === 'cancelled' ? 'Dibatalkan' : 'Gagal'}
+                                                            {item.status === 'cancelled' ? 'Dibatalkan' : 
+                                                             item.status === 'expired' ? 'Expired' : 'Gagal'}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -376,7 +381,7 @@ export function CartSidebar() {
                                                         size="sm"
                                                         variant="outline"
                                                         className="text-xs"
-                                                        onClick={() => handleViewCourse(item.id)}
+                                                        onClick={() => handleContinuePayment(item)}
                                                     >
                                                         Beli Lagi
                                                     </Button>

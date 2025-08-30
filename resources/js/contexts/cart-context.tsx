@@ -21,7 +21,7 @@ interface CartItem {
     title: string;
     price: number;
     thumbnail: string | null;
-    status?: 'pending' | 'completed' | 'failed' | 'cancelled';
+    status?: 'pending' | 'completed' | 'failed' | 'cancelled' | 'expired';
     transaction?: Transaction;
 }
 
@@ -64,14 +64,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 // Convert transactions to cart items
                 const items: CartItem[] = data
                     .filter((t: Transaction) => t.course)
-                    .map((t: Transaction) => ({
-                        id: t.course!.id,
-                        title: t.course!.title,
-                        price: t.course!.price,
-                        thumbnail: t.course!.thumbnail,
-                        status: t.status as CartItem['status'],
-                        transaction: t,
-                    }));
+                    .map((t: Transaction) => {
+                        // Map expired status to failed for display
+                        let displayStatus = t.status as CartItem['status'];
+                        if (displayStatus === 'expired') {
+                            displayStatus = 'failed';
+                        }
+                        
+                        return {
+                            id: t.course!.id,
+                            title: t.course!.title,
+                            price: t.course!.price,
+                            thumbnail: t.course!.thumbnail,
+                            status: displayStatus,
+                            transaction: t,
+                        };
+                    });
                 
                 setCartItems(items);
             }
