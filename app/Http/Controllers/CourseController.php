@@ -209,21 +209,26 @@ class CourseController extends Controller
      */
     public function enrollFree($id)
     {
+        \Log::info('enrollFree method called', ['course_id' => $id, 'user_id' => auth()->id()]);
+        
         $course = Course::with(['category', 'institution'])->findOrFail($id);
 
         // Check if course is published
         if ($course->status !== 'published') {
+            \Log::warning('Course not published', ['course_id' => $id, 'status' => $course->status]);
             abort(404);
         }
 
         // Check if course is free
         if ($course->is_pro || $course->price > 0) {
+            \Log::warning('Course is not free', ['course_id' => $id, 'is_pro' => $course->is_pro, 'price' => $course->price]);
             return redirect()->route('courses.show', $course->id)
                 ->with('error', 'Kursus ini adalah kursus berbayar.');
         }
 
         // Check if user is authenticated
         if (!auth()->check()) {
+            \Log::warning('User not authenticated');
             return redirect()->route('login')
                 ->with('info', 'Silakan login untuk mendaftar di kursus ini.');
         }
@@ -234,20 +239,41 @@ class CourseController extends Controller
             ->exists();
 
         if ($isEnrolled) {
+            \Log::info('User already enrolled', ['course_id' => $id, 'user_id' => auth()->id()]);
             return redirect()->route('courses.learn', $course->id)
                 ->with('info', 'Anda sudah terdaftar di kursus ini.');
         }
 
-        // Create enrollment
-        \App\Models\Enrollment::create([
-            'user_id' => auth()->id(),
-            'course_id' => $course->id,
-            'enrolled_at' => now(),
-            'progress' => 0,
-        ]);
+        try {
+            // Create enrollment with database transaction
+            \DB::transaction(function () use ($course) {
+                $enrollment = \App\Models\Enrollment::create([
+                    'user_id' => auth()->id(),
+                    'course_id' => $course->id,
+                    'enrolled_at' => now(),
+                    'progress' => 0,
+                ]);
+                
+                \Log::info('Enrollment created successfully', [
+                    'enrollment_id' => $enrollment->id,
+                    'user_id' => auth()->id(),
+                    'course_id' => $course->id
+                ]);
+            });
 
-        return redirect()->route('courses.learn', $course->id)
-            ->with('success', 'Selamat! Anda berhasil mendaftar di kursus ini.');
+            return redirect()->route('courses.learn', $course->id)
+                ->with('success', 'Selamat! Anda berhasil mendaftar di kursus ini.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to enroll user in free course', [
+                'user_id' => auth()->id(),
+                'course_id' => $course->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('courses.show', $course->id)
+                ->with('error', 'Terjadi kesalahan saat mendaftar. Silakan coba lagi. Error: ' . $e->getMessage());
+        }
     }
 
     /**

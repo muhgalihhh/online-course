@@ -102,12 +102,29 @@ export default function CoursesIndex() {
     };
 
     const handleBookCourse = (course: Course) => {
+        console.log('handleBookCourse called', { 
+            courseId: course.id, 
+            isPro: course.is_pro, 
+            price: course.price,
+            isAuthenticated 
+        });
+        
         if (!isAuthenticated) {
             setShowLoginDialog(true);
         } else {
             // For free courses, directly enroll without payment
             if (!course.is_pro && course.price === 0) {
-                router.post(`/courses/${course.id}/enroll-free`);
+                console.log('Enrolling in free course:', course.id);
+                router.post(`/courses/${course.id}/enroll-free`, {}, {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        console.log('Enrollment success', page);
+                        // Redirect will be handled by the controller
+                    },
+                    onError: (errors) => {
+                        console.error('Enrollment error:', errors);
+                    }
+                });
             } else {
                 // Navigate to enrollment/payment page for pro courses
                 router.visit(`/courses/${course.id}/enroll`);
