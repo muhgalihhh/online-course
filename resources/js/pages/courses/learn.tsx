@@ -34,6 +34,7 @@ interface Material {
     title: string;
     type: 'pdf' | 'image' | 'video_local' | 'video_youtube';
     file_path?: string | null;
+    file_url?: string | null;
     youtube_url?: string | null;
     order: number;
 }
@@ -312,11 +313,24 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                 </div>
                                             ) : selectedMaterial.type === 'video_local' ? (
                                                 <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                                                    {selectedMaterial.file_path ? (
-                                                        <video className="w-full h-full" src={selectedMaterial.file_path} controls />
+                                                    {(selectedMaterial.file_url || selectedMaterial.file_path) ? (
+                                                        <video 
+                                                            className="w-full h-full" 
+                                                            src={selectedMaterial.file_url || selectedMaterial.file_path} 
+                                                            controls 
+                                                            controlsList="nodownload"
+                                                            preload="metadata"
+                                                        >
+                                                            <source src={selectedMaterial.file_url || selectedMaterial.file_path} type="video/mp4" />
+                                                            <source src={selectedMaterial.file_url || selectedMaterial.file_path} type="video/webm" />
+                                                            <source src={selectedMaterial.file_url || selectedMaterial.file_path} type="video/ogg" />
+                                                            <source src={selectedMaterial.file_url || selectedMaterial.file_path} type="video/quicktime" />
+                                                            Browser Anda tidak mendukung tag video.
+                                                        </video>
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center">
                                                             <Video className="h-12 w-12 text-muted-foreground" />
+                                                            <p className="text-muted-foreground mt-2">Video tidak tersedia</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -326,14 +340,14 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                         <FileText className="h-5 w-5" />
                                                         <span>Dokumen PDF</span>
                                                     </div>
-                                                    {selectedMaterial.file_path ? (
-                                                        <iframe className="w-full h-[70vh] rounded" src={selectedMaterial.file_path} />
+                                                    {(selectedMaterial.file_url || selectedMaterial.file_path) ? (
+                                                        <iframe className="w-full h-[70vh] rounded" src={selectedMaterial.file_url || selectedMaterial.file_path} />
                                                     ) : (
                                                         <p className="text-muted-foreground">Dokumen tidak tersedia.</p>
                                                     )}
-                                                    {selectedMaterial.file_path && (
+                                                    {(selectedMaterial.file_url || selectedMaterial.file_path) && (
                                                         <Button className="mt-4" variant="outline" asChild>
-                                                            <a href={selectedMaterial.file_path} target="_blank" rel="noopener noreferrer">
+                                                            <a href={selectedMaterial.file_url || selectedMaterial.file_path} target="_blank" rel="noopener noreferrer">
                                                                 <Download className="mr-2 h-4 w-4" />
                                                                 Download PDF
                                                             </a>
@@ -342,8 +356,13 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                 </div>
                                             ) : (
                                                 <div className="min-h-[300px] bg-muted rounded-lg p-4 flex items-center justify-center">
-                                                    {selectedMaterial.file_path ? (
-                                                        <img src={selectedMaterial.file_path} alt={selectedMaterial.title} className="max-h-[70vh] rounded" />
+                                                    {(selectedMaterial.file_url || selectedMaterial.file_path) ? (
+                                                        <img 
+                                                            src={selectedMaterial.file_url || selectedMaterial.file_path} 
+                                                            alt={selectedMaterial.title} 
+                                                            className="max-h-[70vh] rounded" 
+                                                            loading="lazy"
+                                                        />
                                                     ) : (
                                                         <div className="text-center text-muted-foreground">
                                                             <ImageIcon className="mx-auto h-12 w-12 mb-2" />

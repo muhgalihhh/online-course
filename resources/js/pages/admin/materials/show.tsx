@@ -10,10 +10,11 @@ interface MaterialShowProps extends PageProps {
 	material: {
 		id: number;
 		title: string;
-		type: 'pdf'|'image'|'video';
+		type: 'pdf'|'image'|'video_local'|'video_youtube';
 		order: number;
 		is_preview: boolean;
 		file_path: string | null;
+		file_url?: string | null;
 		youtube_url: string | null;
 		chapter: { id: number; title: string; course: { id: number; title: string } };
 		created_at: string;
@@ -62,15 +63,20 @@ export default function MaterialShow({ material }: MaterialShowProps) {
 						</div>
 
 						<div className="p-4 border rounded-md">
-							{material.type === 'video' ? (
+							{material.type === 'video_youtube' ? (
 								<div className="flex items-center gap-2 text-sm">
 									<Video className="h-4 w-4" />
-									<span>{material.youtube_url || '-'}</span>
+									<span>YouTube: {material.youtube_url || '-'}</span>
+								</div>
+							) : material.type === 'video_local' ? (
+								<div className="flex items-center gap-2 text-sm">
+									<Video className="h-4 w-4" />
+									<span>Video: {material.file_url || material.file_path || '-'}</span>
 								</div>
 							) : (
 								<div className="flex items-center gap-2 text-sm">
 									<File className="h-4 w-4" />
-									<span>{material.file_path || '-'}</span>
+									<span>File: {material.file_url || material.file_path || '-'}</span>
 								</div>
 							)}
 						</div>
