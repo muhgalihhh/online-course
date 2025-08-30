@@ -53,16 +53,24 @@ export default function EnrollCourse({ course }: PageProps) {
     });
 
     const handleEnrollment = async () => {
-        if (!course.is_pro) {
+        if (!course.is_pro && course.price === 0) {
             setIsProcessing(true);
-            setAlertState({
-                open: true,
-                title: 'Pendaftaran Berhasil',
-                description: 'Selamat! Anda telah berhasil mendaftar di kursus gratis ini.',
-                type: 'success',
-                onAction: () => router.visit(`/courses/${course.id}`)
+            router.post(`/courses/${course.id}/enroll-free`, {}, {
+                onSuccess: () => {
+                    router.visit('/user/my-courses');
+                },
+                onError: () => {
+                    setAlertState({
+                        open: true,
+                        title: 'Pendaftaran Gagal',
+                        description: 'Terjadi kesalahan saat mendaftar kursus gratis.',
+                        type: 'error',
+                    });
+                },
+                onFinish: () => {
+                    setIsProcessing(false);
+                },
             });
-            setIsProcessing(false);
             return;
         }
 

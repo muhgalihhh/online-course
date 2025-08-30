@@ -42,6 +42,14 @@ class Chapter extends Model
     }
 
     /**
+     * Alias relation for courseMaterials to match frontend expectation.
+     */
+    public function materials(): HasMany
+    {
+        return $this->hasMany(CourseMaterial::class);
+    }
+
+    /**
      * Progress records for this chapter.
      */
     public function progress(): HasMany

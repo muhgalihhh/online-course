@@ -281,7 +281,7 @@ export default function CourseShow() {
 
                                     {isEnrolled ? (
                                         <Button size="lg" className="w-full" asChild>
-                                            <Link href={`/user/courses/${course.id}`}>
+                                            <Link href={`/courses/${course.id}/learn`}>
                                                 Lanjutkan Belajar
                                             </Link>
                                         </Button>

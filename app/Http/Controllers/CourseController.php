@@ -186,6 +186,25 @@ class CourseController extends Controller
             abort(404);
         }
 
+        // If course is free, bypass payment/enroll page and enroll directly
+        if (!$course->is_pro && (int) $course->price === 0) {
+            if (!auth()->check()) {
+                return redirect()->route('login')
+                    ->with('info', 'Silakan login untuk mendaftar di kursus ini.');
+            }
+
+            // If already enrolled, send to learn page
+            $alreadyEnrolled = $course->enrollments()
+                ->where('user_id', auth()->id())
+                ->exists();
+            if ($alreadyEnrolled) {
+                return redirect()->route('courses.learn', $course->id)
+                    ->with('info', 'Anda sudah terdaftar di kursus ini.');
+            }
+
+            return $this->enrollFree($course->id);
+        }
+
         // Check if user is already enrolled
         $isEnrolled = false;
         if (auth()->check()) {
@@ -240,7 +259,7 @@ class CourseController extends Controller
 
         if ($isEnrolled) {
             \Log::info('User already enrolled', ['course_id' => $id, 'user_id' => auth()->id()]);
-            return redirect()->route('courses.learn', $course->id)
+            return redirect()->route('user.my-courses')
                 ->with('info', 'Anda sudah terdaftar di kursus ini.');
         }
 
@@ -261,7 +280,7 @@ class CourseController extends Controller
                 ]);
             });
 
-            return redirect()->route('courses.learn', $course->id)
+            return redirect()->route('user.my-courses')
                 ->with('success', 'Selamat! Anda berhasil mendaftar di kursus ini.');
         } catch (\Exception $e) {
             \Log::error('Failed to enroll user in free course', [
