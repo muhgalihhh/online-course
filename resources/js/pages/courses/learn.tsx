@@ -107,6 +107,36 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
         }
     };
 
+    const getMaterialTypeLabel = (type: Material['type']) => {
+        switch (type) {
+            case 'video_youtube':
+                return 'YouTube';
+            case 'video_local':
+                return 'Video';
+            case 'pdf':
+                return 'PDF';
+            case 'image':
+                return 'Gambar';
+            default:
+                return 'Materi';
+        }
+    };
+
+    const getMaterialTypeColor = (type: Material['type']) => {
+        switch (type) {
+            case 'video_youtube':
+                return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+            case 'video_local':
+                return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+            case 'pdf':
+                return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+            case 'image':
+                return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+            default:
+                return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+        }
+    };
+
     const handleMaterialComplete = async (materialId: number) => {
         if (completedMaterialsState.includes(materialId) || !selectedChapter) return;
         const nextCompleted = [...completedMaterialsState, materialId];
@@ -210,57 +240,139 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                 Daftar Materi
                                             </Button>
                                         </SheetTrigger>
-                                        <SheetContent side="left" className="w-80">
-                                            <SheetHeader>
-                                                <SheetTitle>Konten Kelas</SheetTitle>
-                                            </SheetHeader>
-                                            <div className="px-2 py-2">
-                                                <div className="space-y-4">
-                                                    {course.chapters.map((chapter) => (
-                                                        <div key={chapter.id}>
-                                                            <Button
-                                                                variant={selectedChapter?.id === chapter.id ? 'secondary' : 'ghost'}
-                                                                className="w-full justify-start mb-2"
-                                                                onClick={() => {
-                                                                    setSelectedChapter(chapter);
-                                                                    setSelectedMaterial(chapter.materials[0] || null);
-                                                                    setIsSidebarOpen(false);
-                                                                }}
-                                                            >
-                                                                <span className="font-medium">Bab {chapter.order}: {chapter.title}</span>
-                                                            </Button>
-                                                            <div className="ml-4 space-y-1">
-                                                                {chapter.materials.map((material) => {
-                                                                    const isCompleted = completedMaterialsState.includes(material.id);
-                                                                    const isSelected = selectedMaterial?.id === material.id;
-                                                                    return (
-                                                                        <Button
-                                                                            key={material.id}
-                                                                            variant={isSelected ? 'secondary' : 'ghost'}
-                                                                            size="sm"
-                                                                            className="w-full justify-start pl-4"
-                                                                            onClick={() => {
-                                                                                setSelectedChapter(chapter);
-                                                                                setSelectedMaterial(material);
-                                                                                setIsSidebarOpen(false);
-                                                                            }}
-                                                                        >
-                                                                            <div className="flex items-center gap-2 w-full">
-                                                                                {isCompleted ? (
-                                                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                                                ) : (
-                                                                                    getMaterialIcon(material.type)
-                                                                                )}
-                                                                                <span className="flex-1 text-left truncate">{material.title}</span>
-                                                                            </div>
-                                                                        </Button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                        <SheetContent side="left" className="w-[90vw] sm:w-96 p-0">
+                                            <SheetHeader className="px-6 py-4 border-b">
+                                                <SheetTitle>Daftar Materi</SheetTitle>
+                                                <div className="mt-2">
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        {completedMaterialsState.length} dari {totalMaterials} materi selesai
+                                                    </p>
+                                                    <Progress value={progressPercentage} />
                                                 </div>
-                                            </div>
+                                            </SheetHeader>
+                                            <ScrollArea className="h-[calc(100vh-120px)]">
+                                                <div className="px-6 py-4">
+                                                    {course.chapters.map((chapter, chapterIndex) => {
+                                                        const chapterMaterials = chapter.materials;
+                                                        const completedInChapter = chapterMaterials.filter(m => 
+                                                            completedMaterialsState.includes(m.id)
+                                                        ).length;
+                                                        const isCurrentChapter = selectedChapter?.id === chapter.id;
+                                                        
+                                                        return (
+                                                            <div key={chapter.id} className="mb-4">
+                                                                {/* Chapter Header */}
+                                                                <div 
+                                                                    className={`
+                                                                        flex items-center justify-between p-3 rounded-lg cursor-pointer
+                                                                        transition-colors mb-2
+                                                                        ${isCurrentChapter 
+                                                                            ? 'bg-primary/10 border border-primary/20' 
+                                                                            : 'hover:bg-muted/50'
+                                                                        }
+                                                                    `}
+                                                                    onClick={() => {
+                                                                        setSelectedChapter(chapter);
+                                                                        setSelectedMaterial(chapter.materials[0] || null);
+                                                                        if (chapter.materials[0]) {
+                                                                            setIsSidebarOpen(false);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className={`
+                                                                                w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                                                                                ${isCurrentChapter 
+                                                                                    ? 'bg-primary text-primary-foreground' 
+                                                                                    : 'bg-muted-foreground/20 text-muted-foreground'
+                                                                                }
+                                                                            `}>
+                                                                                {chapter.order}
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <h4 className="font-semibold text-sm">{chapter.title}</h4>
+                                                                                <p className="text-xs text-muted-foreground">
+                                                                                    {completedInChapter}/{chapterMaterials.length} materi selesai
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {completedInChapter === chapterMaterials.length && (
+                                                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* Materials List - Always visible on mobile */}
+                                                                <div className="ml-10 space-y-1">
+                                                                    {chapter.materials.map((material) => {
+                                                                        const isCompleted = completedMaterialsState.includes(material.id);
+                                                                        const isSelected = selectedMaterial?.id === material.id;
+                                                                        
+                                                                        return (
+                                                                            <div
+                                                                                key={material.id}
+                                                                                className={`
+                                                                                    flex items-center gap-2 p-2 rounded-md cursor-pointer
+                                                                                    transition-all duration-200
+                                                                                    ${isSelected 
+                                                                                        ? 'bg-secondary shadow-sm border border-secondary-foreground/10' 
+                                                                                        : 'hover:bg-muted/50'
+                                                                                    }
+                                                                                `}
+                                                                                onClick={() => {
+                                                                                    setSelectedChapter(chapter);
+                                                                                    setSelectedMaterial(material);
+                                                                                    setIsSidebarOpen(false);
+                                                                                }}
+                                                                            >
+                                                                                {/* Status Icon */}
+                                                                                <div className="flex-shrink-0">
+                                                                                    {isCompleted ? (
+                                                                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                                    ) : isSelected ? (
+                                                                                        <PlayCircle className="h-4 w-4 text-primary" />
+                                                                                    ) : (
+                                                                                        <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
+                                                                                    )}
+                                                                                </div>
+                                                                                
+                                                                                {/* Material Icon */}
+                                                                                <div className="flex-shrink-0">
+                                                                                    {getMaterialIcon(material.type)}
+                                                                                </div>
+                                                                                
+                                                                                {/* Material Info */}
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className={`
+                                                                                        text-sm truncate
+                                                                                        ${isSelected ? 'font-medium' : ''}
+                                                                                        ${isCompleted ? 'text-muted-foreground line-through' : ''}
+                                                                                    `}>
+                                                                                        {material.title}
+                                                                                    </p>
+                                                                                </div>
+                                                                                
+                                                                                {/* Material Type Badge */}
+                                                                                <Badge 
+                                                                                    variant="secondary" 
+                                                                                    className={`text-xs px-2 py-0 ${getMaterialTypeColor(material.type)}`}
+                                                                                >
+                                                                                    {getMaterialTypeLabel(material.type)}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                
+                                                                {chapterIndex < course.chapters.length - 1 && (
+                                                                    <Separator className="mt-4" />
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </ScrollArea>
                                         </SheetContent>
                                     </Sheet>
                                 </div>
@@ -276,9 +388,145 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
 
                 {/* Main Content */}
                 <div className="container mx-auto px-4 py-6">
-                    <div className="grid gap-6 lg:grid-cols-[1fr,350px]">
+                    <div className="grid gap-6 lg:grid-cols-[350px,1fr] xl:grid-cols-[380px,1fr]">
+                        {/* Sidebar - Desktop Only */}
+                        <div className="hidden lg:block space-y-6">
+                            {/* Course Content - Enhanced Sidebar */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg">Daftar Materi</CardTitle>
+                                    <CardDescription>
+                                        {completedMaterialsState.length} dari {totalMaterials} materi selesai
+                                    </CardDescription>
+                                    <Progress value={progressPercentage} className="mt-2" />
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <ScrollArea className="h-[calc(100vh-250px)]">
+                                        <div className="px-6 pb-4">
+                                            {course.chapters.map((chapter, chapterIndex) => {
+                                                const chapterMaterials = chapter.materials;
+                                                const completedInChapter = chapterMaterials.filter(m => 
+                                                    completedMaterialsState.includes(m.id)
+                                                ).length;
+                                                const isCurrentChapter = selectedChapter?.id === chapter.id;
+                                                
+                                                return (
+                                                    <div key={chapter.id} className="mb-4">
+                                                        {/* Chapter Header */}
+                                                        <div 
+                                                            className={`
+                                                                flex items-center justify-between p-3 rounded-lg cursor-pointer
+                                                                transition-colors mb-2
+                                                                ${isCurrentChapter 
+                                                                    ? 'bg-primary/10 border border-primary/20' 
+                                                                    : 'hover:bg-muted/50'
+                                                                }
+                                                            `}
+                                                            onClick={() => {
+                                                                setSelectedChapter(chapter);
+                                                                setSelectedMaterial(chapter.materials[0]);
+                                                            }}
+                                                        >
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`
+                                                                        w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                                                                        ${isCurrentChapter 
+                                                                            ? 'bg-primary text-primary-foreground' 
+                                                                            : 'bg-muted-foreground/20 text-muted-foreground'
+                                                                        }
+                                                                    `}>
+                                                                        {chapter.order}
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <h4 className="font-semibold text-sm">{chapter.title}</h4>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {completedInChapter}/{chapterMaterials.length} materi selesai
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {completedInChapter === chapterMaterials.length && (
+                                                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* Materials List */}
+                                                        {isCurrentChapter && (
+                                                            <div className="ml-10 space-y-1">
+                                                                {chapter.materials.map((material, materialIndex) => {
+                                                                    const isCompleted = completedMaterialsState.includes(material.id);
+                                                                    const isSelected = selectedMaterial?.id === material.id;
+                                                                    
+                                                                    return (
+                                                                        <div
+                                                                            key={material.id}
+                                                                            className={`
+                                                                                flex items-center gap-3 p-2 rounded-md cursor-pointer
+                                                                                transition-all duration-200
+                                                                                ${isSelected 
+                                                                                    ? 'bg-secondary shadow-sm border border-secondary-foreground/10' 
+                                                                                    : 'hover:bg-muted/50'
+                                                                                }
+                                                                            `}
+                                                                            onClick={() => {
+                                                                                setSelectedMaterial(material);
+                                                                            }}
+                                                                        >
+                                                                            {/* Status Icon */}
+                                                                            <div className="flex-shrink-0">
+                                                                                {isCompleted ? (
+                                                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                                ) : isSelected ? (
+                                                                                    <PlayCircle className="h-4 w-4 text-primary" />
+                                                                                ) : (
+                                                                                    <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
+                                                                                )}
+                                                                            </div>
+                                                                            
+                                                                            {/* Material Icon */}
+                                                                            <div className="flex-shrink-0">
+                                                                                {getMaterialIcon(material.type)}
+                                                                            </div>
+                                                                            
+                                                                            {/* Material Info */}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className={`
+                                                                                    text-sm truncate
+                                                                                    ${isSelected ? 'font-medium' : ''}
+                                                                                    ${isCompleted ? 'text-muted-foreground line-through' : ''}
+                                                                                `}>
+                                                                                    {material.title}
+                                                                                </p>
+                                                                            </div>
+                                                                            
+                                                                            {/* Material Type Badge */}
+                                                                            <Badge 
+                                                                                variant="secondary" 
+                                                                                className={`text-xs px-2 py-0 ${getMaterialTypeColor(material.type)}`}
+                                                                            >
+                                                                                {getMaterialTypeLabel(material.type)}
+                                                                            </Badge>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {chapterIndex < course.chapters.length - 1 && (
+                                                            <Separator className="mt-4" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </div>
+
                         {/* Video/Content Area */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 lg:order-none order-first">
                             {/* Main Content Card */}
                             <Card>
                                 {selectedMaterial ? (
@@ -427,106 +675,6 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                     </CardContent>
                                 </Card>
                             )}
-                        </div>
-
-                        {/* Sidebar */}
-                        <div className="space-y-6">
-                            {/* Course Info */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Informasi Kelas</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Level</span>
-                                        <Badge>{course.level}</Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Durasi</span>
-                                        <span className="flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            {course.duration} jam
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Terdaftar</span>
-                                        <span>{formatDate(enrollment.enrolled_at)}</span>
-                                    </div>
-                                    {enrollment.completed_at && (
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Selesai</span>
-                                            <span>{formatDate(enrollment.completed_at)}</span>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            {/* Course Content */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Konten Kelas</CardTitle>
-                                    <CardDescription>
-                                        {completedMaterialsState.length} dari {totalMaterials} materi selesai
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[400px] pr-4">
-                                        <div className="space-y-4">
-                                            {course.chapters.map((chapter) => (
-                                                <div key={chapter.id}>
-                                                    <Button
-                                                        variant={selectedChapter?.id === chapter.id ? "secondary" : "ghost"}
-                                                        className="w-full justify-start mb-2"
-                                                        onClick={() => {
-                                                            setSelectedChapter(chapter);
-                                                            setSelectedMaterial(chapter.materials[0]);
-                                                        }}
-                                                    >
-                                                        <span className="font-medium">
-                                                            Bab {chapter.order}: {chapter.title}
-                                                        </span>
-                                                    </Button>
-                                                    <div className="ml-4 space-y-1">
-                                                        {chapter.materials.map((material) => {
-                                                            const isCompleted = completedMaterialsState.includes(material.id);
-                                                            const isSelected = selectedMaterial?.id === material.id;
-                                                            
-                                                            return (
-                                                                <Button
-                                                                    key={material.id}
-                                                                    variant={isSelected ? "secondary" : "ghost"}
-                                                                    size="sm"
-                                                                    className="w-full justify-start pl-4"
-                                                                    onClick={() => {
-                                                                        setSelectedChapter(chapter);
-                                                                        setSelectedMaterial(material);
-                                                                    }}
-                                                                >
-                                                                    <div className="flex items-center gap-2 w-full">
-                                                                        {isCompleted ? (
-                                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                                        ) : (
-                                                                            getMaterialIcon(material.type)
-                                                                        )}
-                                                                        <span className="flex-1 text-left truncate">
-                                                                            {material.title}
-                                                                        </span>
-                                                                        {material.duration && (
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {material.duration} menit
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </Button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
                         </div>
                     </div>
                 </div>
