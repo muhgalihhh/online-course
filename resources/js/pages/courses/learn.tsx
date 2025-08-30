@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import UserDashboardLayout from '@/layouts/user-dashboard-layout';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,9 @@ import {
     Star,
     Image as ImageIcon,
     Youtube,
-    List
+    List,
+    Menu,
+    X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -87,6 +89,16 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
     const [completedMaterialsState, setCompletedMaterialsState] = useState<number[]>(completedMaterials);
     const [enrollmentState, setEnrollmentState] = useState(enrollment);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(() => {
+        // Load sidebar state from localStorage
+        const saved = localStorage.getItem('learn-sidebar-open');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    // Save sidebar state to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('learn-sidebar-open', JSON.stringify(isDesktopSidebarOpen));
+    }, [isDesktopSidebarOpen]);
 
     const formatDate = (dateString: string) => {
         return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
@@ -217,6 +229,15 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
+                                {/* Desktop Sidebar Toggle */}
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="hidden lg:flex"
+                                    onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                                >
+                                    <Menu className="h-5 w-5" />
+                                </Button>
                                 <Button variant="ghost" size="sm" asChild>
                                     <Link href="/dashboard">
                                         <ChevronLeft className="mr-2 h-4 w-4" />
@@ -387,21 +408,34 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                 </div>
 
                 {/* Main Content */}
-                <div className="container mx-auto px-4 py-6">
-                    <div className="grid gap-6 lg:grid-cols-[350px,1fr] xl:grid-cols-[380px,1fr]">
-                        {/* Sidebar - Desktop Only */}
-                        <div className="hidden lg:block space-y-6">
-                            {/* Course Content - Enhanced Sidebar */}
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg">Daftar Materi</CardTitle>
-                                    <CardDescription>
-                                        {completedMaterialsState.length} dari {totalMaterials} materi selesai
-                                    </CardDescription>
-                                    <Progress value={progressPercentage} className="mt-2" />
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <ScrollArea className="h-[calc(100vh-250px)]">
+                <div className="flex h-[calc(100vh-73px)]">
+                    {/* Desktop Sidebar */}
+                    <div className={`
+                        hidden lg:block bg-background border-r transition-all duration-300 overflow-hidden
+                        ${isDesktopSidebarOpen ? 'w-[350px] xl:w-[380px]' : 'w-0'}
+                    `}>
+                        <div className="h-full flex flex-col">
+                            {/* Sidebar Header */}
+                            <div className="p-6 border-b">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-lg font-semibold">Daftar Materi</h3>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        className="lg:hidden"
+                                        onClick={() => setIsDesktopSidebarOpen(false)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    {completedMaterialsState.length} dari {totalMaterials} materi selesai
+                                </p>
+                                <Progress value={progressPercentage} />
+                            </div>
+                            
+                            {/* Sidebar Content */}
+                            <ScrollArea className="flex-1">
                                         <div className="px-6 pb-4">
                                             {course.chapters.map((chapter, chapterIndex) => {
                                                 const chapterMaterials = chapter.materials;
@@ -521,12 +555,13 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                             })}
                                         </div>
                                     </ScrollArea>
-                                </CardContent>
-                            </Card>
                         </div>
+                    </div>
 
-                        {/* Video/Content Area */}
-                        <div className="space-y-6 lg:order-none order-first">
+                    {/* Main Content Area */}
+                    <div className="flex-1 overflow-auto">
+                        <div className="container mx-auto px-4 py-6 lg:px-6">
+                            <div className="space-y-6">
                             {/* Main Content Card */}
                             <Card>
                                 {selectedMaterial ? (
@@ -675,6 +710,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                     </CardContent>
                                 </Card>
                             )}
+                            </div>
                         </div>
                     </div>
                 </div>
