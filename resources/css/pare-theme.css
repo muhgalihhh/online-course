@@ -1,0 +1,241 @@
+/* PARE EDU HUB - Additional Color Utilities */
+
+/* Gold Gradient Backgrounds (inspired by logo) */
+.bg-gradient-gold {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--chart-3) 100%);
+}
+
+.bg-gradient-navy-gold {
+    background: linear-gradient(135deg, var(--chart-2) 0%, var(--primary) 100%);
+}
+
+.bg-gradient-gold-light {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+/* Logo-inspired Hero Sections */
+.hero-gradient {
+    background: linear-gradient(135deg, var(--chart-2) 0%, var(--primary) 50%, var(--chart-3) 100%);
+}
+
+/* Custom text colors matching logo */
+.text-gold {
+    color: var(--primary);
+}
+
+.text-navy {
+    color: var(--chart-2);
+}
+
+.text-gold-light {
+    color: var(--chart-5);
+}
+
+/* Hover effects with logo colors */
+.hover-gold {
+    transition: all 0.3s ease;
+}
+
+.hover-gold:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.hover-navy:hover {
+    background-color: var(--chart-2);
+    color: var(--background);
+}
+
+/* Button variants inspired by logo */
+.btn-gold {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+    background-color: var(--chart-3);
+    border-color: var(--chart-3);
+}
+
+.btn-navy {
+    background-color: var(--chart-2);
+    color: var(--background);
+    border: 1px solid var(--chart-2);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-navy:hover {
+    background-color: var(--chart-4);
+    border-color: var(--chart-4);
+}
+
+.btn-outline-gold {
+    background-color: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-gold:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+/* Card variants with logo inspiration */
+.card-gold {
+    background: linear-gradient(135deg, var(--card) 0%, var(--accent) 100%);
+    border: 1px solid var(--primary);
+}
+
+.card-navy {
+    background: var(--card);
+    border: 1px solid var(--chart-2);
+    border-left: 4px solid var(--primary);
+}
+
+/* Status indicators */
+.status-success {
+    background-color: var(--chart-3);
+    color: var(--primary-foreground);
+}
+
+.status-warning {
+    background-color: var(--chart-5);
+    color: var(--foreground);
+}
+
+.status-info {
+    background-color: var(--chart-2);
+    color: var(--background);
+}
+
+/* Badge styles */
+.badge-gold {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-navy {
+    background-color: var(--chart-2);
+    color: var(--background);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-outline {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Course card specific styles */
+.course-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.course-card:hover {
+    border-color: var(--primary);
+    box-shadow:
+        0 10px 25px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.course-thumbnail {
+    height: 12rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--chart-2) 100%);
+    position: relative;
+}
+
+.course-thumbnail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+}
+
+/* Price styling */
+.price-highlight {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+/* Navigation styles */
+.nav-link {
+    color: var(--foreground);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+}
+
+.nav-link.active {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+/* Form styling */
+.form-input {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--ring), 0.1);
+}
+
+/* Loading states */
+.loading-spinner {
+    border: 2px solid var(--muted);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

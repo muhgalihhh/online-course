@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import WeatherWidget from '@/components/weather-widget';
 import { useAuth } from '@/hooks/use-auth';
 import GuestLayout from '@/layouts/guest-layout';
+import { Course } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    Award,
     BookMarked,
     BookOpen,
     CheckCircle,
@@ -28,7 +28,6 @@ import {
     Zap,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Course } from '@/types';
 
 interface Category {
     id: number;
@@ -88,32 +87,32 @@ export default function Welcome() {
         {
             icon: <BookOpen className="h-6 w-6" />,
             title: 'Kursus Berkualitas Tinggi',
-            description: 'Akses kursus berkualitas yang dirancang khusus dari dasar hingga advanced dengan sertifikasi resmi',
+            description: 'Akses kursus berkualitas yang dirancang khusus dari dasar hingga advanced dengan materi terlengkap',
         },
         {
             icon: <GraduationCap className="h-6 w-6" />,
             title: 'Kelas Pro & Free',
-            description: 'Pilih kelas sesuai kebutuhan, dari materi dasar hingga premium dengan sertifikasi',
+            description: 'Pilih kelas sesuai kebutuhan, dari materi dasar hingga premium dengan kualitas terjamin',
         },
         {
             icon: <Download className="h-6 w-6" />,
             title: 'Download Materi PDF',
-            description: 'Download materi pembelajaran dalam format PDF untuk belajar offline',
+            description: 'Download materi pembelajaran dalam format PDF untuk belajar offline kapan saja',
         },
         {
             icon: <MessageCircle className="h-6 w-6" />,
             title: 'Live Chat Support',
-            description: 'Dapatkan bantuan langsung melalui live chat 24/7',
+            description: 'Dapatkan bantuan langsung melalui live chat 24/7 untuk semua pertanyaan Anda',
         },
         {
             icon: <CloudRain className="h-6 w-6" />,
             title: 'Widget Cuaca',
-            description: 'Informasi cuaca real-time untuk perencanaan kegiatan belajar',
+            description: 'Informasi cuaca real-time untuk perencanaan kegiatan belajar yang optimal',
         },
         {
             icon: <Globe className="h-6 w-6" />,
             title: 'Akses Seumur Hidup',
-            description: 'Bayar sekali untuk akses semua kelas Pro selamanya',
+            description: 'Bayar sekali untuk akses semua kelas Pro selamanya tanpa biaya tambahan',
         },
     ];
 
@@ -172,12 +171,12 @@ export default function Welcome() {
     };
 
     const benefits = [
-        'Akses ke kursus berkualitas tinggi yang dirancang khusus',
-        'Kelas gratis dan premium dengan sertifikasi resmi',
+        'Akses Seumur Hidup ke semua kursus yang telah dibeli',
         'Download materi PDF untuk belajar offline',
-        'Live chat support 24/7',
-        'Widget cuaca real-time',
-        'Bayar sekali untuk akses semua kelas Pro selamanya',
+        'Live chat support 24/7 untuk bantuan pembelajaran',
+        'Widget cuaca real-time untuk perencanaan belajar',
+        'Kelas gratis dan premium berkualitas tinggi',
+        'Platform pembelajaran yang mudah digunakan',
     ];
 
     const getCategoryIcon = (categoryName: string) => {
@@ -289,8 +288,8 @@ export default function Welcome() {
                                     <span>Akses Cepat</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Award className="h-4 w-4" />
-                                    <span>Sertifikasi</span>
+                                    <Download className="h-4 w-4" />
+                                    <span>Materi PDF</span>
                                 </div>
                             </div>
                         </div>
@@ -431,18 +430,49 @@ export default function Welcome() {
                     <div className="grid gap-12 lg:grid-cols-2">
                         <div className="space-y-6">
                             <h2 className="text-3xl font-bold">Mengapa Memilih {institution?.name || 'Pare EduHub'}?</h2>
-                            <p className="text-lg text-muted-foreground">
-                                Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi untuk semua level. Dapatkan akses ke
-                                kursus-kursus pilihan dari dasar hingga advanced.
-                            </p>
                             <div className="space-y-4">
+                                {institution?.description && <p className="text-lg text-muted-foreground">{institution.description}</p>}
+
+                                <div className="grid gap-3">
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                        <h3 className="mb-2 font-semibold text-primary">Total Kursus Tersedia</h3>
+                                        <p className="text-2xl font-bold">{stats?.total_courses || 0} Kursus</p>
+                                        <p className="text-sm text-muted-foreground">Dari berbagai kategori pembelajaran</p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                        <h3 className="mb-2 font-semibold text-primary">Siswa Aktif</h3>
+                                        <p className="text-2xl font-bold">{(stats?.total_students || 0).toLocaleString()} Siswa</p>
+                                        <p className="text-sm text-muted-foreground">Bergabung dalam komunitas belajar</p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                        <h3 className="mb-2 font-semibold text-primary">Rating Platform</h3>
+                                        <p className="text-2xl font-bold">{stats?.average_rating || 0} ⭐</p>
+                                        <p className="text-sm text-muted-foreground">Dari ulasan siswa</p>
+                                    </div>
+                                </div>
+
+                                {institution?.phone && (
+                                    <div className="rounded-lg bg-muted/50 p-4">
+                                        <h4 className="mb-2 font-semibold">Kontak Kami</h4>
+                                        <p className="text-sm text-muted-foreground">📞 {institution.phone}</p>
+                                        {institution.email && <p className="text-sm text-muted-foreground">✉️ {institution.email}</p>}
+                                        {institution.address && <p className="text-sm text-muted-foreground">📍 {institution.address}</p>}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-xl font-semibold">Keunggulan Platform Kami:</h3>
                                 {benefits.map((benefit, index) => (
                                     <div key={index} className="flex items-center gap-3">
-                                        <CheckCircle className="h-5 w-5 text-primary" />
+                                        <CheckCircle className="h-5 w-5 flex-shrink-0 text-primary" />
                                         <span className="text-muted-foreground">{benefit}</span>
                                     </div>
                                 ))}
                             </div>
+
                             <div className="pt-4">
                                 <Button size="lg" asChild>
                                     <Link href="/register">Bergabung Sekarang</Link>
@@ -453,34 +483,58 @@ export default function Welcome() {
                         <div className="relative">
                             <Card className="border-0 bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg">
                                 <CardContent className="p-6">
+                                    <h3 className="mb-4 text-center text-xl font-bold">Kategori Kursus Populer</h3>
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                                <Code className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold">Full-Stack Development</h3>
-                                                <p className="text-sm text-muted-foreground">Rating: 4.9 ⭐</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                                <Palette className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold">UI/UX Design</h3>
-                                                <p className="text-sm text-muted-foreground">Rating: 4.8 ⭐</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                                <Database className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold">DevOps & Cloud</h3>
-                                                <p className="text-sm text-muted-foreground">Rating: 4.7 ⭐</p>
-                                            </div>
-                                        </div>
+                                        {categories &&
+                                            categories.slice(0, 3).map((category) => (
+                                                <div
+                                                    key={category.id}
+                                                    className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur"
+                                                >
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                        {getCategoryIcon(category.name)}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold">{category.name}</h4>
+                                                        <p className="text-sm text-muted-foreground">{category.courses_count || 0} Kursus Tersedia</p>
+                                                        {category.description && (
+                                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{category.description}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                        {(!categories || categories.length === 0) && (
+                                            <>
+                                                <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                        <Code className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold">Web Development</h4>
+                                                        <p className="text-sm text-muted-foreground">Kursus Populer</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                        <Palette className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold">UI/UX Design</h4>
+                                                        <p className="text-sm text-muted-foreground">Kursus Populer</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 rounded-lg bg-background/80 p-4 backdrop-blur">
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                                        <Database className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold">Data Science</h4>
+                                                        <p className="text-sm text-muted-foreground">Kursus Populer</p>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
