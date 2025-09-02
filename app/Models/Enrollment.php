@@ -49,19 +49,30 @@ class Enrollment extends Model
     }
 
     /**
-     * Calculate and update progress based on completed chapters.
+     * Get the material progress for this enrollment.
+     */
+    public function materialProgress()
+    {
+        return $this->hasMany(MaterialProgress::class);
+    }
+
+    /**
+     * Calculate and update progress based on completed materials.
      */
     public function updateProgress()
     {
-        $totalChapters = $this->course->chapters()->count();
-        
-        if ($totalChapters > 0) {
-            $completedChapters = $this->chapterProgress()
+        // Get total materials in course
+        $totalMaterials = \App\Models\CourseMaterial::whereHas('chapter', function ($query) {
+            $query->where('course_id', $this->course_id);
+        })->count();
+
+        if ($totalMaterials > 0) {
+            $completedMaterials = $this->materialProgress()
                 ->where('is_completed', true)
                 ->count();
-            
-            $progress = round(($completedChapters / $totalChapters) * 100);
-            
+
+            $progress = round(($completedMaterials / $totalMaterials) * 100);
+
             $this->update([
                 'progress' => $progress,
                 'completed_at' => $progress === 100 ? now() : null,

@@ -27,7 +27,7 @@ import {
     Users,
     Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Category {
     id: number;
@@ -83,6 +83,23 @@ export default function Welcome() {
         type: 'info',
     });
 
+    // Array gambar hero untuk rotasi background
+    const heroImages = ['/hero-1.jpg', '/hero-2.jpg', '/hero-3.jpg'];
+    const [currentHeroImage, setCurrentHeroImage] = useState(heroImages[0]);
+
+    // Ganti gambar hero setiap 10 detik
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentHeroImage((prev) => {
+                const currentIndex = heroImages.indexOf(prev);
+                const nextIndex = (currentIndex + 1) % heroImages.length;
+                return heroImages[nextIndex];
+            });
+        }, 10000); // 10 detik
+
+        return () => clearInterval(interval);
+    }, [heroImages]);
+
     const features = [
         {
             icon: <BookOpen className="h-6 w-6" />,
@@ -123,7 +140,7 @@ export default function Welcome() {
         { label: 'Rating Rata-rata', value: `${stats?.average_rating || 0}`, icon: <Star className="h-4 w-4" /> },
     ];
 
-    const handleEnrollCourse = (course: any) => {
+    const handleEnrollCourse = (course: Course) => {
         // Check if user is logged in
         if (!isAuthenticated) {
             setAlertState({
@@ -247,38 +264,67 @@ export default function Welcome() {
     return (
         <GuestLayout>
             {/* Hero Section with Weather Widget */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-primary/5 py-20">
-                <div className="container mx-auto px-4">
+            <section className="relative overflow-hidden py-20">
+                {/* Background Image */}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000"
+                    style={{
+                        backgroundImage: `url(${currentHeroImage})`,
+                    }}
+                >
+                    {/* Overlay untuk memberikan efek gelap agar teks tetap terbaca */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
+                </div>
+
+                <div className="relative z-10 container mx-auto px-4">
                     <div className="grid items-start gap-12 lg:grid-cols-3">
                         {/* Main Hero Content */}
                         <div className="space-y-8 lg:col-span-2">
                             <div className="space-y-4">
-                                <Badge variant="secondary" className="w-fit">
+                                <Badge variant="secondary" className="w-fit border-white/30 bg-white/20 text-white">
                                     <Star className="mr-1 h-3 w-3" />
                                     Platform Kursus Online Personal
                                 </Badge>
-                                <h1 className="text-4xl font-bold tracking-tight lg:text-6xl">
+                                {/* Institution Logo */}
+                                {(institution?.photo_path || institution?.name) && (
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <img
+                                                src={institution?.photo_path ? `/storage/${institution.photo_path}` : '/logo.png'}
+                                                alt={`Logo ${institution?.name || 'Platform'}`}
+                                                className="h-24 w-auto rounded-xl bg-white/10 object-contain p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm md:h-32"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                <h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">
                                     Tingkatkan Skill dengan{' '}
-                                    <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                                    <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                                         {institution?.name || 'Pare EduHub'}
                                     </span>
                                 </h1>
-                                <p className="text-xl text-muted-foreground">
+                                <p className="text-xl text-gray-100">
                                     Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi. Dari materi dasar hingga
                                     advanced, semua dirancang khusus untuk pengembangan karir digital Anda.
                                 </p>
                             </div>
 
                             <div className="flex flex-col gap-4 sm:flex-row">
-                                <Button size="lg" className="text-base" asChild>
+                                <Button size="lg" className="bg-primary text-base hover:bg-primary/90" asChild>
                                     <Link href="/register">Mulai Belajar Sekarang</Link>
                                 </Button>
-                                <Button variant="outline" size="lg" className="text-base" asChild>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="border-white/30 bg-white/10 text-base text-white hover:bg-white/20"
+                                    asChild
+                                >
                                     <Link href="/courses">Lihat Semua Kursus</Link>
                                 </Button>
                             </div>
 
-                            <div className="flex items-center gap-8 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-8 text-sm text-gray-200">
                                 <div className="flex items-center gap-2">
                                     <Shield className="h-4 w-4" />
                                     <span>100% Terpercaya</span>
@@ -296,7 +342,7 @@ export default function Welcome() {
 
                         {/* Weather Widget in Hero */}
                         <div className="lg:col-span-1">
-                            <WeatherWidget />
+                            <WeatherWidget defaultLocation={institution?.address || 'Pare, Kediri'} />
                         </div>
                     </div>
                 </div>

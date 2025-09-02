@@ -33,9 +33,9 @@ function LoginFormContent({
     useEffect(() => {
         // Show toast when there are errors and this is a new submission
         if (Object.keys(errors).length > 0 && submitCount > lastSubmitCount) {
-            let toastTitle = 'Login Gagal';
+            const toastTitle = 'Login Gagal';
             let toastDescription = 'Terjadi kesalahan saat login.';
-            
+
             // Check for specific error messages
             if (errors.email) {
                 if (errors.email.includes('credentials') || errors.email.includes('tidak cocok') || errors.email.includes('do not match')) {
@@ -56,13 +56,13 @@ function LoginFormContent({
                     toastDescription = errors.password;
                 }
             }
-            
+
             toast({
                 variant: 'destructive',
                 title: toastTitle,
                 description: toastDescription,
             });
-            
+
             // Update last submit count
             setLastSubmitCount(submitCount);
         }
@@ -73,28 +73,28 @@ function LoginFormContent({
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="email">Alamat Email</Label>
-                    <Input 
-                        id="email" 
-                        type="email" 
-                        name="email" 
-                        required 
-                        autoFocus 
-                        tabIndex={1} 
-                        autoComplete="email" 
+                    <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        required
+                        autoFocus
+                        tabIndex={1}
+                        autoComplete="email"
                         placeholder="email@contoh.com"
                         className={errors.email ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
                     />
                     {errors.email && (
-                        <InputError 
+                        <InputError
                             message={
-                                errors.email.includes('credentials') || errors.email.includes('tidak cocok') 
+                                errors.email.includes('credentials') || errors.email.includes('tidak cocok')
                                     ? 'Email atau password salah'
                                     : errors.email.includes('tidak ditemukan')
-                                    ? 'Email tidak terdaftar'
-                                    : errors.email.includes('format') || errors.email.includes('valid')
-                                    ? 'Format email tidak valid'
-                                    : errors.email
-                            } 
+                                      ? 'Email tidak terdaftar'
+                                      : errors.email.includes('format') || errors.email.includes('valid')
+                                        ? 'Format email tidak valid'
+                                        : errors.email
+                            }
                         />
                     )}
                 </div>
@@ -119,16 +119,16 @@ function LoginFormContent({
                         className={errors.password ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/50' : ''}
                     />
                     {errors.password && (
-                        <InputError 
+                        <InputError
                             message={
                                 errors.password.includes('salah') || errors.password.includes('incorrect') || errors.password.includes('wrong')
                                     ? 'Password salah'
                                     : errors.password.includes('required') || errors.password.includes('wajib')
-                                    ? 'Password wajib diisi'
-                                    : errors.password.includes('minimum') || errors.password.includes('minimal')
-                                    ? 'Password minimal 8 karakter'
-                                    : errors.password
-                            } 
+                                      ? 'Password wajib diisi'
+                                      : errors.password.includes('minimum') || errors.password.includes('minimal')
+                                        ? 'Password minimal 8 karakter'
+                                        : errors.password
+                            }
                         />
                     )}
                 </div>
@@ -158,33 +158,43 @@ function LoginFormContent({
 
 export default function Login({ status, canResetPassword }: LoginProps) {
     const [submitCount, setSubmitCount] = useState(0);
-    
+
     return (
         <GuestLayout>
             <Head title="Masuk" />
-            
-            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+            <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
                 <div className="w-full max-w-md space-y-8">
                     <div className="text-center">
                         <h2 className="text-3xl font-bold tracking-tight">Masuk ke Akun Anda</h2>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Masukkan email dan password Anda untuk masuk ke platform Pare EduHub
-                        </p>
+                        <p className="mt-2 text-sm text-muted-foreground">Masukkan email dan password Anda untuk masuk ke platform Pare EduHub</p>
                     </div>
 
-                    <div className="mt-8 bg-card rounded-lg border shadow-sm p-6">
-                        <Form 
-                            method="post" 
-                            action={route('login')} 
-                            resetOnSuccess={['password']} 
+                    <div className="mt-8 rounded-lg border bg-card p-6 shadow-sm">
+                        <Form
+                            method="post"
+                            action={route('login')}
+                            resetOnSuccess={['password']}
                             className="space-y-6"
                             onBefore={() => {
                                 // Increment submit count when form is submitted
-                                setSubmitCount(prev => prev + 1);
+                                setSubmitCount((prev) => prev + 1);
                                 return true;
                             }}
+                            onSuccess={() => {
+                                // Force a full page reload after successful login
+                                // This ensures the user gets redirected properly
+                                window.location.reload();
+                            }}
                         >
-                            {({ processing, errors }) => <LoginFormContent processing={processing} errors={errors} canResetPassword={canResetPassword} submitCount={submitCount} />}
+                            {({ processing, errors }) => (
+                                <LoginFormContent
+                                    processing={processing}
+                                    errors={errors}
+                                    canResetPassword={canResetPassword}
+                                    submitCount={submitCount}
+                                />
+                            )}
                         </Form>
 
                         {status && (

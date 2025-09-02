@@ -5,12 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
     ArrowLeftRight,
@@ -79,6 +74,11 @@ const menuGroups: MenuGroup[] = [
                 label: 'Institutions',
                 icon: School,
                 href: 'admin.institutions.index',
+            },
+            {
+                label: 'Other Institutions',
+                icon: School,
+                href: 'admin.other-institutions.index',
             },
         ],
     },
@@ -152,56 +152,34 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
 
     const renderMenuItem = (item: MenuItem, itemIndex: number) => {
         const isActive = route().current(item.href);
-        
+
         const linkContent = (
             <Link
                 key={itemIndex}
                 href={safeRoute(item.href)}
                 className={cn(
                     'group relative flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
-                    isActive 
-                        ? 'bg-primary/15 text-primary shadow-sm font-semibold' 
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    isActive ? 'bg-primary/15 font-semibold text-primary shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
             >
-                <div className="flex items-center flex-1">
+                <div className="flex flex-1 items-center">
                     {/* Active indicator */}
-                    {isActive && (
-                        <div className="absolute left-0 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-primary shadow-lg" />
-                    )}
-                    
-                                                    <div className={cn(
-                                    "p-1.5 rounded-lg transition-all",
-                                    isActive 
-                                        ? "bg-primary/20" 
-                                        : "group-hover:bg-muted"
-                                )}>
-                                    <Icon 
-                                        iconNode={item.icon as any} 
-                                        className={cn(
-                                            "h-4 w-4 shrink-0 transition-all",
-                                            isActive ? "text-primary scale-110" : "text-muted-foreground"
-                                        )} 
-                                    />
-                                </div>
-                    <span
-                        className={cn(
-                            'ml-3 transition-all duration-300', 
-                            isExpanded 
-                                ? 'opacity-100' 
-                                : 'w-0 opacity-0 overflow-hidden'
-                        )}
-                    >
+                    {isActive && <div className="absolute top-1/2 left-0 h-8 w-1.5 -translate-y-1/2 rounded-r-full bg-primary shadow-lg" />}
+
+                    <div className={cn('rounded-lg p-1.5 transition-all', isActive ? 'bg-primary/20' : 'group-hover:bg-muted')}>
+                        <Icon
+                            iconNode={item.icon as any}
+                            className={cn('h-4 w-4 shrink-0 transition-all', isActive ? 'scale-110 text-primary' : 'text-muted-foreground')}
+                        />
+                    </div>
+                    <span className={cn('ml-3 transition-all duration-300', isExpanded ? 'opacity-100' : 'w-0 overflow-hidden opacity-0')}>
                         {item.label}
                     </span>
                 </div>
-                
+
                 {/* Badge */}
                 {item.badge && isExpanded && (
-                    <Badge 
-                        variant={item.badgeVariant as any || 'default'}
-                        className="ml-auto h-5 px-1.5 text-xs"
-                    >
+                    <Badge variant={(item.badgeVariant as any) || 'default'} className="ml-auto h-5 px-1.5 text-xs">
                         {item.badge}
                     </Badge>
                 )}
@@ -212,16 +190,11 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
         if (!isExpanded) {
             return (
                 <Tooltip key={itemIndex} delayDuration={0}>
-                    <TooltipTrigger asChild>
-                        {linkContent}
-                    </TooltipTrigger>
+                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                     <TooltipContent side="right" className="flex items-center gap-2">
                         <span>{item.label}</span>
                         {item.badge && (
-                            <Badge 
-                                variant={item.badgeVariant as any || 'default'}
-                                className="h-5 px-1.5 text-xs"
-                            >
+                            <Badge variant={(item.badgeVariant as any) || 'default'} className="h-5 px-1.5 text-xs">
                                 {item.badge}
                             </Badge>
                         )}
@@ -235,7 +208,7 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
 
     return (
         <TooltipProvider>
-            <aside className="flex h-full w-full flex-col bg-background border-r">
+            <aside className="flex h-full w-full flex-col border-r bg-background">
                 <div className="flex h-14 items-center justify-between border-b px-4">
                     <div className="flex items-center gap-2">
                         <AppLogo />
@@ -260,19 +233,12 @@ export default function AdminSidebar({ isExpanded = true, onToggle }: AdminSideb
                                         {group.label}
                                     </h2>
                                 )}
-                                
+
                                 {/* Group Items */}
-                                <div className="space-y-1">
-                                    {group.items.map((item, itemIndex) => renderMenuItem(item, itemIndex))}
-                                </div>
-                                
+                                <div className="space-y-1">{group.items.map((item, itemIndex) => renderMenuItem(item, itemIndex))}</div>
+
                                 {/* Add separator between groups except for the last one */}
-                                {groupIndex < menuGroups.length - 1 && (
-                                    <Separator className={cn(
-                                        "mt-4",
-                                        !isExpanded && "mx-auto w-10"
-                                    )} />
-                                )}
+                                {groupIndex < menuGroups.length - 1 && <Separator className={cn('mt-4', !isExpanded && 'mx-auto w-10')} />}
                             </div>
                         ))}
                     </div>

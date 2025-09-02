@@ -17,7 +17,6 @@ import {
     BarChart,
     BookOpen,
     Building,
-    CheckCircle,
     ChevronRight,
     Clock,
     Download,
@@ -360,10 +359,6 @@ export default function CourseShow() {
                                                 <span>Materi dapat diunduh</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <Award className="h-4 w-4 text-primary" />
-                                                <span>Sertifikat penyelesaian</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
                                                 <Globe className="h-4 w-4 text-primary" />
                                                 <span>Akses seumur hidup</span>
                                             </li>
@@ -556,32 +551,10 @@ export default function CourseShow() {
                                         <CardHeader>
                                             <CardTitle>Tentang Kursus</CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-4">
+                                        <CardContent>
                                             <div>
                                                 <h3 className="mb-2 font-semibold">Deskripsi</h3>
                                                 <p className="text-muted-foreground">{course.description}</p>
-                                            </div>
-                                            <Separator />
-                                            <div>
-                                                <h3 className="mb-2 font-semibold">Yang Akan Anda Pelajari</h3>
-                                                <ul className="space-y-2">
-                                                    <li className="flex items-start gap-2">
-                                                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
-                                                        <span>Memahami konsep dasar dan fundamental</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
-                                                        <span>Praktik langsung dengan studi kasus nyata</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
-                                                        <span>Mengerjakan proyek untuk portfolio</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
-                                                        <span>Mendapatkan sertifikat kelulusan</span>
-                                                    </li>
-                                                </ul>
                                             </div>
                                         </CardContent>
                                     </Card>

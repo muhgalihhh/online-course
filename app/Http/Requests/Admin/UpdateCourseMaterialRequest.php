@@ -37,7 +37,30 @@ class UpdateCourseMaterialRequest extends FormRequest
         } elseif ($this->input('type') === 'video_local') {
             $rules['file_path'] = 'nullable|file|mimes:mp4,mov,avi,mkv,wmv,flv,webm|max:102400'; // 100MB
         } elseif ($this->input('type') === 'video_youtube') {
-            $rules['youtube_url'] = 'required|url|regex:/^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/';
+            $rules['youtube_url'] = [
+                'required',
+                'string',
+                'url',
+                function ($attribute, $value, $fail) {
+                    // More comprehensive regex to support various YouTube URL formats
+                    $patterns = [
+                        '/^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]+(&[A-Za-z0-9_\-=&]*)?$/',
+                        '/^(https?:\/\/)?(www\.)?youtu\.be\/[A-Za-z0-9_-]+(\?[A-Za-z0-9_\-=&]*)?$/',
+                    ];
+
+                    $isValid = false;
+                    foreach ($patterns as $pattern) {
+                        if (preg_match($pattern, $value)) {
+                            $isValid = true;
+                            break;
+                        }
+                    }
+
+                    if (!$isValid) {
+                        $fail('URL YouTube tidak valid. Gunakan format yang benar.');
+                    }
+                }
+            ];
         }
 
         return $rules;

@@ -1,10 +1,10 @@
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import LiveChatWidget from '@/components/live-chat-widget';
-import { CartProvider, useCart } from '@/contexts/cart-context';
 import { CartSidebar } from '@/components/cart-sidebar';
+import LiveChatWidget from '@/components/live-chat-widget';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,28 +13,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    BookOpen,
-    GraduationCap,
-    Menu,
-    X,
-    User,
-    Settings,
-    LogOut,
-    ShoppingBag,
-    ShoppingCart,
-    Heart,
-    History,
-    CreditCard,
-    HelpCircle,
-} from 'lucide-react';
-import React, { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
-import { useAuth } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
+import WeatherDropdown from '@/components/weather-dropdown';
+import { CartProvider, useCart } from '@/contexts/cart-context';
+import { useAuth } from '@/hooks/use-auth';
 import { useToastNotifications } from '@/hooks/use-toast-notifications';
-import { usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BookOpen, GraduationCap, LogOut, Menu, ShoppingCart, User, X } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Institution {
     id: number;
@@ -61,10 +47,10 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
     const { user } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
     const { toggleCart, getPendingCount } = useCart();
-    
+
     // Initialize toast notifications
     useToastNotifications();
-    
+
     const pendingCount = getPendingCount();
 
     // Function to check if a link is active
@@ -86,12 +72,14 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
     };
 
     const getInitials = (name: string) => {
-        return name
-            ?.split(' ')
-            .map(word => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2) || 'U';
+        return (
+            name
+                ?.split(' ')
+                .map((word) => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2) || 'U'
+        );
     };
 
     return (
@@ -118,13 +106,11 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                         key={item.name}
                                         href={item.href}
                                         className={`relative text-sm font-medium transition-all hover:text-primary ${
-                                            isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                            isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
                                         }`}
                                     >
                                         {item.name}
-                                        {isActive && (
-                                            <span className="absolute -bottom-[21px] left-0 right-0 h-[3px] bg-primary rounded-t-sm" />
-                                        )}
+                                        {isActive && <span className="absolute right-0 -bottom-[21px] left-0 h-[3px] rounded-t-sm bg-primary" />}
                                     </Link>
                                 );
                             })}
@@ -132,28 +118,24 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="relative h-9 w-9 p-0"
-                                onClick={toggleCart}
-                            >
+                            <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" onClick={toggleCart}>
                                 <ShoppingCart className="h-4 w-4" />
                                 {pendingCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold text-white">
                                         {pendingCount}
                                     </span>
                                 )}
                             </Button>
+                            <WeatherDropdown defaultLocation={institution?.address || 'Pare, Kediri'} />
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
-                            
+
                             {/* Profile Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                                         <Avatar className="h-9 w-9">
-                                            <AvatarImage src={user?.avatar} alt={user?.name} />
+                                            <AvatarImage src={user?.profile_photo_url} alt={user?.name} />
                                             <AvatarFallback>{getInitials(user?.name || '')}</AvatarFallback>
                                         </Avatar>
                                     </Button>
@@ -161,10 +143,8 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                 <DropdownMenuContent className="w-56" align="end" forceMount>
                                     <DropdownMenuLabel className="font-normal">
                                         <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user?.name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">
-                                                {user?.email}
-                                            </p>
+                                            <p className="text-sm leading-none font-medium">{user?.name}</p>
+                                            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
@@ -181,10 +161,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                        onClick={handleLogout}
-                                        className="cursor-pointer text-red-600 focus:text-red-600"
-                                    >
+                                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
                                         <LogOut className="mr-2 h-4 w-4" />
                                         <span>Keluar</span>
                                     </DropdownMenuItem>
@@ -193,12 +170,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                         </div>
 
                         {/* Mobile menu button */}
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-9 w-9 p-0 md:hidden" 
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        >
+                        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                             {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </Button>
                     </div>
@@ -209,13 +181,16 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                             {/* Mobile User Info */}
                             <div className="mb-4 flex items-center gap-3 px-2">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                                    <AvatarImage src={user?.profile_photo_url} alt={user?.name} />
                                     <AvatarFallback>{getInitials(user?.name || '')}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                     <p className="text-sm font-medium">{user?.name}</p>
                                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                                 </div>
+                            </div>
+                            <div className="mb-4 px-2">
+                                <WeatherDropdown defaultLocation={institution?.address || 'Pare, Kediri'} />
                             </div>
 
                             <nav className="space-y-4">
@@ -226,7 +201,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                             key={item.name}
                                             href={item.href}
                                             className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                                isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                                isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
                                             }`}
                                             onClick={() => setIsMobileMenuOpen(false)}
                                         >
@@ -237,7 +212,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                         </Link>
                                     );
                                 })}
-                                
+
                                 <div className="space-y-2 border-t pt-4">
                                     <button
                                         onClick={() => {
@@ -249,7 +224,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                         <ShoppingCart className="h-4 w-4" />
                                         <span>Keranjang</span>
                                         {pendingCount > 0 && (
-                                            <Badge variant="outline" className="ml-auto bg-yellow-500 text-white border-yellow-500 text-xs">
+                                            <Badge variant="outline" className="ml-auto border-yellow-500 bg-yellow-500 text-xs text-white">
                                                 {pendingCount}
                                             </Badge>
                                         )}
@@ -298,7 +273,8 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                 </div>
                             </div>
                             <p className="mb-4 max-w-md text-muted-foreground">
-                                {institution?.description || 'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
+                                {institution?.description ||
+                                    'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
                             </p>
                             <div className="flex gap-4">
                                 <Button size="sm" variant="outline" className="h-9 w-9 p-0">
@@ -351,7 +327,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                 <div className="text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                         <BookOpen className="h-3 w-3" />
-                                        500+ Kursus Tersedia
+                                        Platform Pembelajaran Terpercaya
                                     </span>
                                 </div>
                             </div>
@@ -362,17 +338,6 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                     <div className="mt-8 border-t pt-8">
                         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
                             <p className="text-sm text-muted-foreground">© 2025 {institution?.name || 'Pare EduHub'}. Semua hak dilindungi.</p>
-                            <div className="flex gap-6 text-sm text-muted-foreground">
-                                <Link href="/privacy" className="transition-colors hover:text-primary">
-                                    Kebijakan Privasi
-                                </Link>
-                                <Link href="/terms" className="transition-colors hover:text-primary">
-                                    Syarat & Ketentuan
-                                </Link>
-                                <Link href="/refund" className="transition-colors hover:text-primary">
-                                    Kebijakan Pengembalian
-                                </Link>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -380,10 +345,10 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
 
             {/* Live Chat Widget - Only for Users */}
             <LiveChatWidget />
-            
+
             {/* Toast Notifications */}
             <Toaster />
-            
+
             {/* Cart Sidebar */}
             <CartSidebar />
         </div>

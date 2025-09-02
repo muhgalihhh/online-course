@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\InstitutionController as AdminInstitutionController;
+use App\Http\Controllers\Admin\OtherInstitutionController as AdminOtherInstitutionController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Admin\CourseMaterialController as AdminCourseMaterialController;
@@ -39,6 +40,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/institutions', [AdminInstitutionController::class, 'index'])->name('institutions.index');
     Route::get('/institutions/edit', [AdminInstitutionController::class, 'edit'])->name('institutions.edit');
     Route::patch('/institutions', [AdminInstitutionController::class, 'update'])->name('institutions.update');
+
+    // Other Institution Management (full CRUD)
+    Route::resource('other-institutions', AdminOtherInstitutionController::class);
 
     // Transaction Management (Read-only)
     Route::resource('transactions', AdminTransactionController::class)->only(['index', 'show']);

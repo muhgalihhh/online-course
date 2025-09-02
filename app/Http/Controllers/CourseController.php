@@ -7,11 +7,21 @@ use App\Models\Category;
 use App\Models\Institution;
 use App\Models\CourseReview;
 use App\Models\Enrollment;
+use App\Services\VideoSecurityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class CourseController extends Controller
 {
+    protected $videoSecurityService;
+
+    public function __construct(VideoSecurityService $videoSecurityService)
+    {
+        $this->videoSecurityService = $videoSecurityService;
+    }
     /**
      * Display all courses (catalog)
      */
@@ -21,10 +31,10 @@ class CourseController extends Controller
             ->where('status', 'published');
 
         // Include current user's enrollment status efficiently
-        if (auth()->check()) {
+        if (Auth::check()) {
             $query->withCount([
                 'enrollments as is_enrolled' => function ($q) {
-                    $q->where('user_id', auth()->id());
+                    $q->where('user_id', Auth::id());
                 }
             ]);
         }
@@ -344,15 +354,57 @@ class CourseController extends Controller
         $course->enrolled_at = $enrollment->enrolled_at;
         $course->completed_at = $enrollment->completed_at;
 
-        // Get completed materials for this user based on completed chapters
-        $completedChapterIds = \App\Models\ChapterProgress::where('user_id', auth()->id())
+        // Get completed materials for this user based on material progress
+        $completedMaterials = \App\Models\MaterialProgress::where('user_id', Auth::id())
             ->where('enrollment_id', $enrollment->id)
             ->where('is_completed', true)
-            ->pluck('chapter_id');
-
-        $completedMaterials = \App\Models\CourseMaterial::whereIn('chapter_id', $completedChapterIds)
-            ->pluck('id')
+            ->pluck('course_material_id')
             ->toArray();
+
+        // Generate secure URLs for videos
+        foreach ($course->chapters as $chapter) {
+            foreach ($chapter->materials as $material) {
+                if ($material->type === 'video_local' && $material->file_path) {
+                    // Generate secure URL for local videos
+                    try {
+                        $material->secure_video_url = $this->videoSecurityService->generateSecureVideoUrl(
+                            $material->id,
+                            Auth::id(),
+                            120 // 2 hours expiration
+                        );
+                        Log::info('Generated secure video URL for material ' . $material->id);
+                    } catch (\Exception $e) {
+                        // Log error but don't break the page
+                        Log::warning('Failed to generate secure video URL for material ' . $material->id . ': ' . $e->getMessage());
+
+                        // Try to set a direct URL if available
+                        if ($material->file_path) {
+                            $material->file_url = asset('storage/' . $material->file_path);
+                        }
+                    }
+                } elseif ($material->type === 'video_youtube' && $material->youtube_url) {
+                    // Generate secure URL for YouTube videos
+                    try {
+                        $material->secure_youtube_url = $this->videoSecurityService->generateSecureYouTubeUrl(
+                            $material->youtube_url,
+                            $material->id,
+                            Auth::id()
+                        );
+                        Log::info('Generated secure YouTube URL for material ' . $material->id . ' with URL: ' . $material->youtube_url);
+                    } catch (\Exception $e) {
+                        // Log error but don't break the page
+                        Log::warning('Failed to generate secure YouTube URL for material ' . $material->id . ': ' . $e->getMessage());
+                        // Keep the original YouTube URL for fallback
+                    }
+                }
+
+                // Log material info for debugging
+                Log::info('Material ' . $material->id . ' - Type: ' . $material->type . ', Title: ' . $material->title);
+                if ($material->type === 'video_youtube') {
+                    Log::info('YouTube URL: ' . ($material->youtube_url ?? 'null') . ', Secure URL: ' . ($material->secure_youtube_url ?? 'null'));
+                }
+            }
+        }
 
         return Inertia::render('courses/learn', [
             'course' => $course,
@@ -362,26 +414,28 @@ class CourseController extends Controller
     }
 
     /**
-     * Mark a chapter as completed for the current user and enrollment.
+     * Mark a material as completed for the current user and enrollment.
      */
-    public function completeChapter($courseId, $chapterId)
+    public function completeMaterial($courseId, $materialId)
     {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $course = Course::with('chapters')->findOrFail($courseId);
-        $chapter = $course->chapters()->where('id', $chapterId)->firstOrFail();
+        $course = Course::findOrFail($courseId);
+        $material = \App\Models\CourseMaterial::whereHas('chapter', function ($query) use ($course) {
+            $query->where('course_id', $course->id);
+        })->where('id', $materialId)->firstOrFail();
 
-        $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+        $enrollment = \App\Models\Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->firstOrFail();
 
-        // Find or create progress record for this chapter
-        $progress = \App\Models\ChapterProgress::firstOrCreate(
+        // Find or create progress record for this material
+        $progress = \App\Models\MaterialProgress::firstOrCreate(
             [
-                'user_id' => auth()->id(),
-                'chapter_id' => $chapter->id,
+                'user_id' => Auth::id(),
+                'course_material_id' => $material->id,
                 'enrollment_id' => $enrollment->id,
             ],
             [
@@ -393,21 +447,75 @@ class CourseController extends Controller
             $progress->markAsCompleted();
         }
 
-        // Recalculate completed materials by completed chapters
-        $completedChapterIds = \App\Models\ChapterProgress::where('user_id', auth()->id())
-            ->where('enrollment_id', $enrollment->id)
+        // Get all completed materials for this enrollment
+        $completedMaterials = \App\Models\MaterialProgress::where('enrollment_id', $enrollment->id)
             ->where('is_completed', true)
-            ->pluck('chapter_id');
+            ->pluck('course_material_id')
+            ->toArray();
 
-        $completedMaterials = \App\Models\CourseMaterial::whereIn('chapter_id', $completedChapterIds)
-            ->pluck('id')
+        return response()->json([
+            'message' => 'Material marked as completed',
+            'enrollment' => [
+                'progress' => $enrollment->fresh()->progress,
+                'completed_at' => $enrollment->fresh()->completed_at,
+            ],
+            'completedMaterials' => $completedMaterials,
+        ]);
+    }
+
+    /**
+     * Mark a chapter as completed for the current user and enrollment.
+     */
+    public function completeChapter($courseId, $chapterId)
+    {
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $course = Course::with('chapters')->findOrFail($courseId);
+        $chapter = $course->chapters()->where('id', $chapterId)->firstOrFail();
+
+        $enrollment = \App\Models\Enrollment::where('user_id', Auth::id())
+            ->where('course_id', $course->id)
+            ->firstOrFail();
+
+        // Mark all materials in this chapter as completed
+        $materials = \App\Models\CourseMaterial::where('chapter_id', $chapter->id)->get();
+
+        foreach ($materials as $material) {
+            $progress = \App\Models\MaterialProgress::firstOrCreate(
+                [
+                    'user_id' => Auth::id(),
+                    'course_material_id' => $material->id,
+                    'enrollment_id' => $enrollment->id,
+                ],
+                [
+                    'is_completed' => false,
+                ]
+            );
+
+            if (!$progress->is_completed) {
+                $progress->update([
+                    'is_completed' => true,
+                    'completed_at' => now(),
+                ]);
+            }
+        }
+
+        // Update enrollment progress
+        $enrollment->updateProgress();
+
+        // Get all completed materials for this enrollment
+        $completedMaterials = \App\Models\MaterialProgress::where('enrollment_id', $enrollment->id)
+            ->where('is_completed', true)
+            ->pluck('course_material_id')
             ->toArray();
 
         return response()->json([
             'message' => 'Chapter marked as completed',
             'enrollment' => [
-                'progress' => $enrollment->progress,
-                'completed_at' => $enrollment->completed_at,
+                'progress' => $enrollment->fresh()->progress,
+                'completed_at' => $enrollment->fresh()->completed_at,
             ],
             'completedMaterials' => $completedMaterials,
         ]);

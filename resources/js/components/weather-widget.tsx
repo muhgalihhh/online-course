@@ -1,28 +1,28 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { 
-    CloudRain, 
-    Sun, 
-    Cloud, 
-    CloudLightning, 
-    Wind, 
-    MapPin, 
-    Thermometer,
-    Droplets,
-    Eye,
-    Clock,
-    CloudSnow,
-    CloudDrizzle,
-    Loader2,
-    Search,
-    X,
-    Edit2
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Separator } from '@/components/ui/separator';
 import axios from 'axios';
+import {
+    Clock,
+    Cloud,
+    CloudDrizzle,
+    CloudLightning,
+    CloudRain,
+    CloudSnow,
+    Droplets,
+    Edit2,
+    Eye,
+    Loader2,
+    MapPin,
+    Search,
+    Sun,
+    Thermometer,
+    Wind,
+    X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface WeatherData {
     location: string;
@@ -36,26 +36,30 @@ interface WeatherData {
     description: string;
 }
 
-const WeatherWidget = () => {
+interface WeatherWidgetProps {
+    defaultLocation?: string;
+}
+
+const WeatherWidget = ({ defaultLocation = 'Pare, Kediri' }: WeatherWidgetProps) => {
     const [weather, setWeather] = useState<WeatherData>({
-        location: "Pare, Kediri",
+        location: defaultLocation,
         temperature: 28,
-        condition: "Cerah Berawan",
+        condition: 'Cerah Berawan',
         humidity: 75,
         windSpeed: 12,
         visibility: 10,
         feelsLike: 30,
         icon: <Cloud className="h-6 w-6" />,
-        description: "Cerah dengan sedikit awan"
+        description: 'Cerah dengan sedikit awan',
     });
 
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isLoading, setIsLoading] = useState(false);
-    const [searchLocation, setSearchLocation] = useState("Pare, Kediri");
+    const [searchLocation, setSearchLocation] = useState(defaultLocation);
     const [isEditingLocation, setIsEditingLocation] = useState(false);
-    const [inputLocation, setInputLocation] = useState("");
+    const [inputLocation, setInputLocation] = useState('');
     const [error, setError] = useState<string | null>(null);
-    
+
     const API_KEY = 'c652cbba36019afd965ac4cb698ba98f';
     const API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
@@ -95,7 +99,7 @@ const WeatherWidget = () => {
                     return <Sun className="h-6 w-6 text-yellow-500" />;
             }
         }
-        
+
         // Fallback to weather condition text
         switch (weatherCode.toLowerCase()) {
             case 'clear':
@@ -119,19 +123,19 @@ const WeatherWidget = () => {
     const fetchWeather = async (location: string) => {
         setIsLoading(true);
         setError(null);
-        
+
         try {
             const response = await axios.get(API_URL, {
                 params: {
                     q: location,
                     appid: API_KEY,
                     units: 'metric',
-                    lang: 'id'
-                }
+                    lang: 'id',
+                },
             });
 
             const data = response.data;
-            
+
             setWeather({
                 location: `${data.name}, ${data.sys.country}`,
                 temperature: Math.round(data.main.temp),
@@ -141,14 +145,19 @@ const WeatherWidget = () => {
                 windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
                 visibility: Math.round(data.visibility / 1000), // Convert m to km
                 feelsLike: Math.round(data.main.feels_like),
-                icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon)
+                icon: getWeatherIcon(data.weather[0].main, data.weather[0].icon),
             });
-            
+
             setSearchLocation(location);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error fetching weather:', err);
-            if (err.response?.status === 404) {
-                setError('Lokasi tidak ditemukan. Silakan coba nama kota lain.');
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosError = err as { response?: { status?: number } };
+                if (axiosError.response?.status === 404) {
+                    setError('Lokasi tidak ditemukan. Silakan coba nama kota lain.');
+                } else {
+                    setError('Gagal memuat data cuaca. Silakan coba lagi.');
+                }
             } else {
                 setError('Gagal memuat data cuaca. Silakan coba lagi.');
             }
@@ -162,7 +171,7 @@ const WeatherWidget = () => {
         if (inputLocation.trim()) {
             fetchWeather(inputLocation.trim());
             setIsEditingLocation(false);
-            setInputLocation("");
+            setInputLocation('');
         }
     };
 
@@ -170,7 +179,7 @@ const WeatherWidget = () => {
         return date.toLocaleTimeString('id-ID', {
             hour: '2-digit',
             minute: '2-digit',
-            second: '2-digit'
+            second: '2-digit',
         });
     };
 
@@ -179,14 +188,11 @@ const WeatherWidget = () => {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
         });
     };
 
-    const popularCities = [
-        "Jakarta", "Surabaya", "Bandung", "Medan", 
-        "Semarang", "Makassar", "Yogyakarta", "Bali"
-    ];
+    const popularCities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Yogyakarta', 'Bali'];
 
     return (
         <Card className="border-0 shadow-lg">
@@ -197,9 +203,7 @@ const WeatherWidget = () => {
                             <CloudRain className="h-5 w-5" />
                             Informasi Cuaca
                         </CardTitle>
-                        <CardDescription>
-                            Cuaca real-time untuk perencanaan kegiatan belajar
-                        </CardDescription>
+                        <CardDescription>Cuaca real-time untuk perencanaan kegiatan belajar</CardDescription>
                     </div>
                     <Badge variant="secondary" className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -225,13 +229,13 @@ const WeatherWidget = () => {
                                     <Button type="submit" size="sm" disabled={isLoading}>
                                         <Search className="h-4 w-4" />
                                     </Button>
-                                    <Button 
-                                        type="button" 
-                                        size="sm" 
+                                    <Button
+                                        type="button"
+                                        size="sm"
                                         variant="outline"
                                         onClick={() => {
                                             setIsEditingLocation(false);
-                                            setInputLocation("");
+                                            setInputLocation('');
                                         }}
                                     >
                                         <X className="h-4 w-4" />
@@ -244,11 +248,11 @@ const WeatherWidget = () => {
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            className="text-xs h-7 px-2"
+                                            className="h-7 px-2 text-xs"
                                             onClick={() => {
                                                 fetchWeather(city);
                                                 setIsEditingLocation(false);
-                                                setInputLocation("");
+                                                setInputLocation('');
                                             }}
                                         >
                                             {city}
@@ -264,24 +268,15 @@ const WeatherWidget = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="font-medium">{weather.location}</span>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-7 w-7 p-0"
-                                        onClick={() => setIsEditingLocation(true)}
-                                    >
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setIsEditingLocation(true)}>
                                         <Edit2 className="h-3 w-3" />
                                     </Button>
                                 </div>
                             </div>
                         )}
                     </div>
-                    
-                    {error && (
-                        <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                            {error}
-                        </div>
-                    )}
+
+                    {error && <div className="rounded bg-red-50 p-2 text-sm text-red-500 dark:bg-red-900/20">{error}</div>}
 
                     {isLoading ? (
                         <div className="flex items-center justify-center py-8">
@@ -290,7 +285,7 @@ const WeatherWidget = () => {
                     ) : (
                         <>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Thermometer className="h-4 w-4 text-muted-foreground" />
@@ -299,19 +294,19 @@ const WeatherWidget = () => {
                                 <span className="font-medium">{weather.temperature}°C</span>
                             </div>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     {weather.icon}
                                     <span className="text-sm text-muted-foreground">Kondisi</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="font-medium block">{weather.condition}</span>
+                                    <span className="block font-medium">{weather.condition}</span>
                                     <span className="text-xs text-muted-foreground capitalize">{weather.description}</span>
                                 </div>
                             </div>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Droplets className="h-4 w-4 text-muted-foreground" />
@@ -320,7 +315,7 @@ const WeatherWidget = () => {
                                 <span className="font-medium">{weather.humidity}%</span>
                             </div>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Wind className="h-4 w-4 text-muted-foreground" />
@@ -329,7 +324,7 @@ const WeatherWidget = () => {
                                 <span className="font-medium">{weather.windSpeed} km/h</span>
                             </div>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Eye className="h-4 w-4 text-muted-foreground" />
@@ -338,7 +333,7 @@ const WeatherWidget = () => {
                                 <span className="font-medium">{weather.visibility} km</span>
                             </div>
                             <Separator />
-                            
+
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Thermometer className="h-4 w-4 text-muted-foreground" />
@@ -348,18 +343,10 @@ const WeatherWidget = () => {
                             </div>
                         </>
                     )}
-                    
-                    <div className="pt-2 text-xs text-muted-foreground text-center">
-                        {formatDate(currentTime)}
-                    </div>
-                    
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => fetchWeather(searchLocation)}
-                        disabled={isLoading}
-                    >
+
+                    <div className="pt-2 text-center text-xs text-muted-foreground">{formatDate(currentTime)}</div>
+
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => fetchWeather(searchLocation)} disabled={isLoading}>
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

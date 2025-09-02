@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Auth\AuthenticationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'midtrans.webhook' => \App\Http\Middleware\VerifyMidtransWebhook::class,
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
+            'anti.piracy' => \App\Http\Middleware\AntiPiracyMiddleware::class,
         ]);
         $middleware->redirectGuestsTo('/login');
 
@@ -73,6 +75,16 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->wantsJson() || $request->inertia()) {
                 $statusCode = $e->getStatusCode();
                 $customErrorPages = [403, 404, 419, 500, 503];
+
+                // Log debugging info
+                Log::info('HttpException caught in exception handler', [
+                    'status' => $statusCode,
+                    'message' => $e->getMessage(),
+                    'url' => $request->url(),
+                    'is_inertia' => $request->inertia(),
+                    'wants_json' => $request->wantsJson(),
+                    'user_id' => $request->user() ? $request->user()->id : null,
+                ]);
 
                 // Use specific error page if available
                 if (in_array($statusCode, $customErrorPages)) {

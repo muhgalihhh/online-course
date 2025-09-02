@@ -87,12 +87,14 @@ export default function Tentang() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Accept: 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify(reviewForm),
             });
 
             if (response.ok) {
+                console.log('Review submit success');
                 toast({
                     title: 'Review Terkirim',
                     description: 'Review Anda telah berhasil dikirim dan sedang menunggu persetujuan admin.',
@@ -100,14 +102,20 @@ export default function Tentang() {
                 setReviewForm({ rating: 0, comment: '' });
                 window.location.reload();
             } else {
-                const error = await response.json();
+                let error: unknown = {};
+                try {
+                    error = await response.json();
+                } catch (e) {
+                    // ignore JSON parse error
+                }
+                console.error('Review submit failed', error, response.status);
                 toast({
                     title: 'Error',
-                    description: error.message || 'Terjadi kesalahan saat mengirim review.',
+                    description: (error as any)?.message || 'Terjadi kesalahan saat mengirim review.',
                     variant: 'destructive',
                 });
             }
-        } catch (_error) {
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Terjadi kesalahan saat mengirim review.',
@@ -341,24 +349,45 @@ export default function Tentang() {
                             </CardContent>
                         </Card>
 
-                        {/* Map */}
+                        {/* Map (Dynamic based on institution address) */}
                         <Card className="border-0 shadow-lg">
                             <CardHeader>
                                 <CardTitle>Lokasi Kami</CardTitle>
-                                <CardDescription>Temukan kami di peta</CardDescription>
+                                <CardDescription>Temukan kami di peta berdasarkan alamat yang tersimpan di database</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="aspect-video overflow-hidden rounded-lg">
-                                    <iframe
-                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3952.8661536284646!2d112.17619751477365!3d-7.805389794357686!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e78575e8b2b3c9d%3A0x5c6c21f5f5b6b6b6!2sPare%2C%20Kediri%20Regency%2C%20East%20Java!5e0!3m2!1sen!2sid!4v1634567890123!5m2!1sen!2sid"
-                                        width="100%"
-                                        height="100%"
-                                        loading="lazy"
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                        className="border-0"
-                                        title="Google Maps"
-                                    ></iframe>
-                                </div>
+                                {institution?.address && institution.address.trim() !== '' ? (
+                                    <>
+                                        <div className="aspect-video overflow-hidden rounded-lg">
+                                            {(() => {
+                                                const mapAddress = institution.address!.trim();
+                                                const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapAddress)}&output=embed`;
+                                                return (
+                                                    <iframe
+                                                        src={mapSrc}
+                                                        width="100%"
+                                                        height="100%"
+                                                        loading="lazy"
+                                                        referrerPolicy="no-referrer-when-downgrade"
+                                                        className="border-0"
+                                                        title={`Lokasi ${mapAddress}`}
+                                                    ></iframe>
+                                                );
+                                            })()}
+                                        </div>
+                                        <p className="mt-2 text-xs break-words text-muted-foreground">Alamat sumber: {institution.address}</p>
+                                    </>
+                                ) : (
+                                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                        <p className="mb-2 font-medium">Alamat belum tersedia</p>
+                                        <p className="mb-4">Alamat institusi belum ditambahkan di database sehingga peta tidak dapat ditampilkan.</p>
+                                        {auth?.user?.role === 'admin' && (
+                                            <Button asChild size="sm" variant="outline">
+                                                <a href="/admin/institutions">Tambahkan Alamat Sekarang</a>
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>

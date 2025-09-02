@@ -1,7 +1,18 @@
 <?php
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Http\Controllers\SecureVideoController;
+
+// Include test route for debugging
+require __DIR__ . '/test-youtube.php';
+require __DIR__ . '/test-youtube-web.php';
+require __DIR__ . '/debug-admin.php';
+require __DIR__ . '/debug-materials.php';
+require __DIR__ . '/test-video.php';
+require __DIR__ . '/quick-admin.php';
 
 Route::get('/', function () {
     // Fetch institution data for contact info
@@ -65,6 +76,10 @@ Route::get('/kelas-pro', [\App\Http\Controllers\CourseController::class, 'pro'])
 Route::get('/kelas-free', [\App\Http\Controllers\CourseController::class, 'free'])->name('courses.free');
 Route::get('/katalog-lembaga', [\App\Http\Controllers\CourseController::class, 'institutions'])->name('institutions.index');
 
+// Other institutions routes (accessible without login)
+Route::get('/lembaga-lain', [\App\Http\Controllers\OtherInstitutionController::class, 'index'])->name('other-institutions.index');
+Route::get('/lembaga-lain/{institution}', [\App\Http\Controllers\OtherInstitutionController::class, 'show'])->name('other-institutions.show');
+
 // Course enrollment (requires authentication)
 Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/enroll', [\App\Http\Controllers\CourseController::class, 'enroll'])->name('courses.enroll');
@@ -72,10 +87,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{id}/learn', [\App\Http\Controllers\CourseController::class, 'learn'])->name('courses.learn');
     Route::post('/courses/{course}/chapters/{chapter}/complete', [\App\Http\Controllers\CourseController::class, 'completeChapter'])
         ->name('courses.chapters.complete');
+    Route::post('/courses/{course}/materials/{material}/complete', [\App\Http\Controllers\CourseController::class, 'completeMaterial'])
+        ->name('courses.materials.complete');
     Route::post('/payments/courses/{id}', [\App\Http\Controllers\PaymentController::class, 'createCourseTransaction'])
         ->name('payments.courses.create');
 
-    // Review routes
+    // Review routes (requires authentication)
     Route::post('/reviews/institution', [\App\Http\Controllers\ReviewController::class, 'storeInstitutionReview'])
         ->name('reviews.institution.store');
     Route::post('/reviews/course/{course}', [\App\Http\Controllers\ReviewController::class, 'storeCourseReview'])
@@ -186,8 +203,16 @@ require __DIR__ . '/settings.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/user.php';
 
+// Secure video routes MUST be placed BEFORE the catch-all fallback route.
+// Previously these routes were below the fallback, causing /secure/... URLs
+// to be intercepted by the wildcard and returning a 404 page inside the iframe/video.
+Route::middleware(['auth', 'anti.piracy'])->group(function () {
+    Route::get('/secure/video/{token}', [SecureVideoController::class, 'streamVideo'])->name('secure.video.stream');
+    Route::get('/secure/youtube/embed', [SecureVideoController::class, 'youtubeEmbed'])->name('secure.youtube.embed');
+});
+
 // Catch all route for handling 404 and undefined routes
-// This must be at the very bottom of all routes
+// This must remain at the very bottom AFTER all other explicit routes
 Route::any('/{any}', function () {
     // Check if user is authenticated and trying to access admin/user routes
     $path = request()->path();

@@ -1,15 +1,14 @@
 // resources/js/pages/admin/analytics.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdminFilter } from '@/components/admin/AdminFilter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChartCard, LineChartComponent, BarChartComponent, PieChartComponent } from '@/components/ui/charts';
-import { DashboardFilters } from '@/components/dashboard-filters';
-import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChartComponent, ChartCard, LineChartComponent, PieChartComponent } from '@/components/ui/charts';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem, type PageProps } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Users, DollarSign, Calendar, Download, Eye, Target } from 'lucide-react';
+import { Calendar, DollarSign, Download, Eye, Target, Users } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -33,7 +32,15 @@ interface AnalyticsProps extends PageProps {
     filters?: Record<string, any>;
 }
 
-export default function Analytics({ userStats = [], revenueStats = [], topCourses = [], courseTypeDistribution = [], categoryPerformance = [], totals, filters = {} }: AnalyticsProps) {
+export default function Analytics({
+    userStats = [],
+    revenueStats = [],
+    topCourses = [],
+    courseTypeDistribution = [],
+    categoryPerformance = [],
+    totals,
+    filters = {},
+}: AnalyticsProps) {
     const [chartPeriod, setChartPeriod] = useState((filters.period as string) || '30d');
 
     const monthLabel = (y: number, m: number) => {
@@ -41,8 +48,12 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
         return date.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
     };
 
-    const userGrowthData = userStats.map(r => ({ month: monthLabel(r.year, r.month), users: (r.users ?? 0) }));
-    const revenueData = revenueStats.map(r => ({ month: monthLabel(r.year, r.month), revenue: r.revenue ?? 0, transactions: r.transactions_count ?? 0 }));
+    const userGrowthData = userStats.map((r) => ({ month: monthLabel(r.year, r.month), users: r.users ?? 0 }));
+    const revenueData = revenueStats.map((r) => ({
+        month: monthLabel(r.year, r.month),
+        revenue: r.revenue ?? 0,
+        transactions: r.transactions_count ?? 0,
+    }));
 
     const handleExportAnalytics = () => {
         // @ts-ignore
@@ -52,21 +63,15 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Analytics" />
-            
+
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-                    <p className="text-muted-foreground">
-                        Analisis mendalam tentang performa platform dan pengguna
-                    </p>
+                    <p className="text-muted-foreground">Analisis mendalam tentang performa platform dan pengguna</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setChartPeriod('30d')}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setChartPeriod('30d')}>
                         <Calendar className="mr-2 h-4 w-4" />
                         Last 30 Days
                     </Button>
@@ -150,38 +155,27 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                 title="User Growth Trends"
                 description="Pertumbuhan pengguna dalam 6 bulan terakhir"
                 trend={{
-                    value: "+18%",
+                    value: '+18%',
                     isPositive: true,
-                    label: "vs bulan lalu"
+                    label: 'vs bulan lalu',
                 }}
             >
-                <LineChartComponent
-                    data={userGrowthData}
-                    index="month"
-                    categories={["users"]}
-                    colors={["#3b82f6"]}
-                />
+                <LineChartComponent data={userGrowthData} index="month" categories={['users']} colors={['#3b82f6']} />
             </ChartCard>
 
             {/* Revenue and Transactions */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <ChartCard
-                    title="Revenue Trends"
-                    description="Pendapatan dan transaksi per bulan"
-                >
+                <ChartCard title="Revenue Trends" description="Pendapatan dan transaksi per bulan">
                     <BarChartComponent
                         data={revenueData}
                         index="month"
-                        categories={["revenue"]}
-                        colors={["#10b981"]}
+                        categories={['revenue']}
+                        colors={['#10b981']}
                         valueFormatter={(value) => `Rp ${Math.round(value).toLocaleString('id-ID')}`}
                     />
                 </ChartCard>
 
-                <ChartCard
-                    title="Course Type Distribution"
-                    description="Perbandingan kursus Pro vs Free"
-                >
+                <ChartCard title="Course Type Distribution" description="Perbandingan kursus Pro vs Free">
                     <PieChartComponent data={courseTypeDistribution} />
                 </ChartCard>
             </div>
@@ -194,30 +188,27 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                 <CardContent>
                     <div className="space-y-4">
                         {topCourses.map((course, index) => (
-                            <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div key={course.id} className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="mb-1 flex items-center gap-2">
                                         <h4 className="font-medium">{course.title}</h4>
                                         {course.status && (
-                                            <Badge 
-                                                variant={course.status === 'published' ? 'success' : 'warning'} 
-                                                className="text-xs"
-                                            >
+                                            <Badge variant={course.status === 'published' ? 'success' : 'warning'} className="text-xs">
                                                 {course.status === 'published' ? 'Published' : 'Draft'}
                                             </Badge>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                                         <span>{(course.enrollments_count ?? 0).toLocaleString('id-ID')} enrollments</span>
                                         <div className="flex items-center gap-1">
                                             <span>★</span>
-                                            <span>{(course.avg_rating ?? 0).toFixed(1)}</span>
+                                            <span>{(Number(course.avg_rating) || 0).toFixed(1)}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => router.visit(route('admin.courses.show', { course: course.id }))}
                                     >
@@ -248,9 +239,7 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                                         </div>
                                     </div>
                                 ))}
-                                {categoryPerformance.length === 0 && (
-                                    <p className="text-sm text-muted-foreground">Tidak ada data kategori</p>
-                                )}
+                                {categoryPerformance.length === 0 && <p className="text-sm text-muted-foreground">Tidak ada data kategori</p>}
                             </div>
                         </CardContent>
                     </Card>
@@ -269,9 +258,7 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                                             <span className="text-sm">{type.name} Courses</span>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">({type.value})</span>
-                                                <Badge variant={type.name === 'Pro' ? 'default' : 'secondary'}>
-                                                    {percentage}%
-                                                </Badge>
+                                                <Badge variant={type.name === 'Pro' ? 'default' : 'secondary'}>{percentage}%</Badge>
                                             </div>
                                         </div>
                                     );
@@ -289,25 +276,22 @@ export default function Analytics({ userStats = [], revenueStats = [], topCourse
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm">Avg Rating</span>
                                     <Badge variant="secondary">
-                                        {topCourses.length > 0 
-                                            ? (topCourses.reduce((sum, c) => sum + (c.avg_rating || 0), 0) / topCourses.length).toFixed(1)
-                                            : '0.0'
-                                        } ⭐
+                                        {topCourses.length > 0
+                                            ? (topCourses.reduce((sum, c) => sum + (Number(c.avg_rating) || 0), 0) / topCourses.length).toFixed(1)
+                                            : '0.0'}{' '}
+                                        ⭐
                                     </Badge>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm">Total Enrollments</span>
-                                    <Badge variant="secondary">
-                                        {topCourses.reduce((sum, c) => sum + (c.enrollments_count || 0), 0)}
-                                    </Badge>
+                                    <Badge variant="secondary">{topCourses.reduce((sum, c) => sum + (c.enrollments_count || 0), 0)}</Badge>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm">Avg per Course</span>
                                     <Badge variant="secondary">
-                                        {totals.totalCourses > 0 
+                                        {totals.totalCourses > 0
                                             ? Math.round(topCourses.reduce((sum, c) => sum + (c.enrollments_count || 0), 0) / totals.totalCourses)
-                                            : 0
-                                        }
+                                            : 0}
                                     </Badge>
                                 </div>
                             </div>

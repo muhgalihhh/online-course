@@ -24,6 +24,9 @@ class ReviewController extends Controller
     $institution = Institution::first();
 
     if (!$institution) {
+      if ($request->expectsJson()) {
+        return response()->json(['message' => 'Institusi tidak ditemukan.'], 404);
+      }
       return back()->with('error', 'Institusi tidak ditemukan.');
     }
 
@@ -33,17 +36,25 @@ class ReviewController extends Controller
       ->first();
 
     if ($existingReview) {
+      if ($request->expectsJson()) {
+        return response()->json(['message' => 'Anda sudah memberikan review untuk institusi ini.'], 422);
+      }
       return back()->with('error', 'Anda sudah memberikan review untuk institusi ini.');
     }
 
-    Review::create([
+    $review = Review::create([
       'user_id' => Auth::id(),
       'institution_id' => $institution->id,
       'rating' => $request->rating,
       'comment' => $request->comment,
       'status' => 'pending', // Will be approved by admin
     ]);
-
+    if ($request->expectsJson()) {
+      return response()->json([
+        'message' => 'Review Anda telah berhasil dikirim dan sedang menunggu persetujuan admin.',
+        'data' => $review,
+      ], 201);
+    }
     return back()->with('success', 'Review Anda telah berhasil dikirim dan sedang menunggu persetujuan admin.');
   }
 

@@ -1,9 +1,9 @@
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
-import { Button } from '@/components/ui/button';
-import { CartProvider, useCart } from '@/contexts/cart-context';
 import { CartSidebar } from '@/components/cart-sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,27 +12,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    BookOpen,
-    GraduationCap,
-    Menu,
-    X,
-    User,
-    Settings,
-    LogOut,
-    ShoppingBag,
-    ShoppingCart,
-    Heart,
-    History,
-    CreditCard,
-    HelpCircle,
-} from 'lucide-react';
-import React, { useState } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
-import { useAuth } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
+import WeatherButton from '@/components/weather-button';
+import { CartProvider, useCart } from '@/contexts/cart-context';
+import { useAuth } from '@/hooks/use-auth';
 import { useToastNotifications } from '@/hooks/use-toast-notifications';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BookOpen, GraduationCap, HelpCircle, LogOut, Menu, Settings, ShoppingCart, User, X } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Institution {
     id: number;
@@ -59,10 +46,10 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
     const { user, isAuthenticated } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
     const { toggleCart, getPendingCount } = useCart();
-    
+
     // Initialize toast notifications
     useToastNotifications();
-    
+
     const pendingCount = getPendingCount();
 
     const handleLogout = () => {
@@ -70,12 +57,14 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
     };
 
     const getInitials = (name: string) => {
-        return name
-            ?.split(' ')
-            .map(word => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2) || 'U';
+        return (
+            name
+                ?.split(' ')
+                .map((word) => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2) || 'U'
+        );
     };
 
     // Function to check if a link is active
@@ -92,6 +81,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
         { name: 'Kelas Free', href: '/kelas-free', requiresAuth: false },
         { name: 'Kelas Anda', href: isAuthenticated ? '/user/my-courses' : '/dashboard', requiresAuth: false },
         { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
+        { name: 'Lembaga Lain', href: '/lembaga-lain', requiresAuth: false },
     ];
 
     return (
@@ -121,7 +111,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                             preserveScroll: true,
                                             onSuccess: () => {
                                                 // Flash message is handled by server
-                                            }
+                                            },
                                         });
                                     }
                                 };
@@ -131,13 +121,11 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                         href={item.href}
                                         onClick={handleClick}
                                         className={`relative text-sm font-medium transition-all hover:text-primary ${
-                                            isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                            isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
                                         }`}
                                     >
                                         {item.name}
-                                        {isActive && (
-                                            <span className="absolute -bottom-[21px] left-0 right-0 h-[3px] bg-primary rounded-t-sm" />
-                                        )}
+                                        {isActive && <span className="absolute right-0 -bottom-[21px] left-0 h-[3px] rounded-t-sm bg-primary" />}
                                     </Link>
                                 );
                             })}
@@ -145,19 +133,15 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="relative h-9 w-9 p-0"
-                                onClick={toggleCart}
-                            >
+                            <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" onClick={toggleCart}>
                                 <ShoppingCart className="h-4 w-4" />
                                 {pendingCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-[10px] font-bold text-white flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold text-white">
                                         {pendingCount}
                                     </span>
                                 )}
                             </Button>
+                            <WeatherButton defaultLocation={institution?.address || 'Pare, Kediri'} />
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
                             {isAuthenticated && user ? (
@@ -173,10 +157,8 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                     <DropdownMenuContent className="w-56" align="end" forceMount>
                                         <DropdownMenuLabel className="font-normal">
                                             <div className="flex flex-col space-y-1">
-                                                <p className="text-sm font-medium leading-none">{user.name}</p>
-                                                <p className="text-xs leading-none text-muted-foreground">
-                                                    {user.email}
-                                                </p>
+                                                <p className="text-sm leading-none font-medium">{user.name}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                                             </div>
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
@@ -206,10 +188,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem 
-                                            onClick={handleLogout}
-                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                        >
+                                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
                                             <LogOut className="mr-2 h-4 w-4" />
                                             <span>Keluar</span>
                                         </DropdownMenuItem>
@@ -228,12 +207,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                         </div>
 
                         {/* Mobile menu button */}
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-9 w-9 p-0 md:hidden" 
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        >
+                        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                             {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </Button>
                     </div>
@@ -252,7 +226,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                                 preserveScroll: true,
                                                 onSuccess: () => {
                                                     // Flash message is handled by server
-                                                }
+                                                },
                                             });
                                         }
                                         setIsMobileMenuOpen(false);
@@ -262,7 +236,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                             key={item.name}
                                             href={item.href}
                                             className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                                isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                                                isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
                                             }`}
                                             onClick={handleClick}
                                         >
@@ -274,10 +248,10 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                     );
                                 })}
                                 <div className="space-y-4 border-t pt-4">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="w-full justify-start relative"
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="relative w-full justify-start"
                                         onClick={() => {
                                             setIsMobileMenuOpen(false);
                                             toggleCart();
@@ -286,11 +260,14 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                         <ShoppingCart className="mr-2 h-4 w-4" />
                                         Keranjang
                                         {pendingCount > 0 && (
-                                            <Badge variant="outline" className="ml-auto bg-yellow-500 text-white border-yellow-500">
+                                            <Badge variant="outline" className="ml-auto border-yellow-500 bg-yellow-500 text-white">
                                                 {pendingCount}
                                             </Badge>
                                         )}
                                     </Button>
+                                    <div className="px-2">
+                                        <WeatherButton defaultLocation={institution?.address || 'Pare, Kediri'} />
+                                    </div>
                                     {isAuthenticated && user ? (
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-3 px-2 py-1">
@@ -304,23 +281,35 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <Link href="/dashboard" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                <Link
+                                                    href="/dashboard"
+                                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                                                >
                                                     <User className="h-4 w-4" />
                                                     Dashboard
                                                 </Link>
-                                                <Link href="/user/my-courses" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                <Link
+                                                    href="/user/my-courses"
+                                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                                                >
                                                     <BookOpen className="h-4 w-4" />
                                                     Kelas Saya
                                                 </Link>
-                                                <Link href="/user/profile" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                <Link
+                                                    href="/user/profile"
+                                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                                                >
                                                     <Settings className="h-4 w-4" />
                                                     Pengaturan
                                                 </Link>
-                                                <Link href="/help" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                                                <Link
+                                                    href="/help"
+                                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                                                >
                                                     <HelpCircle className="h-4 w-4" />
                                                     Bantuan
                                                 </Link>
-                                                <button 
+                                                <button
                                                     onClick={handleLogout}
                                                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent"
                                                 >
@@ -365,7 +354,8 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                 </div>
                             </div>
                             <p className="mb-4 max-w-md text-muted-foreground">
-                                {institution?.description || 'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
+                                {institution?.description ||
+                                    'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
                             </p>
                             <div className="flex gap-4">
                                 <Button size="sm" variant="outline" className="h-9 w-9 p-0">
@@ -379,8 +369,8 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                             <h4 className="mb-4 font-semibold">Menu Utama</h4>
                             <ul className="space-y-2">
                                 <li>
-                                    <Link 
-                                        href={isAuthenticated ? "/kelas-pro" : "/login"} 
+                                    <Link
+                                        href={isAuthenticated ? '/kelas-pro' : '/login'}
                                         className="text-muted-foreground transition-colors hover:text-primary"
                                         onClick={(e) => {
                                             if (!isAuthenticated) {
@@ -393,8 +383,8 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link 
-                                        href={isAuthenticated ? "/kelas-free" : "/login"} 
+                                    <Link
+                                        href={isAuthenticated ? '/kelas-free' : '/login'}
                                         className="text-muted-foreground transition-colors hover:text-primary"
                                         onClick={(e) => {
                                             if (!isAuthenticated) {
@@ -411,7 +401,6 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                         Tentang Kami
                                     </Link>
                                 </li>
-
                             </ul>
                         </div>
 
@@ -437,7 +426,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                 <div className="text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">
                                         <BookOpen className="h-3 w-3" />
-                                        500+ Kursus Tersedia
+                                        Platform Pembelajaran Terpercaya
                                     </span>
                                 </div>
                             </div>
@@ -448,25 +437,14 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                     <div className="mt-8 border-t pt-8">
                         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
                             <p className="text-sm text-muted-foreground">© 2025 {institution?.name || 'Pare EduHub'}. Semua hak dilindungi.</p>
-                            <div className="flex gap-6 text-sm text-muted-foreground">
-                                <Link href="/privacy" className="transition-colors hover:text-primary">
-                                    Kebijakan Privasi
-                                </Link>
-                                <Link href="/terms" className="transition-colors hover:text-primary">
-                                    Syarat & Ketentuan
-                                </Link>
-                                <Link href="/refund" className="transition-colors hover:text-primary">
-                                    Kebijakan Pengembalian
-                                </Link>
-                            </div>
                         </div>
                     </div>
                 </div>
             </footer>
-            
+
             {/* Toast Notifications */}
             <Toaster />
-            
+
             {/* Cart Sidebar */}
             <CartSidebar />
         </div>

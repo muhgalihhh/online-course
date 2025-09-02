@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Institution;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Middleware;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -24,6 +25,18 @@ class HandleInertiaRequests extends Middleware
         // Skip Inertia processing for API routes
         if ($request->is('api/*')) {
             return $next($request);
+        }
+
+        // Log debugging info for admin routes
+        if ($request->is('admin/*')) {
+            Log::info('HandleInertiaRequests: Processing admin request', [
+                'url' => $request->url(),
+                'is_inertia' => $request->header('X-Inertia') !== null,
+                'x_inertia_header' => $request->header('X-Inertia'),
+                'accept_header' => $request->header('Accept'),
+                'user_id' => $request->user() ? $request->user()->id : null,
+                'user_role' => $request->user() ? $request->user()->role : null,
+            ]);
         }
 
         return parent::handle($request, $next);

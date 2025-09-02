@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './pare-theme.css';
+@import './security.css';
 
 @plugin 'tailwindcss-animate';
 

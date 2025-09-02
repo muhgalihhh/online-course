@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class StoreCourseMaterialRequest extends FormRequest
 {
@@ -11,7 +12,20 @@ class StoreCourseMaterialRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        Log::info('StoreCourseMaterialRequest - Authorization check');
         return true;
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation()
+    {
+        Log::info('StoreCourseMaterialRequest - Prepare for validation', [
+            'all_input' => $this->all(),
+            'type' => $this->input('type'),
+            'youtube_url' => $this->input('youtube_url'),
+        ]);
     }
 
     /**
@@ -21,6 +35,11 @@ class StoreCourseMaterialRequest extends FormRequest
      */
     public function rules(): array
     {
+        Log::info('StoreCourseMaterialRequest - Building rules', [
+            'type' => $this->input('type'),
+            'has_file' => $this->hasFile('file_path'),
+        ]);
+
         $rules = [
             'chapter_id' => 'required|exists:chapters,id',
             'title' => 'required|string|max:255',
@@ -37,9 +56,33 @@ class StoreCourseMaterialRequest extends FormRequest
         } elseif ($this->input('type') === 'video_local') {
             $rules['file_path'] = 'required|file|mimes:mp4,mov,avi,mkv,wmv,flv,webm|max:102400'; // 100MB
         } elseif ($this->input('type') === 'video_youtube') {
-            $rules['youtube_url'] = 'required|url|regex:/^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/';
+            $rules['youtube_url'] = [
+                'required',
+                'string',
+                'url',
+                function ($attribute, $value, $fail) {
+                    // More comprehensive regex to support various YouTube URL formats
+                    $patterns = [
+                        '/^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]+(&[A-Za-z0-9_\-=&]*)?$/',
+                        '/^(https?:\/\/)?(www\.)?youtu\.be\/[A-Za-z0-9_-]+(\?[A-Za-z0-9_\-=&]*)?$/',
+                    ];
+
+                    $isValid = false;
+                    foreach ($patterns as $pattern) {
+                        if (preg_match($pattern, $value)) {
+                            $isValid = true;
+                            break;
+                        }
+                    }
+
+                    if (!$isValid) {
+                        $fail('URL YouTube tidak valid. Gunakan format yang benar.');
+                    }
+                }
+            ];
         }
 
+        Log::info('StoreCourseMaterialRequest - Final rules', $rules);
         return $rules;
     }
 
@@ -71,5 +114,18 @@ class StoreCourseMaterialRequest extends FormRequest
             'youtube_url.required' => 'URL YouTube wajib diisi untuk tipe Video YouTube.',
             'youtube_url.regex' => 'URL YouTube tidak valid. Gunakan format yang benar.',
         ];
+    }
+
+    /**
+     * Handle a failed validation attempt.
+     */
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        Log::error('StoreCourseMaterialRequest - Validation failed', [
+            'errors' => $validator->errors()->toArray(),
+            'input_data' => $this->all(),
+        ]);
+
+        parent::failedValidation($validator);
     }
 }

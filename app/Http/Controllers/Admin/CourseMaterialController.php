@@ -10,6 +10,7 @@ use App\Models\Chapter;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,7 +28,7 @@ class CourseMaterialController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%");
+                    ->orWhere('content', 'like', "%{$search}%");
             });
         }
 
@@ -52,7 +53,7 @@ class CourseMaterialController extends Controller
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->get('date_from'));
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->get('date_to'));
         }
@@ -64,27 +65,27 @@ class CourseMaterialController extends Controller
 
         // Get materials with proper grouping
         $materials = $query->paginate(10)->withQueryString();
-        
+
         // Group materials by course and chapter for better display
         $groupedMaterials = [];
         foreach ($materials->items() as $material) {
             $courseId = $material->chapter->course->id;
             $chapterId = $material->chapter->id;
-            
+
             if (!isset($groupedMaterials[$courseId])) {
                 $groupedMaterials[$courseId] = [
                     'course' => $material->chapter->course,
                     'chapters' => []
                 ];
             }
-            
+
             if (!isset($groupedMaterials[$courseId]['chapters'][$chapterId])) {
                 $groupedMaterials[$courseId]['chapters'][$chapterId] = [
                     'chapter' => $material->chapter,
                     'materials' => []
                 ];
             }
-            
+
             $groupedMaterials[$courseId]['chapters'][$chapterId]['materials'][] = $material;
         }
 
@@ -114,38 +115,68 @@ class CourseMaterialController extends Controller
      */
     public function store(StoreCourseMaterialRequest $request)
     {
-        $data = $request->validated();
-        
-        // Handle file upload untuk type pdf, image, dan video_local
-        if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image', 'video_local'])) {
-            $filePath = $request->file('file_path')->store('materials', 'public');
-            $data['file_path'] = $filePath;
-        }
-        
-        // Pastikan youtube_url kosong jika type bukan video_youtube
-        if ($data['type'] !== 'video_youtube') {
-            $data['youtube_url'] = null;
-        }
-        
-        // Pastikan file_path kosong jika type adalah video_youtube
-        if ($data['type'] === 'video_youtube') {
-            $data['file_path'] = null;
-        }
+        Log::info('Store Material - Request Data:', $request->all());
 
-        $material = CourseMaterial::create($data);
-        
-        // Get the course_id from the created material's chapter
-        $chapter = Chapter::find($material->chapter_id);
-        $courseId = $chapter ? $chapter->course_id : null;
+        try {
+            $data = $request->validated();
 
-        // Redirect with selected_course parameter if available
-        $redirectUrl = route('admin.materials.index');
-        if ($courseId) {
-            $redirectUrl .= '?selected_course=' . $courseId;
+            Log::info('Store Material - Validated Data:', $data);
+
+            // Handle file upload untuk type pdf, image, dan video_local
+            if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image', 'video_local'])) {
+                $filePath = $request->file('file_path')->store('materials', 'public');
+                $data['file_path'] = $filePath;
+            }
+
+            // Pastikan youtube_url kosong jika type bukan video_youtube
+            if ($data['type'] !== 'video_youtube') {
+                $data['youtube_url'] = null;
+            }
+
+            // Pastikan file_path kosong jika type adalah video_youtube
+            if ($data['type'] === 'video_youtube') {
+                $data['file_path'] = null;
+            }
+
+            Log::info('Store Material - Final Data Before Create:', $data);
+
+            $material = CourseMaterial::create($data);
+
+            Log::info('Store Material - Created Material:', $material->toArray());
+
+            // Update progress for all enrollments in this course when new material is added
+            $chapter = Chapter::find($material->chapter_id);
+            if ($chapter) {
+                $enrollments = \App\Models\Enrollment::where('course_id', $chapter->course_id)->get();
+                foreach ($enrollments as $enrollment) {
+                    $enrollment->updateProgress();
+                }
+            }
+
+            // Get the course_id from the created material's chapter
+            $chapter = Chapter::find($material->chapter_id);
+            $courseId = $chapter ? $chapter->course_id : null;
+
+            // Redirect with selected_course parameter if available
+            $redirectUrl = route('admin.materials.index');
+            if ($courseId) {
+                $redirectUrl .= '?selected_course=' . $courseId;
+            }
+
+            return redirect($redirectUrl)
+                ->with('success', 'Materi kursus berhasil dibuat.');
+
+        } catch (\Exception $e) {
+            Log::error('Store Material - Exception:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan materi: ' . $e->getMessage());
         }
-
-        return redirect($redirectUrl)
-            ->with('success', 'Materi kursus berhasil dibuat.');
     }
 
     /**
@@ -164,41 +195,52 @@ class CourseMaterialController extends Controller
      */
     public function update(UpdateCourseMaterialRequest $request, CourseMaterial $material)
     {
+        Log::info('Update Material - Request Data:', $request->all());
+        Log::info('Update Material - Current Material:', $material->toArray());
+
         $data = $request->validated();
         $oldType = $material->type;
-        
+
+        Log::info('Update Material - Validated Data:', $data);
+
         // Jika type berubah, hapus file lama yang tidak relevan
         if ($oldType !== $data['type']) {
             if ($oldType !== 'video_youtube' && $material->file_path) {
                 Storage::disk('public')->delete($material->file_path);
+                // Setelah delete file, pastikan file_path di database juga dihapus
                 $material->file_path = null;
+                $material->save(); // Save perubahan file_path
             }
         }
-        
+
         // Handle file upload untuk type pdf, image, dan video_local
         if ($request->hasFile('file_path') && in_array($data['type'], ['pdf', 'image', 'video_local'])) {
             // Hapus file lama jika ada
             if ($material->file_path) {
                 Storage::disk('public')->delete($material->file_path);
             }
-            
+
             // Upload file baru
             $filePath = $request->file('file_path')->store('materials', 'public');
             $data['file_path'] = $filePath;
         }
-        
+
         // Pastikan youtube_url kosong jika type bukan video_youtube
         if ($data['type'] !== 'video_youtube') {
             $data['youtube_url'] = null;
         }
-        
+
         // Pastikan file_path kosong jika type adalah video_youtube
         if ($data['type'] === 'video_youtube') {
             $data['file_path'] = null;
+            // Jika ada file lama dan belum dihapus, hapus sekarang
+            if ($material->file_path && $oldType !== 'video_youtube') {
+                Storage::disk('public')->delete($material->file_path);
+            }
         }
 
         $material->update($data);
-        
+
         // Get the course_id from the updated material's chapter
         $chapter = Chapter::find($material->chapter_id);
         $courseId = $chapter ? $chapter->course_id : null;
@@ -221,13 +263,24 @@ class CourseMaterialController extends Controller
         // Get the course_id before deleting
         $chapter = Chapter::find($material->chapter_id);
         $courseId = $chapter ? $chapter->course_id : null;
-        
+
         // Hapus file terkait jika ada
         if ($material->file_path) {
             Storage::disk('public')->delete($material->file_path);
         }
-        
+
+        // Delete related material progress records
+        \App\Models\MaterialProgress::where('course_material_id', $material->id)->delete();
+
         $material->delete();
+
+        // Update progress for all enrollments in this course when material is deleted
+        if ($courseId) {
+            $enrollments = \App\Models\Enrollment::where('course_id', $courseId)->get();
+            foreach ($enrollments as $enrollment) {
+                $enrollment->updateProgress();
+            }
+        }
 
         // Redirect with selected_course parameter if available
         $redirectUrl = route('admin.materials.index');
@@ -238,7 +291,7 @@ class CourseMaterialController extends Controller
         return redirect($redirectUrl)
             ->with('success', 'Materi kursus berhasil dihapus.');
     }
-    
+
     /**
      * Tampilkan detail materi.
      */

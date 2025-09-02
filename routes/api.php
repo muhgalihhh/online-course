@@ -8,6 +8,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Institution location for weather widget
+Route::get('/institution/location', function () {
+    $institution = \App\Models\Institution::first();
+    return response()->json([
+        'address' => $institution?->address ?? 'Pare, Kediri'
+    ]);
+});
+
 // Transaction API routes
 Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/transactions', [PaymentController::class, 'getUserTransactions'])

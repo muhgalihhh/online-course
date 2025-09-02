@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test YouTube Material Form</title>
+</head>
+<body>
+    <h1>Test YouTube Material Creation</h1>
+
+    <form action="/admin/materials" method="POST">
+        <input type="hidden" name="_token" value="test-token">
+
+        <label for="chapter_id">Chapter ID:</label>
+        <input type="number" name="chapter_id" id="chapter_id" value="1" required><br><br>
+
+        <label for="title">Title:</label>
+        <input type="text" name="title" id="title" value="Test YouTube Video" required><br><br>
+
+        <label for="order">Order:</label>
+        <input type="number" name="order" id="order" value="1" required><br><br>
+
+        <label for="type">Type:</label>
+        <select name="type" id="type" required>
+            <option value="">Select Type</option>
+            <option value="pdf">PDF</option>
+            <option value="image">Image</option>
+            <option value="video_local">Video Local</option>
+            <option value="video_youtube" selected>Video YouTube</option>
+        </select><br><br>
+
+        <label for="youtube_url">YouTube URL:</label>
+        <input type="url" name="youtube_url" id="youtube_url" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" required><br><br>
+
+        <label for="is_preview">Is Preview:</label>
+        <input type="checkbox" name="is_preview" id="is_preview" value="1"><br><br>
+
+        <button type="submit">Create Material</button>
+    </form>
+
+    <script>
+        // Get CSRF token
+        fetch('/sanctum/csrf-cookie').then(() => {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (token) {
+                document.querySelector('input[name="_token"]').value = token;
+            }
+        });
+    </script>
+</body>
+</html>

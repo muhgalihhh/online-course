@@ -13,6 +13,10 @@ return new class extends Migration {
             $table->foreignId('institution_id')->constrained()->onDelete('cascade');
             $table->unsignedTinyInteger('rating');
             $table->text('comment')->nullable();
+            // Status kolom ditambahkan langsung agar instalasi baru tidak perlu migration tambahan
+            if (!Schema::hasColumn('reviews', 'status')) {
+                $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            }
             $table->timestamps();
         });
     }
