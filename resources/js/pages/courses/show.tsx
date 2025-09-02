@@ -100,12 +100,13 @@ interface RelatedCourse {
 interface PageProps {
     course: Course;
     isEnrolled: boolean;
+    hasCompletedTransaction?: boolean;
     relatedCourses: RelatedCourse[];
     [key: string]: unknown;
 }
 
 export default function CourseShow() {
-    const { course, isEnrolled, relatedCourses } = usePage<PageProps>().props;
+    const { course, isEnrolled, hasCompletedTransaction = false, relatedCourses } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
     const { toast } = useToast();
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -328,11 +329,19 @@ export default function CourseShow() {
                                         </p>
                                         {course.is_pro && <p className="text-sm text-muted-foreground">Harga sudah termasuk pajak</p>}
                                         {isEnrolled && <p className="mt-2 text-sm text-green-600">Anda sudah terdaftar di kursus ini</p>}
+                                        {hasCompletedTransaction && !isEnrolled && (
+                                            <p className="mt-2 text-sm text-blue-600">Pembayaran sudah berhasil, sedang diproses pendaftaran</p>
+                                        )}
                                     </div>
 
                                     {isEnrolled ? (
                                         <Button size="lg" className="w-full" asChild>
                                             <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
+                                        </Button>
+                                    ) : hasCompletedTransaction ? (
+                                        <Button size="lg" className="w-full gap-2" disabled>
+                                            <Clock className="h-5 w-5" />
+                                            Sedang Diproses
                                         </Button>
                                     ) : (
                                         <Button size="lg" className="w-full gap-2" onClick={handleEnroll}>

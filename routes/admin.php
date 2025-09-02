@@ -40,6 +40,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/institutions', [AdminInstitutionController::class, 'index'])->name('institutions.index');
     Route::get('/institutions/edit', [AdminInstitutionController::class, 'edit'])->name('institutions.edit');
     Route::patch('/institutions', [AdminInstitutionController::class, 'update'])->name('institutions.update');
+    // Fallback POST (some front-end submissions may send POST with _method spoof or even without it)
+    Route::post('/institutions', [AdminInstitutionController::class, 'update']);
 
     // Other Institution Management (full CRUD)
     Route::resource('other-institutions', AdminOtherInstitutionController::class);

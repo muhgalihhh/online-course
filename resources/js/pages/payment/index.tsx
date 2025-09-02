@@ -21,26 +21,34 @@ interface PaymentPageProps {
     clientKey: string;
     isProduction: boolean;
     isAlreadyEnrolled?: boolean;
+    isAlreadyPaid?: boolean;
     transactionExpired?: boolean;
 }
 
-export default function PaymentPage({ course, transaction: initialTransaction, snapToken: initialSnapToken, clientKey, isProduction, isAlreadyEnrolled = false, transactionExpired = false }: PaymentPageProps) {
+export default function PaymentPage({
+    course,
+    transaction: initialTransaction,
+    snapToken: initialSnapToken,
+    clientKey,
+    isProduction,
+    isAlreadyEnrolled = false,
+    isAlreadyPaid = false,
+    transactionExpired = false,
+}: PaymentPageProps) {
     const { auth } = usePage().props as any;
     const [isLoading, setIsLoading] = useState(false);
     const [transaction, setTransaction] = useState<Transaction | undefined>(initialTransaction);
     const [snapToken, setSnapToken] = useState<string | undefined>(initialSnapToken);
     const snapContainerRef = useRef<HTMLDivElement>(null);
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'>(
-        isAlreadyEnrolled ? 'completed' : 'pending'
+        isAlreadyEnrolled || isAlreadyPaid ? 'completed' : 'pending',
     );
 
-    // Load Midtrans Snap script (only if not already enrolled)
+    // Load Midtrans Snap script (only if not already enrolled or paid)
     useEffect(() => {
-        if (isAlreadyEnrolled) return;
+        if (isAlreadyEnrolled || isAlreadyPaid) return;
 
-        const snapSrcUrl = isProduction
-            ? 'https://app.midtrans.com/snap/snap.js'
-            : 'https://app.sandbox.midtrans.com/snap/snap.js';
+        const snapSrcUrl = isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
 
         const script = document.createElement('script');
         script.src = snapSrcUrl;
@@ -54,16 +62,50 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
         };
     }, [clientKey, isProduction, isAlreadyEnrolled]);
 
-    // Create transaction if not exists (skip if already enrolled)
+    // Auto-check enrollment status for already paid transactions
     useEffect(() => {
-        if (!isAlreadyEnrolled && !transaction && !snapToken && course.is_pro && course.price > 0) {
+        if (isAlreadyPaid && !isAlreadyEnrolled) {
+            // Start polling enrollment status
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(route('api.user.enrollment.check', course.id), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.is_enrolled) {
+                            clearInterval(interval);
+                            toast.success('Pendaftaran berhasil! Mengarahkan ke halaman kursus...');
+                            setTimeout(() => {
+                                router.visit(route('courses.learn', course.id));
+                            }, 1500);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking enrollment status:', error);
+                }
+            }, 3000); // Check every 3 seconds
+
+            // Clean up interval on component unmount
+            return () => clearInterval(interval);
+        }
+    }, [isAlreadyPaid, isAlreadyEnrolled, course.id]);
+
+    // Create transaction if not exists (skip if already enrolled or paid)
+    useEffect(() => {
+        if (!isAlreadyEnrolled && !isAlreadyPaid && !transaction && !snapToken && course.is_pro && course.price > 0) {
             createTransaction();
         }
         // Also create new transaction if previous one expired
-        if (transactionExpired && !isAlreadyEnrolled && course.is_pro && course.price > 0) {
+        if (transactionExpired && !isAlreadyEnrolled && !isAlreadyPaid && course.is_pro && course.price > 0) {
             createTransaction();
         }
-    }, [isAlreadyEnrolled, transactionExpired]);
+    }, [isAlreadyEnrolled, isAlreadyPaid, transactionExpired]);
 
     // Embed Snap payment when token is available
     useEffect(() => {
@@ -89,7 +131,7 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
             }
 
             const data = await response.json();
-            
+
             // Check if using existing transaction or new one
             if (data.existing_transaction) {
                 // Using existing transaction
@@ -98,9 +140,9 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                 // New transaction created
                 toast.success('Transaksi baru berhasil dibuat');
             }
-            
+
             setSnapToken(data.snap_token);
-            
+
             // Create a temporary transaction object
             setTransaction({
                 id: data.order_id,
@@ -115,7 +157,6 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             } as Transaction);
-
         } catch (error: any) {
             toast.error(error.message || 'Gagal membuat transaksi');
             setPaymentStatus('failed');
@@ -134,33 +175,66 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
 
         window.snap.embed(snapToken, {
             embedId: 'snap-container',
-            onSuccess: function(result: any) {
+            onSuccess: function (result: any) {
                 console.log('Payment success:', result);
                 setPaymentStatus('completed');
                 toast.success('Pembayaran berhasil!');
-                
-                // Redirect to course learn page after 2 seconds
-                setTimeout(() => {
-                    router.visit(route('courses.learn', course.id));
-                }, 2000);
+
+                // Check enrollment status and redirect
+                checkEnrollmentStatusAndRedirect();
             },
-            onPending: function(result: any) {
+            onPending: function (result: any) {
                 console.log('Payment pending:', result);
                 setPaymentStatus('processing');
                 toast.info('Menunggu pembayaran...');
             },
-            onError: function(result: any) {
+            onError: function (result: any) {
                 console.log('Payment error:', result);
                 setPaymentStatus('failed');
                 toast.error('Pembayaran gagal!');
             },
-            onClose: function() {
+            onClose: function () {
                 console.log('Customer closed the popup without finishing the payment');
                 if (paymentStatus === 'pending') {
                     toast.warning('Pembayaran dibatalkan');
                 }
-            }
+            },
         });
+    };
+
+    // Function to check enrollment status and redirect to course
+    const checkEnrollmentStatusAndRedirect = async () => {
+        try {
+            const response = await fetch(route('api.user.enrollment.check', course.id), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.is_enrolled) {
+                    toast.success('Pendaftaran berhasil! Mengarahkan ke halaman kursus...');
+                    setTimeout(() => {
+                        router.visit(route('courses.learn', course.id));
+                    }, 2000);
+                } else {
+                    toast.info('Pembayaran berhasil, sedang memproses pendaftaran...');
+                    // Check again after a short delay
+                    setTimeout(() => {
+                        checkEnrollmentStatusAndRedirect();
+                    }, 3000);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking enrollment:', error);
+            // Fallback: redirect to course show page
+            setTimeout(() => {
+                router.visit(route('courses.show', course.id));
+            }, 3000);
+        }
     };
 
     const getStatusIcon = () => {
@@ -182,9 +256,12 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
         if (isAlreadyEnrolled) {
             return 'Anda sudah terdaftar di kursus ini. Pembayaran telah berhasil dilakukan sebelumnya.';
         }
+        if (isAlreadyPaid) {
+            return 'Pembayaran telah berhasil! Anda sedang diproses untuk didaftarkan ke kursus ini.';
+        }
         switch (paymentStatus) {
             case 'completed':
-                return 'Pembayaran berhasil! Anda akan diarahkan ke halaman kursus...';
+                return 'Pembayaran berhasil! Sedang memproses pendaftaran...';
             case 'processing':
                 return 'Menunggu konfirmasi pembayaran...';
             case 'failed':
@@ -199,37 +276,31 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
     return (
         <>
             <Head title={`Pembayaran - ${course.title}`} />
-            
+
             <div className="min-h-screen bg-gray-50 py-8">
-                <div className="container mx-auto px-4 max-w-6xl">
+                <div className="container mx-auto max-w-6xl px-4">
                     {/* Back button */}
-                    <Button
-                        variant="ghost"
-                        onClick={() => router.visit(route('courses.show', course.id))}
-                        className="mb-6"
-                    >
+                    <Button variant="ghost" onClick={() => router.visit(route('courses.show', course.id))} className="mb-6">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Kembali ke Detail Kursus
                     </Button>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         {/* Payment Form Section */}
                         <div className="lg:col-span-2">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Pembayaran Kursus</CardTitle>
-                                    <CardDescription>
-                                        Lakukan pembayaran untuk mengakses kursus premium
-                                    </CardDescription>
+                                    <CardDescription>Lakukan pembayaran untuk mengakses kursus premium</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {/* Status Message */}
-                                    <div className="mb-6 p-4 rounded-lg bg-gray-50 flex items-center gap-3">
+                                    <div className="mb-6 flex items-center gap-3 rounded-lg bg-gray-50 p-4">
                                         {getStatusIcon()}
                                         <div className="flex-1">
                                             <span className="text-sm">{getStatusMessage()}</span>
                                             {transactionExpired && (
-                                                <p className="text-xs text-orange-600 mt-1">
+                                                <p className="mt-1 text-xs text-orange-600">
                                                     Transaksi sebelumnya telah expired. Membuat transaksi baru...
                                                 </p>
                                             )}
@@ -237,25 +308,39 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                     </div>
 
                                     {/* Midtrans Snap Embed Container or Success Message */}
+                                    {/* Midtrans Snap Embed Container or Success Message */}
                                     {isAlreadyEnrolled ? (
                                         <div className="flex flex-col items-center justify-center py-12">
-                                            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">Pembayaran Sudah Berhasil</h3>
-                                            <p className="text-gray-600 text-center mb-6">
+                                            <CheckCircle className="mb-4 h-16 w-16 text-green-500" />
+                                            <h3 className="mb-2 text-lg font-semibold">Pembayaran Sudah Berhasil</h3>
+                                            <p className="mb-6 text-center text-gray-600">
                                                 Anda sudah melakukan pembayaran untuk kursus ini dan sudah terdaftar.
                                             </p>
-                                            <Button 
-                                                onClick={() => router.visit(route('courses.learn', course.id))}
-                                                className="mb-3"
-                                            >
+                                            <Button onClick={() => router.visit(route('courses.learn', course.id))} className="mb-3">
                                                 Mulai Belajar
                                             </Button>
-                                            <Button 
-                                                variant="outline"
-                                                onClick={() => router.visit(route('courses.show', course.id))}
-                                            >
+                                            <Button variant="outline" onClick={() => router.visit(route('courses.show', course.id))}>
                                                 Kembali ke Detail Kursus
                                             </Button>
+                                        </div>
+                                    ) : isAlreadyPaid ? (
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <CheckCircle className="mb-4 h-16 w-16 text-blue-500" />
+                                            <h3 className="mb-2 text-lg font-semibold">Pembayaran Sudah Dibayar</h3>
+                                            <p className="mb-6 text-center text-gray-600">
+                                                Pembayaran untuk kursus ini sudah berhasil. Sedang diproses untuk mendaftarkan Anda ke kursus.
+                                            </p>
+                                            <p className="mb-6 text-center text-sm text-orange-600">
+                                                Jika dalam 5 menit Anda belum bisa mengakses kursus, silakan hubungi admin.
+                                            </p>
+                                            <div className="flex gap-3">
+                                                <Button onClick={() => window.location.reload()} variant="outline">
+                                                    Refresh Halaman
+                                                </Button>
+                                                <Button variant="outline" onClick={() => router.visit(route('courses.show', course.id))}>
+                                                    Kembali ke Detail Kursus
+                                                </Button>
+                                            </div>
                                         </div>
                                     ) : isLoading ? (
                                         <div className="flex items-center justify-center py-12">
@@ -263,11 +348,7 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                             <span className="ml-3">Memuat form pembayaran...</span>
                                         </div>
                                     ) : (
-                                        <div 
-                                            id="snap-container" 
-                                            ref={snapContainerRef}
-                                            className="w-full min-h-[400px]"
-                                        />
+                                        <div id="snap-container" ref={snapContainerRef} className="min-h-[400px] w-full" />
                                     )}
 
                                     {/* Retry button for failed payments */}
@@ -295,7 +376,7 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div>
-                                        <h4 className="font-semibold mb-2">Metode Pembayaran yang Tersedia:</h4>
+                                        <h4 className="mb-2 font-semibold">Metode Pembayaran yang Tersedia:</h4>
                                         <ul className="space-y-1 text-sm text-gray-600">
                                             <li>• Transfer Bank (BCA, BNI, BRI, Mandiri, dll)</li>
                                             <li>• E-Wallet (GoPay, OVO, DANA, ShopeePay)</li>
@@ -306,7 +387,7 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                     </div>
                                     <Separator />
                                     <div>
-                                        <h4 className="font-semibold mb-2">Catatan:</h4>
+                                        <h4 className="mb-2 font-semibold">Catatan:</h4>
                                         <ul className="space-y-1 text-sm text-gray-600">
                                             <li>• Pembayaran diproses secara otomatis</li>
                                             <li>• Akses kursus langsung setelah pembayaran berhasil</li>
@@ -330,17 +411,15 @@ export default function PaymentPage({ course, transaction: initialTransaction, s
                                             <img
                                                 src={`/storage/${course.thumbnail_path}`}
                                                 alt={course.title}
-                                                className="w-full h-32 object-cover rounded-lg"
+                                                className="h-32 w-full rounded-lg object-cover"
                                             />
                                         )}
                                         <div>
                                             <h3 className="font-semibold">{course.title}</h3>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {course.category?.name}
-                                            </p>
+                                            <p className="mt-1 text-sm text-gray-600">{course.category?.name}</p>
                                         </div>
                                         <Separator />
-                                        
+
                                         {/* Price Details */}
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-sm">

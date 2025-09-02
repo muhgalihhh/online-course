@@ -24,7 +24,7 @@ class UpdateInstitutionRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'required|numeric',
+            'phone' => 'required|string|max:20',
             'website' => 'nullable|url|max:255',
             'address' => 'nullable|string|max:500',
             'description' => 'nullable|string|max:1000',

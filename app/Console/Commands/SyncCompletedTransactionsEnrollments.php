@@ -87,6 +87,16 @@ class SyncCompletedTransactionsEnrollments extends Command
         DB::transaction(function () use ($missingEnrollments, &$created, &$errors) {
             foreach ($missingEnrollments as $transaction) {
                 try {
+                    // Check if enrollment already exists to avoid duplicate
+                    $existingEnrollment = Enrollment::where('user_id', $transaction->user_id)
+                        ->where('course_id', $transaction->transactionable_id)
+                        ->first();
+
+                    if ($existingEnrollment) {
+                        $this->info("ℹ️  Enrollment already exists for user {$transaction->user->email} in course \"{$transaction->transactionable->title}\"");
+                        continue;
+                    }
+
                     $enrollment = Enrollment::create([
                         'user_id' => $transaction->user_id,
                         'course_id' => $transaction->transactionable_id,

@@ -1,12 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Building2, Image } from 'lucide-react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface Institution {
@@ -28,7 +28,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PATCH',
-        name: institution.name,
+        name: institution.name || '',
         description: institution.description || '',
         address: institution.address || '',
         phone: institution.phone || '',
@@ -49,7 +49,10 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('admin.institutions.update'));
+
+        post(route('admin.institutions.update'), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -63,9 +66,9 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
             <Head title="Edit Profil Institusi" />
 
             <div className="">
-                <div className="flex items-center mb-6">
+                <div className="mb-6 flex items-center">
                     <Button variant="ghost" size="sm" className="mr-2" asChild>
-                        <a href={route('admin.institutions.index')}>
+                        <a href={route('admin.institutions.index')} title="Kembali ke daftar institusi">
                             <ArrowLeft className="h-4 w-4" />
                         </a>
                     </Button>
@@ -75,7 +78,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                 <Card className="max-w-2xl">
                     <CardHeader>
                         <CardTitle className="flex items-center">
-                            <Building2 className="h-5 w-5 mr-2" />
+                            <Building2 className="mr-2 h-5 w-5" />
                             Perbarui Informasi Profil
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
@@ -88,16 +91,16 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                                 <Label htmlFor="photo_path">Foto Institusi</Label>
                                 <div className="flex items-center space-x-4">
                                     {(preview || institution.photo_path) && (
-                                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                                        <div className="relative h-32 w-32 overflow-hidden rounded-lg border-2 border-gray-200">
                                             <img
                                                 src={preview || `/storage/${institution.photo_path}`}
                                                 alt="Preview"
-                                                className="w-full h-full object-cover"
+                                                className="h-full w-full object-cover"
                                             />
                                         </div>
                                     )}
                                     {!preview && !institution.photo_path && (
-                                        <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                        <div className="flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
                                             <Building2 className="h-8 w-8 text-gray-400" />
                                         </div>
                                     )}
@@ -109,9 +112,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                                             onChange={(e) => setData('photo_path', e.target.files ? e.target.files[0] : null)}
                                             className={errors.photo_path ? 'border-red-500' : ''}
                                         />
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            Upload gambar JPG, PNG, atau WebP (maksimal 2MB)
-                                        </p>
+                                        <p className="mt-1 text-sm text-gray-500">Upload gambar JPG, PNG, atau WebP (maksimal 2MB)</p>
                                         {errors.photo_path && <p className="text-sm text-red-600">{errors.photo_path}</p>}
                                     </div>
                                 </div>
@@ -192,9 +193,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
 
                             <div className="flex justify-end space-x-2">
                                 <Button type="button" variant="outline" asChild>
-                                    <a href={route('admin.institutions.index')}>
-                                        Batal
-                                    </a>
+                                    <a href={route('admin.institutions.index')}>Batal</a>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
                                     {processing ? 'Menyimpan...' : 'Update Profil Institusi'}

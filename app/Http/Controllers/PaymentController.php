@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Transaction;
+use App\Models\Enrollment;
 use App\Services\MidtransService;
+use App\Events\TransactionCompleted;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class PaymentController extends Controller
 {
@@ -35,10 +38,26 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        // Check if user is already enrolled
         $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
         if ($alreadyEnrolled) {
             return response()->json([
                 'message' => 'Anda sudah terdaftar di kursus ini.',
+                'is_enrolled' => true,
+            ], 409);
+        }
+
+        // Check if user has a completed transaction for this course
+        $hasCompletedTransaction = Transaction::where('user_id', $user->id)
+            ->where('transactionable_id', $courseId)
+            ->where('transactionable_type', Course::class)
+            ->where('status', 'completed')
+            ->exists();
+
+        if ($hasCompletedTransaction) {
+            return response()->json([
+                'message' => 'Anda sudah membeli kursus ini. Silakan hubungi admin jika belum terdaftar.',
+                'has_completed_transaction' => true,
             ], 409);
         }
 
@@ -107,8 +126,12 @@ class PaymentController extends Controller
             'payment_method' => $transaction->payment_method ?: ($payload['payment_type'] ?? null),
         ]);
 
-        // Auto-enroll user when payment is completed
-        if ($newStatus === 'completed' && $transaction->transactionable_type === Course::class) {
+        // Fire event and trigger immediate auto-enrollment when payment is completed
+        if ($newStatus === 'completed') {
+            // Fire event for any listeners
+            TransactionCompleted::dispatch($transaction);
+
+            // Also trigger immediate auto-enrollment to ensure user gets enrolled right away
             $this->autoEnrollUserToCourse($transaction);
         }
 
@@ -131,7 +154,7 @@ class PaymentController extends Controller
     /**
      * Show payment page with embedded Midtrans Snap
      */
-    public function showPaymentPage(Request $request, int $courseId): Response
+    public function showPaymentPage(Request $request, int $courseId): Response|RedirectResponse
     {
         $course = Course::with(['category', 'institution'])
             ->where('status', 'published')
@@ -148,14 +171,39 @@ class PaymentController extends Controller
         // Check if already enrolled (payment completed)
         $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
         if ($alreadyEnrolled) {
-            // Show payment page with success status
+            // Redirect to course learning page instead of showing payment
+            return redirect()->route('courses.learn', $courseId)
+                ->with('success', 'Anda sudah terdaftar di kursus ini.');
+        }
+
+        // Check if user has completed transaction
+        $completedTransaction = Transaction::where('user_id', $user->id)
+            ->where('transactionable_id', $courseId)
+            ->where('transactionable_type', Course::class)
+            ->where('status', 'completed')
+            ->first();
+
+        if ($completedTransaction) {
+            // Trigger auto-enrollment if not enrolled yet
+            $this->autoEnrollUserToCourse($completedTransaction);
+
+            // Check enrollment again after auto-enrollment
+            $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
+
+            if ($alreadyEnrolled) {
+                return redirect()->route('courses.learn', $courseId)
+                    ->with('success', 'Anda sudah terdaftar di kursus ini.');
+            }
+
+            // Show payment success page with enrollment in progress
             return Inertia::render('payment/index', [
                 'course' => $course,
-                'transaction' => null,
+                'transaction' => $completedTransaction,
                 'snapToken' => null,
                 'clientKey' => (string) config('midtrans.client_key'),
                 'isProduction' => (bool) config('midtrans.is_production'),
-                'isAlreadyEnrolled' => true,
+                'isAlreadyPaid' => true,
+                'isAlreadyEnrolled' => false,
             ]);
         }
 
@@ -250,7 +298,7 @@ class PaymentController extends Controller
     /**
      * Show transaction detail page
      */
-    public function showTransaction(Request $request, string $orderId): Response
+    public function showTransaction(Request $request, string $orderId): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -342,7 +390,7 @@ class PaymentController extends Controller
     /**
      * Automatically enroll user to course after successful payment
      */
-    private function autoEnrollUserToCourse(Transaction $transaction): void
+    public function autoEnrollUserToCourse(Transaction $transaction): void
     {
         try {
             if (!$transaction->isCourseTransaction()) {
@@ -370,17 +418,22 @@ class PaymentController extends Controller
                 return;
             }
 
-            // Create enrollment with database transaction for consistency
+            // Create (or fetch existing) enrollment with database transaction for consistency & idempotency
             DB::transaction(function () use ($user, $courseId, $transaction) {
-                $enrollment = \App\Models\Enrollment::create([
-                    'user_id' => $user->id,
-                    'course_id' => $courseId,
-                    'enrolled_at' => now(),
-                    'progress' => 0,
-                ]);
+                $enrollment = Enrollment::firstOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'course_id' => $courseId,
+                    ],
+                    [
+                        'enrolled_at' => now(),
+                        'progress' => 0,
+                    ]
+                );
 
-                Log::info('User automatically enrolled after payment', [
+                Log::info('User auto-enroll processed after payment', [
                     'enrollment_id' => $enrollment->id,
+                    'was_recently_created' => $enrollment->wasRecentlyCreated,
                     'user_id' => $user->id,
                     'course_id' => $courseId,
                     'transaction_id' => $transaction->id,

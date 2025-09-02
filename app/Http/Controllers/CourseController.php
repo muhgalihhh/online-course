@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CourseController extends Controller
@@ -135,10 +136,47 @@ class CourseController extends Controller
 
         // Check if user is enrolled (if logged in)
         $isEnrolled = false;
-        if (auth()->check()) {
+        $hasCompletedTransaction = false;
+
+        if (Auth::check()) {
             $isEnrolled = $course->enrollments()
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->exists();
+
+            // Also check if user has completed transaction but not enrolled yet
+            if (!$isEnrolled) {
+                $completedTransaction = \App\Models\Transaction::where('user_id', Auth::id())
+                    ->where('transactionable_id', $course->id)
+                    ->where('transactionable_type', Course::class)
+                    ->where('status', 'completed')
+                    ->first();
+
+                if ($completedTransaction) {
+                    $hasCompletedTransaction = true;
+
+                    // Try to auto-enroll user if they have completed transaction
+                    try {
+                        $paymentController = app(\App\Http\Controllers\PaymentController::class);
+                        $paymentController->autoEnrollUserToCourse($completedTransaction);
+
+                        // Re-check enrollment status after auto-enrollment attempt
+                        $isEnrolled = $course->enrollments()
+                            ->where('user_id', Auth::id())
+                            ->exists();
+
+                        if ($isEnrolled) {
+                            $hasCompletedTransaction = false; // Clear this since user is now enrolled
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Failed to auto-enroll user in course show method', [
+                            'user_id' => Auth::id(),
+                            'course_id' => $course->id,
+                            'transaction_id' => $completedTransaction->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
         }
 
         // Get related courses
@@ -158,6 +196,7 @@ class CourseController extends Controller
         return Inertia::render('courses/show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
+            'hasCompletedTransaction' => $hasCompletedTransaction,
             'relatedCourses' => $relatedCourses
         ]);
     }
@@ -223,9 +262,9 @@ class CourseController extends Controller
 
         // Check if user is already enrolled
         $isEnrolled = false;
-        if (auth()->check()) {
+        if (Auth::check()) {
             $isEnrolled = $course->enrollments()
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->exists();
         }
 
@@ -249,54 +288,59 @@ class CourseController extends Controller
      */
     public function enrollFree($id)
     {
-        \Log::info('enrollFree method called', ['course_id' => $id, 'user_id' => auth()->id()]);
+        Log::info('enrollFree method called', ['course_id' => $id, 'user_id' => Auth::id()]);
 
         $course = Course::with(['category', 'institution'])->findOrFail($id);
 
         // Check if course is published
         if ($course->status !== 'published') {
-            \Log::warning('Course not published', ['course_id' => $id, 'status' => $course->status]);
+            Log::warning('Course not published', ['course_id' => $id, 'status' => $course->status]);
             abort(404);
         }
 
         // Check if course is free
         if ($course->is_pro || $course->price > 0) {
-            \Log::warning('Course is not free', ['course_id' => $id, 'is_pro' => $course->is_pro, 'price' => $course->price]);
+            Log::warning('Course is not free', ['course_id' => $id, 'is_pro' => $course->is_pro, 'price' => $course->price]);
             return redirect()->route('courses.show', $course->id)
                 ->with('error', 'Kursus ini adalah kursus berbayar.');
         }
 
         // Check if user is authenticated
-        if (!auth()->check()) {
-            \Log::warning('User not authenticated');
+        if (!Auth::check()) {
+            Log::warning('User not authenticated');
             return redirect()->route('login')
                 ->with('info', 'Silakan login untuk mendaftar di kursus ini.');
         }
 
         // Check if user is already enrolled
         $isEnrolled = $course->enrollments()
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->exists();
 
         if ($isEnrolled) {
-            \Log::info('User already enrolled', ['course_id' => $id, 'user_id' => auth()->id()]);
+            Log::info('User already enrolled', ['course_id' => $id, 'user_id' => Auth::id()]);
             return redirect()->route('courses.learn', $course->id)
                 ->with('info', 'Anda sudah terdaftar di kursus ini.');
         }
 
         try {
             // Create enrollment with database transaction
-            \DB::transaction(function () use ($course) {
-                $enrollment = \App\Models\Enrollment::create([
-                    'user_id' => auth()->id(),
-                    'course_id' => $course->id,
-                    'enrolled_at' => now(),
-                    'progress' => 0,
-                ]);
+            DB::transaction(function () use ($course) {
+                // Idempotent creation to avoid duplicate enrollments under race conditions
+                $enrollment = \App\Models\Enrollment::firstOrCreate(
+                    [
+                        'user_id' => Auth::id(),
+                        'course_id' => $course->id,
+                    ],
+                    [
+                        'enrolled_at' => now(),
+                        'progress' => 0,
+                    ]
+                );
 
-                \Log::info('Enrollment created successfully', [
+                Log::info('Enrollment created successfully', [
                     'enrollment_id' => $enrollment->id,
-                    'user_id' => auth()->id(),
+                    'user_id' => Auth::id(),
                     'course_id' => $course->id
                 ]);
             });
@@ -304,8 +348,8 @@ class CourseController extends Controller
             return redirect()->route('courses.learn', $course->id)
                 ->with('success', 'Selamat! Anda berhasil mendaftar di kursus ini.');
         } catch (\Exception $e) {
-            \Log::error('Failed to enroll user in free course', [
-                'user_id' => auth()->id(),
+            Log::error('Failed to enroll user in free course', [
+                'user_id' => Auth::id(),
                 'course_id' => $course->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -322,7 +366,7 @@ class CourseController extends Controller
     public function learn($id)
     {
         // Check if user is authenticated
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login')
                 ->with('error', 'Silakan login untuk mengakses halaman belajar.');
         }
@@ -340,7 +384,7 @@ class CourseController extends Controller
             ->findOrFail($id);
 
         // Check if user is enrolled
-        $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+        $enrollment = \App\Models\Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->first();
 
