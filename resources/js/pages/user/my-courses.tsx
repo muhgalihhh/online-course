@@ -1,21 +1,12 @@
-import UserDashboardLayout from '@/layouts/user-dashboard-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { 
-    BookOpen, 
-    Clock, 
-    GraduationCap, 
-    Star, 
-    Users,
-    Play,
-    CheckCircle,
-    ArrowRight
-} from 'lucide-react';
-import { Link, Head } from '@inertiajs/react';
+import UserDashboardLayout from '@/layouts/user-dashboard-layout';
+import { Head, Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { ArrowRight, BookOpen, CheckCircle, Clock, GraduationCap, Play, Star, Users } from 'lucide-react';
 
 interface Course {
     id: number;
@@ -52,8 +43,6 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
         return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
     };
 
-
-
     const getProgressColor = (progress: number) => {
         if (progress >= 80) return 'bg-green-500';
         if (progress >= 50) return 'bg-yellow-500';
@@ -63,7 +52,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
     return (
         <UserDashboardLayout>
             <Head title="Kelas Saya" />
-            
+
             <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
                 {/* Header Section */}
                 <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -71,9 +60,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight">Kelas Saya</h1>
-                                <p className="mt-2 text-muted-foreground">
-                                    Lanjutkan perjalanan belajar Anda
-                                </p>
+                                <p className="mt-2 text-muted-foreground">Lanjutkan perjalanan belajar Anda</p>
                             </div>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -81,9 +68,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                     <span>{enrollments.length} Kelas Terdaftar</span>
                                 </div>
                                 <Button asChild>
-                                    <Link href="/courses">
-                                        Jelajahi Kelas Lain
-                                    </Link>
+                                    <Link href="/courses">Jelajahi Kelas Lain</Link>
                                 </Button>
                             </div>
                         </div>
@@ -100,8 +85,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                 </div>
                                 <h3 className="mt-4 text-lg font-semibold">Belum Ada Kelas</h3>
                                 <p className="mt-2 text-center text-sm text-muted-foreground">
-                                    Anda belum terdaftar di kelas manapun. 
-                                    Mulai perjalanan belajar Anda sekarang!
+                                    Anda belum terdaftar di kelas manapun. Mulai perjalanan belajar Anda sekarang!
                                 </p>
                                 <Button asChild className="mt-6">
                                     <Link href="/courses">
@@ -119,7 +103,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                     <div className="relative aspect-video overflow-hidden bg-muted">
                                         {course.thumbnail || course.thumbnail_path ? (
                                             <img
-                                                src={course.thumbnail || `/storage/${course.thumbnail_path}`}
+                                                src={course.thumbnail || course.thumbnail_path}
                                                 alt={course.title}
                                                 className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                             />
@@ -128,7 +112,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                                 <BookOpen className="h-12 w-12 text-muted-foreground" />
                                             </div>
                                         )}
-                                        
+
                                         {/* Progress Overlay */}
                                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                                             <div className="space-y-2">
@@ -136,16 +120,13 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                                     <span>Progress</span>
                                                     <span>{course.user_progress}%</span>
                                                 </div>
-                                                <Progress 
-                                                    value={course.user_progress} 
-                                                    className="h-2 bg-white/20"
-                                                />
+                                                <Progress value={course.user_progress} className="h-2 bg-white/20" />
                                             </div>
                                         </div>
 
                                         {/* Completed Badge */}
                                         {course.user_progress === 100 && (
-                                            <div className="absolute right-2 top-2">
+                                            <div className="absolute top-2 right-2">
                                                 <Badge className="gap-1 bg-green-500">
                                                     <CheckCircle className="h-3 w-3" />
                                                     Selesai
@@ -156,19 +137,11 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
 
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
-                                            <Badge variant={course.is_pro ? "default" : "secondary"}>
-                                                {course.is_pro ? "Pro" : "Free"}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                                {course.category.name}
-                                            </Badge>
+                                            <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
+                                            <Badge variant="outline">{course.category.name}</Badge>
                                         </div>
-                                        <CardTitle className="line-clamp-2">
-                                            {course.title}
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-2">
-                                            {course.description}
-                                        </CardDescription>
+                                        <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                                        <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                                     </CardHeader>
 
                                     <CardContent className="space-y-4">
@@ -185,9 +158,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                                     <GraduationCap className="h-3 w-3" />
                                                 </div>
                                             )}
-                                            <span className="text-sm text-muted-foreground">
-                                                {course.institution.name}
-                                            </span>
+                                            <span className="text-sm text-muted-foreground">{course.institution.name}</span>
                                         </div>
 
                                         {/* Stats */}
