@@ -1,28 +1,15 @@
-import UserDashboardLayout from '@/layouts/user-dashboard-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-    BookOpen, 
-    Clock, 
-    GraduationCap, 
-    Star, 
-    Users,
-    Play,
-    CheckCircle,
-    ArrowRight,
-    Info,
-    Calendar,
-    Award,
-    TrendingUp
-} from 'lucide-react';
-import { Link, Head, usePage } from '@inertiajs/react';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import UserDashboardLayout from '@/layouts/user-dashboard-layout';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { ArrowRight, Award, BookOpen, Calendar, CheckCircle, GraduationCap, Info, Play, Star, TrendingUp, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 interface Course {
     id: number;
@@ -104,28 +91,22 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
 
     // Calculate statistics
     const totalCourses = enrollments.length;
-    const completedCourses = enrollments.filter(c => c.user_progress === 100).length;
-    const inProgressCourses = enrollments.filter(c => c.user_progress > 0 && c.user_progress < 100).length;
-    const averageProgress = totalCourses > 0 
-        ? Math.round(enrollments.reduce((sum, c) => sum + c.user_progress, 0) / totalCourses)
-        : 0;
+    const completedCourses = enrollments.filter((c) => c.user_progress === 100).length;
+    const inProgressCourses = enrollments.filter((c) => c.user_progress > 0 && c.user_progress < 100).length;
+    const averageProgress = totalCourses > 0 ? Math.round(enrollments.reduce((sum, c) => sum + c.user_progress, 0) / totalCourses) : 0;
 
     return (
         <UserDashboardLayout>
             <Head title="Dashboard" />
-            
+
             <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
                 {/* Header Section */}
                 <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                     <div className="container mx-auto px-4 py-8">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight">
-                                    Selamat Datang, {user.name}!
-                                </h1>
-                                <p className="mt-2 text-muted-foreground">
-                                    Berikut adalah daftar kelas yang Anda ambil
-                                </p>
+                                <h1 className="text-3xl font-bold tracking-tight">Selamat Datang, {user.name}!</h1>
+                                <p className="mt-2 text-muted-foreground">Berikut adalah daftar kelas yang Anda ambil</p>
                             </div>
                             <Button asChild>
                                 <Link href="/courses">
@@ -184,7 +165,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                 {/* Content Section - Enrolled Courses */}
                 <div className="container mx-auto px-4 py-8">
                     <h2 className="mb-6 text-2xl font-bold">Daftar Kelas yang Diambil</h2>
-                    
+
                     {enrollments.length === 0 ? (
                         <Card className="border-dashed">
                             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -193,8 +174,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                 </div>
                                 <h3 className="mt-4 text-lg font-semibold">Belum Ada Kelas</h3>
                                 <p className="mt-2 text-center text-sm text-muted-foreground">
-                                    Anda belum terdaftar di kelas manapun. 
-                                    Mulai perjalanan belajar Anda sekarang!
+                                    Anda belum terdaftar di kelas manapun. Mulai perjalanan belajar Anda sekarang!
                                 </p>
                                 <Button asChild className="mt-6">
                                     <Link href="/courses">
@@ -212,7 +192,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                     <div className="relative aspect-video overflow-hidden bg-muted">
                                         {course.thumbnail_path ? (
                                             <img
-                                                src={`/storage/${course.thumbnail_path}`}
+                                                src={course.thumbnail_path}
                                                 alt={course.title}
                                                 className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                             />
@@ -221,7 +201,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                 <BookOpen className="h-12 w-12 text-muted-foreground" />
                                             </div>
                                         )}
-                                        
+
                                         {/* Progress Overlay */}
                                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                                             <div className="space-y-2">
@@ -229,16 +209,13 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                     <span>Progress</span>
                                                     <span>{course.user_progress}%</span>
                                                 </div>
-                                                <Progress 
-                                                    value={course.user_progress} 
-                                                    className="h-2 bg-white/20"
-                                                />
+                                                <Progress value={course.user_progress} className="h-2 bg-white/20" />
                                             </div>
                                         </div>
 
                                         {/* Completed Badge */}
                                         {course.user_progress === 100 && (
-                                            <div className="absolute right-2 top-2">
+                                            <div className="absolute top-2 right-2">
                                                 <Badge className="gap-1 bg-green-500">
                                                     <CheckCircle className="h-3 w-3" />
                                                     Selesai
@@ -249,19 +226,11 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
 
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
-                                            <Badge variant={getLevelBadgeVariant(course.level)}>
-                                                {course.level || 'Semua Level'}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                                {course.category.name}
-                                            </Badge>
+                                            <Badge variant={getLevelBadgeVariant(course.level)}>{course.level || 'Semua Level'}</Badge>
+                                            <Badge variant="outline">{course.category.name}</Badge>
                                         </div>
-                                        <CardTitle className="line-clamp-2">
-                                            {course.title}
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-2">
-                                            {course.description}
-                                        </CardDescription>
+                                        <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                                        <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                                     </CardHeader>
 
                                     <CardContent className="space-y-4">
@@ -269,7 +238,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                         <div className="flex items-center gap-2">
                                             {course.institution.photo_path ? (
                                                 <img
-                                                    src={`/storage/${course.institution.photo_path}`}
+                                                    src={course.institution.photo_path}
                                                     alt={course.institution.name}
                                                     className="h-6 w-6 rounded-full object-cover"
                                                 />
@@ -278,9 +247,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                     <GraduationCap className="h-3 w-3" />
                                                 </div>
                                             )}
-                                            <span className="text-sm text-muted-foreground">
-                                                {course.institution.name}
-                                            </span>
+                                            <span className="text-sm text-muted-foreground">{course.institution.name}</span>
                                         </div>
 
                                         {/* Stats */}
@@ -309,12 +276,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                         <div className="flex gap-2">
                                             <Dialog>
                                                 <DialogTrigger asChild>
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm"
-                                                        className="flex-1"
-                                                        onClick={() => setSelectedCourse(course)}
-                                                    >
+                                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedCourse(course)}>
                                                         <Info className="mr-2 h-4 w-4" />
                                                         Detail
                                                     </Button>
@@ -322,29 +284,27 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                 <DialogContent className="max-w-2xl">
                                                     <DialogHeader>
                                                         <DialogTitle>{course.title}</DialogTitle>
-                                                        <DialogDescription>
-                                                            Informasi lengkap tentang kelas ini
-                                                        </DialogDescription>
+                                                        <DialogDescription>Informasi lengkap tentang kelas ini</DialogDescription>
                                                     </DialogHeader>
                                                     <div className="space-y-4">
                                                         {/* Thumbnail */}
                                                         {course.thumbnail_path && (
                                                             <div className="aspect-video overflow-hidden rounded-lg">
                                                                 <img
-                                                                    src={`/storage/${course.thumbnail_path}`}
+                                                                    src={course.thumbnail_path}
                                                                     alt={course.title}
                                                                     className="h-full w-full object-cover"
                                                                 />
                                                             </div>
                                                         )}
-                                                        
+
                                                         {/* Details */}
                                                         <div className="space-y-3">
                                                             <div>
                                                                 <h4 className="font-semibold">Deskripsi</h4>
                                                                 <p className="text-sm text-muted-foreground">{course.description}</p>
                                                             </div>
-                                                            
+
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div>
                                                                     <h4 className="font-semibold">Kategori</h4>
@@ -357,7 +317,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                     </Badge>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div>
                                                                     <h4 className="font-semibold">Institusi</h4>
@@ -368,7 +328,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                     <p className="text-sm text-muted-foreground">{course.duration} jam</p>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <div className="grid grid-cols-3 gap-4">
                                                                 <div>
                                                                     <h4 className="font-semibold">Rating</h4>
@@ -386,7 +346,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                     <p className="text-sm text-muted-foreground">{course.total_chapters}</p>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <div>
                                                                 <h4 className="font-semibold">Progress Anda</h4>
                                                                 <div className="space-y-2">
@@ -397,7 +357,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                     <Progress value={course.user_progress} />
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div>
                                                                     <h4 className="font-semibold">Tanggal Terdaftar</h4>
@@ -406,12 +366,14 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                                 {course.completed_at && (
                                                                     <div>
                                                                         <h4 className="font-semibold">Tanggal Selesai</h4>
-                                                                        <p className="text-sm text-muted-foreground">{formatDate(course.completed_at)}</p>
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            {formatDate(course.completed_at)}
+                                                                        </p>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Action Button in Modal */}
                                                         <Button asChild className="w-full">
                                                             <Link href={`/courses/${course.id}/learn`}>
@@ -422,7 +384,7 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                                     </div>
                                                 </DialogContent>
                                             </Dialog>
-                                            
+
                                             <Button asChild size="sm" className="flex-1">
                                                 <Link href={`/courses/${course.id}/learn`}>
                                                     <Play className="mr-2 h-4 w-4" />

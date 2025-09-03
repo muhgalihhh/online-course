@@ -408,11 +408,7 @@ export default function PaymentPage({
                                     {/* Course Info */}
                                     <div className="space-y-4">
                                         {course.thumbnail_path && (
-                                            <img
-                                                src={`/storage/${course.thumbnail_path}`}
-                                                alt={course.title}
-                                                className="h-32 w-full rounded-lg object-cover"
-                                            />
+                                            <img src={course.thumbnail_path} alt={course.title} className="h-32 w-full rounded-lg object-cover" />
                                         )}
                                         <div>
                                             <h3 className="font-semibold">{course.title}</h3>

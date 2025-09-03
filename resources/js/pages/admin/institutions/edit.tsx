@@ -92,11 +92,7 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                                 <div className="flex items-center space-x-4">
                                     {(preview || institution.photo_path) && (
                                         <div className="relative h-32 w-32 overflow-hidden rounded-lg border-2 border-gray-200">
-                                            <img
-                                                src={preview || `/storage/${institution.photo_path}`}
-                                                alt="Preview"
-                                                className="h-full w-full object-cover"
-                                            />
+                                            <img src={preview || institution.photo_path} alt="Preview" className="h-full w-full object-cover" />
                                         </div>
                                     )}
                                     {!preview && !institution.photo_path && (

@@ -1,15 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps } from '@/types';
-import { Head, useForm, Link } from '@inertiajs/react';
-import { ArrowLeft, Image, Upload, X, AlertCircle } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, Upload, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface Category {
@@ -52,7 +52,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
         description: course.description,
         price: course.price.toString(),
         is_pro: course.is_pro,
-        status: course.status || 'draft' as 'draft' | 'published',
+        status: course.status || ('draft' as 'draft' | 'published'),
         thumbnail_path: null as File | null,
     });
 
@@ -82,11 +82,11 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
             <Head title="Edit Course" />
 
             <div className="">
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href={route('admin.courses.index')}>
                             <Button variant="ghost" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                <ArrowLeft className="mr-2 h-4 w-4" />
                                 Kembali
                             </Button>
                         </Link>
@@ -97,19 +97,14 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                 <Card className="max-w-4xl">
                     <CardHeader>
                         <CardTitle>Informasi Kursus</CardTitle>
-                        <CardDescription>
-                            Perbarui informasi kursus di bawah ini
-                        </CardDescription>
+                        <CardDescription>Perbarui informasi kursus di bawah ini</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="institution_id">Institusi</Label>
-                                    <Select
-                                        value={data.institution_id}
-                                        onValueChange={(value) => setData('institution_id', value)}
-                                    >
+                                    <Select value={data.institution_id} onValueChange={(value) => setData('institution_id', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih institusi" />
                                         </SelectTrigger>
@@ -121,17 +116,12 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.institution_id && (
-                                        <p className="text-sm text-red-600">{errors.institution_id}</p>
-                                    )}
+                                    {errors.institution_id && <p className="text-sm text-red-600">{errors.institution_id}</p>}
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="category_id">Kategori</Label>
-                                    <Select
-                                        value={data.category_id}
-                                        onValueChange={(value) => setData('category_id', value)}
-                                    >
+                                    <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih kategori" />
                                         </SelectTrigger>
@@ -143,9 +133,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.category_id && (
-                                        <p className="text-sm text-red-600">{errors.category_id}</p>
-                                    )}
+                                    {errors.category_id && <p className="text-sm text-red-600">{errors.category_id}</p>}
                                 </div>
                             </div>
 
@@ -174,22 +162,22 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
 
                             <div className="space-y-2">
                                 <Label htmlFor="thumbnail_path">Thumbnail Kursus</Label>
-                                <div className="grid md:grid-cols-2 gap-6">
+                                <div className="grid gap-6 md:grid-cols-2">
                                     <div>
-                                        <div className="relative group">
-                                            {(preview || course.thumbnail_path) ? (
-                                                <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                                        <div className="group relative">
+                                            {preview || course.thumbnail_path ? (
+                                                <div className="relative aspect-video overflow-hidden rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
                                                     <img
-                                                        src={preview || `/storage/${course.thumbnail_path}`}
+                                                        src={preview || course.thumbnail_path}
                                                         alt="Preview"
-                                                        className="w-full h-full object-cover"
+                                                        className="h-full w-full object-cover"
                                                     />
                                                     {preview && (
                                                         <Button
                                                             type="button"
                                                             variant="destructive"
                                                             size="icon"
-                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
                                                             onClick={() => setData('thumbnail_path', null)}
                                                         >
                                                             <X className="h-4 w-4" />
@@ -199,11 +187,11 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             ) : (
                                                 <label
                                                     htmlFor="thumbnail_path"
-                                                    className="relative aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 hover:bg-muted/70 transition-colors cursor-pointer flex flex-col items-center justify-center group"
+                                                    className="group relative flex aspect-video cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted/70"
                                                 >
-                                                    <Upload className="h-10 w-10 text-muted-foreground mb-3 group-hover:scale-110 transition-transform" />
+                                                    <Upload className="mb-3 h-10 w-10 text-muted-foreground transition-transform group-hover:scale-110" />
                                                     <p className="text-sm font-medium text-muted-foreground">Klik untuk upload</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">atau drag & drop gambar di sini</p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">atau drag & drop gambar di sini</p>
                                                 </label>
                                             )}
                                         </div>
@@ -215,7 +203,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             className="hidden"
                                         />
                                         {!preview && course.thumbnail_path && (
-                                            <p className="text-sm text-muted-foreground mt-2 text-center">
+                                            <p className="mt-2 text-center text-sm text-muted-foreground">
                                                 Upload gambar baru untuk mengganti thumbnail yang ada
                                             </p>
                                         )}
@@ -225,7 +213,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             <AlertCircle className="h-4 w-4" />
                                             <AlertDescription>
                                                 <strong>Tips untuk thumbnail yang baik:</strong>
-                                                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                                                <ul className="mt-2 list-inside list-disc space-y-1 text-sm">
                                                     <li>Gunakan gambar dengan resolusi minimal 1280x720 px</li>
                                                     <li>Format yang didukung: JPG, PNG, WebP</li>
                                                     <li>Ukuran maksimal file: 2MB</li>
@@ -269,10 +257,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
 
                             <div className="space-y-2">
                                 <Label htmlFor="status">Status Publikasi</Label>
-                                <Select
-                                    value={data.status}
-                                    onValueChange={(value: 'draft' | 'published') => setData('status', value)}
-                                >
+                                <Select value={data.status} onValueChange={(value: 'draft' | 'published') => setData('status', value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pilih status" />
                                     </SelectTrigger>
@@ -284,7 +269,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                 {errors.status && <p className="text-sm text-red-600">{errors.status}</p>}
                             </div>
 
-                            <div className="flex justify-end space-x-2 pt-4 border-t">
+                            <div className="flex justify-end space-x-2 border-t pt-4">
                                 <Link href={route('admin.courses.index')}>
                                     <Button type="button" variant="outline">
                                         Batal

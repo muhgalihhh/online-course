@@ -142,7 +142,7 @@ export default function Settings({ settings = {}, profileData, mustVerifyEmail }
                                     <div className="flex items-center gap-6">
                                         <Avatar className="h-20 w-20">
                                             <AvatarImage
-                                                src={profileData?.profile_photo_path ? `/storage/${profileData.profile_photo_path}` : undefined}
+                                                src={profileData?.profile_photo_path ? profileData.profile_photo_path : undefined}
                                                 alt={profileForm.data.name}
                                             />
                                             <AvatarFallback>{getInitials(profileForm.data.name)}</AvatarFallback>

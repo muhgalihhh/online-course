@@ -186,11 +186,7 @@ export default function ChaptersByCourse({ course, chapters }: ChaptersByCourseP
                         {/* Thumbnail Section */}
                         <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 md:h-auto md:w-48">
                             {course.thumbnail || course.thumbnail_path ? (
-                                <img
-                                    src={course.thumbnail || `/storage/${course.thumbnail_path}`}
-                                    alt={course.title}
-                                    className="h-full w-full object-cover"
-                                />
+                                <img src={course.thumbnail || course.thumbnail_path} alt={course.title} className="h-full w-full object-cover" />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center">
                                     <div className="text-center">

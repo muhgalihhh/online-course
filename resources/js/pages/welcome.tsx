@@ -290,7 +290,7 @@ export default function Welcome() {
                                     <div className="flex items-center gap-4">
                                         <div className="relative">
                                             <img
-                                                src={institution?.photo_path ? `/storage/${institution.photo_path}` : '/logo.png'}
+                                                src={institution?.photo_path ? institution.photo_path : '/logo.png'}
                                                 alt={`Logo ${institution?.name || 'Platform'}`}
                                                 className="h-24 w-auto rounded-xl bg-white/10 object-contain p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm md:h-32"
                                                 loading="lazy"
