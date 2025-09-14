@@ -16,7 +16,7 @@ import { useCart } from '@/contexts/cart-context';
 import { useAuth } from '@/hooks/use-auth';
 import { router } from '@inertiajs/react';
 import { AlertCircle, CheckCircle, Clock, CreditCard, Loader2, Lock, ShoppingCart, Trash2, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export function CartSidebar() {
@@ -25,6 +25,43 @@ export function CartSidebar() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Heuristic expiry estimation based on payment method
+    const guessExpiry = (createdAtIso: string, paymentMethod?: string) => {
+        const createdAt = new Date(createdAtIso).getTime();
+        const HOURS = 60 * 60 * 1000;
+        const MIN = 60 * 1000;
+        switch (paymentMethod) {
+            case 'gopay':
+            case 'shopeepay':
+                return createdAt + 15 * MIN;
+            case 'qris':
+                return createdAt + 30 * MIN;
+            case 'indomaret':
+            case 'alfamart':
+                return createdAt + 48 * HOURS;
+            default:
+                return createdAt + 24 * HOURS;
+        }
+    };
+
+    const formatRemaining = (ms?: number) => {
+        if (ms == null) return '';
+        const sec = Math.max(Math.floor(ms / 1000), 0);
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        if (h > 0) return `${h}j ${m}m ${s}d`;
+        if (m > 0) return `${m}m ${s}d`;
+        return `${s}d`;
+    };
+
+    // Ticking timer for pending items
+    const [now, setNow] = useState<number>(() => Date.now());
+    useEffect(() => {
+        const id = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(id);
+    }, []);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -137,6 +174,15 @@ export function CartSidebar() {
     const completedItems = cartItems.filter((item) => item.status === 'completed');
     const failedItems = cartItems.filter((item) => item.status === 'failed' || item.status === 'cancelled' || item.status === 'expired');
 
+    const pendingWithTimers = useMemo(() => {
+        return pendingItems.map((item) => {
+            const createdAtIso = item.transaction?.created_at || new Date().toISOString();
+            const expiryAt = guessExpiry(createdAtIso, item.transaction?.payment_method);
+            const remainingMs = expiryAt - now;
+            return { ...item, remainingMs: remainingMs > 0 ? remainingMs : 0 } as typeof item & { remainingMs: number };
+        });
+    }, [pendingItems, now]);
+
     return (
         <>
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -212,7 +258,7 @@ export function CartSidebar() {
                                     <div className="mb-6">
                                         <h3 className="mb-3 text-sm font-semibold text-yellow-700">Menunggu Pembayaran ({pendingItems.length})</h3>
                                         <div className="space-y-3">
-                                            {pendingItems.map((item) => (
+                                            {pendingWithTimers.map((item) => (
                                                 <div key={item.id} className="flex gap-3 rounded-lg border border-yellow-200 bg-yellow-50/50 p-3">
                                                     {item.thumbnail ? (
                                                         <img src={item.thumbnail} alt={item.title} className="h-16 w-20 rounded object-cover" />
@@ -228,6 +274,11 @@ export function CartSidebar() {
                                                             {getStatusIcon(item.status)}
                                                             <span className="text-xs text-yellow-600">Menunggu pembayaran</span>
                                                         </div>
+                                                        {typeof (item as any).remainingMs === 'number' && (
+                                                            <div className="mt-1 text-xs text-gray-600">
+                                                                Sisa waktu estimasi: {formatRemaining((item as any).remainingMs)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col gap-1">
                                                         <Button

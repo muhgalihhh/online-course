@@ -201,7 +201,8 @@ class MidtransService
                 'redirect_url_present' => !empty($snapTransaction->redirect_url)
             ]);
 
-            $transaction = Transaction::create([
+            try {
+                $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'transactionable_id' => $course->id,
                 'transactionable_type' => Course::class,
@@ -214,7 +215,28 @@ class MidtransService
                     'redirect_url' => $snapTransaction->redirect_url ?? null,
                     'enabled_payments' => $enabledPayments,
                 ],
-            ]);
+                ]);
+            } catch (\Illuminate\Database\QueryException $qe) {
+                // Handle unique active constraint violation: reuse existing active transaction
+                if (str_contains(strtolower($qe->getMessage()), 'uniq_active_tx_user_course')) {
+                    $existing = Transaction::where('user_id', $user->id)
+                        ->where('transactionable_id', $course->id)
+                        ->where('transactionable_type', Course::class)
+                        ->whereIn('status', ['pending', 'processing'])
+                        ->latest()
+                        ->first();
+                    if ($existing) {
+                        return [
+                            'order_id' => $existing->midtrans_order_id,
+                            'snap_token' => $existing->payment_details['snap_token'] ?? null,
+                            'redirect_url' => $existing->payment_details['redirect_url'] ?? null,
+                            'transaction' => $existing,
+                            'is_existing' => true,
+                        ];
+                    }
+                }
+                throw $qe;
+            }
 
             Log::info('Created new transaction', [
                 'order_id' => $orderId,
