@@ -117,7 +117,7 @@ class CoursePaymentStatusService
         break;
 
       case 'continue_payment':
-        $config['href'] = route('payments.courses.show', $course->id);
+        $config['href'] = route('payments.show', $course->id);
         $config['variant'] = 'outline';
         break;
 

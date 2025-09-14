@@ -234,9 +234,15 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
         setStatus('creating');
         try {
             // Call backend create
-            const res = await fetch(`/payments/courses/${course.id}/transaction`, {
+            const res = await fetch(`/payments/courses/${course.id}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
+                },
+                credentials: 'include',
                 body: JSON.stringify({}),
             });
             if (!res.ok) {
@@ -260,7 +266,15 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
         if (!orderId) return;
         setIsLoading(true);
         try {
-            await fetch(`/payments/transactions/${orderId}/cancel`, { method: 'DELETE', headers: { Accept: 'application/json' } });
+            await fetch(`/api/transactions/${orderId}`, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
+                },
+                credentials: 'include',
+            });
             setStatus('cancelled');
             setOrderId(undefined);
             setSnapToken(undefined);
@@ -274,7 +288,10 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
     const refreshStatus = useCallback(async () => {
         if (!orderId) return;
         try {
-            const res = await fetch(`/payments/transactions/${orderId}/status`, { headers: { Accept: 'application/json' } });
+            const res = await fetch(`/api/transactions/${orderId}/status`, {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'include',
+            });
             if (!res.ok) return;
             const data: CheckStatusResponse = await res.json();
             if (data.status === 'completed') {
@@ -503,6 +520,7 @@ const PaymentPage: React.FC = () => {
                 <div className="rounded border p-4">
                     <h3 className="mb-2 font-medium">Selesaikan Pembayaran</h3>
                     <SnapEmbed
+                        key={snapToken}
                         token={snapToken!}
                         onSuccess={() => {
                             /* Will poll -> completed */
