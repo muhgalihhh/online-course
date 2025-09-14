@@ -1,90 +1,67 @@
-import GuestLayout from '@/layouts/guest-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { 
-    BookOpen, 
-    Star, 
-    Users, 
-    Search,
-    Filter,
-    Grid,
-    List,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    DollarSign
-} from 'lucide-react';
-import { Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import GuestLayout from '@/layouts/guest-layout';
+import { type Transaction } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BookOpen, ChevronLeft, ChevronRight, Clock, Grid, List, Search, Star, Users } from 'lucide-react';
+import { useState } from 'react';
 
 interface Course {
     id: number;
     title: string;
     description: string;
     price: number;
-    is_pro: boolean;
+    formatted_price: string;
+    instructor: string;
+    category: { name: string };
+    image: string;
+    thumbnail?: string;
     status: string;
-    thumbnail: string | null;
-    category: {
-        id: number;
-        name: string;
-    };
-    institution: {
-        id: number;
-        name: string;
-    };
     average_rating: number;
-    total_reviews: number;
-    total_students: number;
+    enrolled_count: number;
+    duration: string;
+    total_chapters: number;
+    total_reviews?: number;
+    total_students?: number;
+    level: string;
     is_enrolled?: boolean;
-}
-
-interface Category {
-    id: number;
-    name: string;
-    description?: string;
+    is_favorite?: boolean;
+    is_pro?: boolean;
+    payment_status?: string;
+    button_text?: string;
+    institution?: { name: string };
+    transaction?: Transaction;
 }
 
 interface PageProps {
     courses: {
         data: Course[];
+        links: Array<{ url?: string; label: string; active: boolean }>;
         current_page: number;
         last_page: number;
         per_page: number;
         total: number;
-        from: number;
-        to: number;
-        links: Array<{
-            url: string | null;
-            label: string;
-            active: boolean;
-        }>;
+        from?: number;
+        to?: number;
     };
-    categories: Category[];
+    categories: Array<{ id: number; name: string }>;
     filters: {
         category?: string;
         type?: string;
         search?: string;
         sort?: string;
     };
+    [key: string]: unknown;
 }
 
 export default function CoursesIndex() {
     const { courses, categories, filters } = usePage<PageProps>().props;
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isAdmin } = useAuth();
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -95,37 +72,56 @@ export default function CoursesIndex() {
     };
 
     const handleFilterChange = (key: string, value: string) => {
-        const newFilters = { ...filters, [key]: value };
+        const currentFilters = { ...filters };
         if (value === 'all' || !value) {
-            delete newFilters[key];
+            const updatedFilters = Object.fromEntries(Object.entries(currentFilters).filter(([k]) => k !== key));
+            router.get('/courses', updatedFilters, { preserveState: true });
+        } else {
+            router.get('/courses', { ...currentFilters, [key]: value }, { preserveState: true });
         }
-        router.get('/courses', newFilters, { preserveState: true });
     };
 
     const handleBookCourse = (course: Course) => {
-        console.log('handleBookCourse called', { 
-            courseId: course.id, 
-            isPro: course.is_pro, 
+        console.log('handleBookCourse called', {
+            courseId: course.id,
+            isPro: course.is_pro,
             price: course.price,
-            isAuthenticated 
+            isAuthenticated,
+            isAdmin,
+            paymentStatus: course.payment_status,
         });
-        
+
         if (!isAuthenticated) {
             setShowLoginDialog(true);
+        } else if (isAdmin) {
+            // Prevent admin from enrolling
+            alert('Admin tidak dapat mendaftar kelas. Silakan gunakan panel admin untuk mengelola kursus.');
+            return;
         } else {
+            // Check payment status first
+            if (course.payment_status === 'pending_payment' && course.transaction) {
+                // Redirect to continue payment using order ID
+                router.visit(route('transactions.show', course.transaction.midtrans_order_id));
+                return;
+            }
+
             // For free courses, directly enroll without payment
             if (!course.is_pro && course.price === 0) {
                 console.log('Enrolling in free course:', course.id);
-                router.post(`/courses/${course.id}/enroll-free`, {}, {
-                    preserveScroll: true,
-                    onSuccess: (page) => {
-                        console.log('Enrollment success', page);
-                        // Redirect will be handled by the controller
+                router.post(
+                    `/courses/${course.id}/enroll-free`,
+                    {},
+                    {
+                        preserveScroll: true,
+                        onSuccess: (page) => {
+                            console.log('Enrollment success', page);
+                            // Redirect will be handled by the controller
+                        },
+                        onError: (errors) => {
+                            console.error('Enrollment error:', errors);
+                        },
                     },
-                    onError: (errors) => {
-                        console.error('Enrollment error:', errors);
-                    }
-                });
+                );
             } else {
                 // Navigate to enrollment/payment page for pro courses
                 router.visit(`/courses/${course.id}/enroll`);
@@ -138,26 +134,26 @@ export default function CoursesIndex() {
     };
 
     const CourseCard = ({ course }: { course: Course }) => (
-        <Card className="overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg h-full flex flex-col">
+        <Card className="flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
             <CardHeader className="p-0">
                 <div className="relative">
-                    <img 
-                        src={course.thumbnail || 'https://via.placeholder.com/400x225'} 
-                        alt={course.title} 
-                        className="aspect-[16/9] w-full object-cover" 
+                    <img
+                        src={course.thumbnail || 'https://via.placeholder.com/400x225'}
+                        alt={course.title}
+                        className="aspect-[16/9] w-full object-cover"
                     />
                     <div className="absolute top-2 right-2">
-                        <Badge variant={course.is_pro ? "default" : "secondary"}>
-                            {course.is_pro ? "Pro" : "Free"}
-                        </Badge>
+                        <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 flex-1 flex flex-col">
-                <Badge variant="outline" className="mb-2 w-fit">{course.category.name}</Badge>
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">{course.description}</p>
-                
+            <CardContent className="flex flex-1 flex-col p-4">
+                <Badge variant="outline" className="mb-2 w-fit">
+                    {course.category.name}
+                </Badge>
+                <h3 className="mb-2 line-clamp-2 text-lg font-semibold">{course.title}</h3>
+                <p className="mb-3 line-clamp-2 flex-1 text-sm text-muted-foreground">{course.description}</p>
+
                 <div className="space-y-3">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -167,43 +163,39 @@ export default function CoursesIndex() {
                         </div>
                         <div className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            <span>{course.total_students.toLocaleString()}</span>
+                            <span>{course.total_students?.toLocaleString() || 0}</span>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            {course.institution.name}
-                        </p>
-                        <p className="text-lg font-bold text-primary">
-                            {course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{course.institution?.name}</p>
+                        <p className="text-lg font-bold text-primary">{course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}</p>
                     </div>
-                    
+
                     <div className="flex gap-2">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            asChild
-                        >
-                            <Link href={`/courses/${course.id}`}>
-                                Lihat Detail
-                            </Link>
+                        <Button variant="outline" size="sm" className="flex-1" asChild>
+                            <Link href={`/courses/${course.id}`}>Lihat Detail</Link>
                         </Button>
                         {course.is_enrolled ? (
                             <Button size="sm" className="flex-1" asChild>
-                                <Link href={`/courses/${course.id}/learn`}>
-                                    Lanjutkan Belajar
-                                </Link>
+                                <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
+                            </Button>
+                        ) : isAdmin ? (
+                            <Button size="sm" className="flex-1" variant="outline" disabled>
+                                Admin
+                            </Button>
+                        ) : course.payment_status === 'paid_processing' ? (
+                            <Button size="sm" className="flex-1" variant="secondary" disabled>
+                                <Clock className="mr-1 h-3 w-3" />
+                                Sedang Diproses
+                            </Button>
+                        ) : course.payment_status === 'pending_payment' ? (
+                            <Button size="sm" className="flex-1" variant="outline" onClick={() => handleBookCourse(course)}>
+                                Lanjutkan Pembayaran
                             </Button>
                         ) : (
-                            <Button 
-                                size="sm" 
-                                className="flex-1"
-                                onClick={() => handleBookCourse(course)}
-                            >
-                                {course.is_pro ? 'Pesan' : 'Ikuti'}
+                            <Button size="sm" className="flex-1" onClick={() => handleBookCourse(course)}>
+                                {course.button_text || (course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus')}
                             </Button>
                         )}
                     </div>
@@ -216,30 +208,28 @@ export default function CoursesIndex() {
         <Card className="overflow-hidden transition-all hover:shadow-lg">
             <CardContent className="p-4">
                 <div className="flex gap-4">
-                    <img 
-                        src={course.thumbnail || 'https://via.placeholder.com/200x150'} 
-                        alt={course.title} 
-                        className="w-48 h-32 object-cover rounded-lg" 
+                    <img
+                        src={course.thumbnail || 'https://via.placeholder.com/200x150'}
+                        alt={course.title}
+                        className="h-32 w-48 rounded-lg object-cover"
                     />
                     <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between">
                             <div>
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="mb-1 flex items-center gap-2">
                                     <Badge variant="outline">{course.category.name}</Badge>
-                                    <Badge variant={course.is_pro ? "default" : "secondary"}>
-                                        {course.is_pro ? "Pro" : "Free"}
-                                    </Badge>
+                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
                                 </div>
-                                <h3 className="font-semibold text-lg">{course.title}</h3>
-                                <p className="text-sm text-muted-foreground mt-1">{course.institution.name}</p>
+                                <h3 className="text-lg font-semibold">{course.title}</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">{course.institution?.name}</p>
                             </div>
                             <p className="text-xl font-bold text-primary">
                                 {course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
                             </p>
                         </div>
-                        
-                        <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
-                        
+
+                        <p className="line-clamp-2 text-sm text-muted-foreground">{course.description}</p>
+
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
@@ -249,32 +239,29 @@ export default function CoursesIndex() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <Users className="h-4 w-4" />
-                                    <span>{course.total_students.toLocaleString()} siswa</span>
+                                    <span>{course.total_students?.toLocaleString() || 0} siswa</span>
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-2">
-                                <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    asChild
-                                >
-                                    <Link href={`/courses/${course.id}`}>
-                                        Lihat Detail
-                                    </Link>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/courses/${course.id}`}>Lihat Detail</Link>
                                 </Button>
                                 {course.is_enrolled ? (
                                     <Button size="sm" asChild>
-                                        <Link href={`/courses/${course.id}/learn`}>
-                                            Lanjutkan Belajar
-                                        </Link>
+                                        <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
+                                    </Button>
+                                ) : isAdmin ? (
+                                    <Button size="sm" variant="outline" disabled>
+                                        Admin
+                                    </Button>
+                                ) : course.payment_status === 'paid_processing' ? (
+                                    <Button size="sm" variant="secondary" disabled>
+                                        {course.button_text || 'Sedang Diproses'}
                                     </Button>
                                 ) : (
-                                    <Button 
-                                        size="sm"
-                                        onClick={() => handleBookCourse(course)}
-                                    >
-                                        {course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus'}
+                                    <Button size="sm" onClick={() => handleBookCourse(course)}>
+                                        {course.button_text || (course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus')}
                                     </Button>
                                 )}
                             </div>
@@ -291,8 +278,8 @@ export default function CoursesIndex() {
             <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-12">
                 <div className="container mx-auto px-4">
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold mb-4">Katalog Kursus</h1>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
+                        <h1 className="mb-4 text-3xl font-bold">Katalog Kursus</h1>
+                        <p className="mx-auto max-w-2xl text-muted-foreground">
                             Temukan kursus yang sesuai dengan kebutuhan Anda dari berbagai kategori dan tingkat kesulitan
                         </p>
                     </div>
@@ -300,13 +287,13 @@ export default function CoursesIndex() {
             </section>
 
             {/* Filters Section */}
-            <section className="py-6 border-b">
+            <section className="border-b py-6">
                 <div className="container mx-auto px-4">
-                    <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="flex flex-col gap-4 lg:flex-row">
                         {/* Search */}
-                        <form onSubmit={handleSearch} className="flex-1 max-w-md">
+                        <form onSubmit={handleSearch} className="max-w-md flex-1">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     type="text"
                                     placeholder="Cari kursus..."
@@ -319,10 +306,7 @@ export default function CoursesIndex() {
 
                         {/* Filters */}
                         <div className="flex flex-wrap gap-2">
-                            <Select
-                                value={filters.category || 'all'}
-                                onValueChange={(value) => handleFilterChange('category', value)}
-                            >
+                            <Select value={filters.category || 'all'} onValueChange={(value) => handleFilterChange('category', value)}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Semua Kategori" />
                                 </SelectTrigger>
@@ -336,10 +320,7 @@ export default function CoursesIndex() {
                                 </SelectContent>
                             </Select>
 
-                            <Select
-                                value={filters.type || 'all'}
-                                onValueChange={(value) => handleFilterChange('type', value)}
-                            >
+                            <Select value={filters.type || 'all'} onValueChange={(value) => handleFilterChange('type', value)}>
                                 <SelectTrigger className="w-[150px]">
                                     <SelectValue placeholder="Semua Tipe" />
                                 </SelectTrigger>
@@ -350,10 +331,7 @@ export default function CoursesIndex() {
                                 </SelectContent>
                             </Select>
 
-                            <Select
-                                value={filters.sort || 'latest'}
-                                onValueChange={(value) => handleFilterChange('sort', value)}
-                            >
+                            <Select value={filters.sort || 'latest'} onValueChange={(value) => handleFilterChange('sort', value)}>
                                 <SelectTrigger className="w-[150px]">
                                     <SelectValue placeholder="Urutkan" />
                                 </SelectTrigger>
@@ -367,19 +345,11 @@ export default function CoursesIndex() {
                             </Select>
 
                             {/* View Mode Toggle */}
-                            <div className="flex gap-1 ml-auto">
-                                <Button
-                                    variant={viewMode === 'grid' ? 'default' : 'outline'}
-                                    size="icon"
-                                    onClick={() => setViewMode('grid')}
-                                >
+                            <div className="ml-auto flex gap-1">
+                                <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('grid')}>
                                     <Grid className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                    variant={viewMode === 'list' ? 'default' : 'outline'}
-                                    size="icon"
-                                    onClick={() => setViewMode('list')}
-                                >
+                                <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}>
                                     <List className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -445,7 +415,11 @@ export default function CoursesIndex() {
                                                 );
                                             }
                                             if (link.label === '...') {
-                                                return <span key={index} className="px-3 py-1">...</span>;
+                                                return (
+                                                    <span key={index} className="px-3 py-1">
+                                                        ...
+                                                    </span>
+                                                );
                                             }
                                             return (
                                                 <Button
@@ -465,11 +439,9 @@ export default function CoursesIndex() {
                     ) : (
                         <Card className="p-12">
                             <CardContent className="text-center">
-                                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">Tidak ada kursus ditemukan</h3>
-                                <p className="text-muted-foreground">
-                                    Coba ubah filter atau kata kunci pencarian Anda
-                                </p>
+                                <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                <h3 className="mb-2 text-lg font-semibold">Tidak ada kursus ditemukan</h3>
+                                <p className="text-muted-foreground">Coba ubah filter atau kata kunci pencarian Anda</p>
                             </CardContent>
                         </Card>
                     )}
@@ -481,14 +453,10 @@ export default function CoursesIndex() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Login Diperlukan</DialogTitle>
-                        <DialogDescription>
-                            Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.
-                        </DialogDescription>
+                        <DialogDescription>Silakan login atau daftar terlebih dahulu untuk memesan kursus ini.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button onClick={handleLoginRedirect}>
-                            OK
-                        </Button>
+                        <Button onClick={handleLoginRedirect}>OK</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

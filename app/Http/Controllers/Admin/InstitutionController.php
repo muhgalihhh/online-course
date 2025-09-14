@@ -40,6 +40,12 @@ class InstitutionController extends Controller
                 'email' => '',
                 'address' => '',
                 'website' => '',
+                'tiktok_url' => null,
+                'instagram_url' => null,
+                'facebook_url' => null,
+                'twitter_url' => null,
+                'ios_app_url' => null,
+                'android_app_url' => null,
             ]);
         }
 

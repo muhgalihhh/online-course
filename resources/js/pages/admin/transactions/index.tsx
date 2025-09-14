@@ -1,14 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, DollarSign } from 'lucide-react';
-import { Pagination } from '@/components/pagination';
-import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import { DollarSign, Eye } from 'lucide-react';
 
 interface User {
     id: number;
@@ -49,58 +48,65 @@ interface TransactionIndexProps extends PageProps {
 export default function TransactionIndex({ transactions, filters }: TransactionIndexProps) {
     const { patch } = useForm();
 
+    const handlePagination = (url: string) => {
+        router.get(url, filters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const filterConfig: FilterConfig = {
         search: {
-            placeholder: "Search by user name, email, or order ID...",
+            placeholder: 'Search by user name, email, or order ID...',
         },
         select: {
             status: {
-                label: "Status",
+                label: 'Status',
                 options: [
-                    { value: "pending", label: "Pending" },
-                    { value: "settlement", label: "Settlement" },
-                    { value: "capture", label: "Capture" },
-                    { value: "expire", label: "Expired" },
-                    { value: "cancel", label: "Cancelled" },
-                    { value: "deny", label: "Denied" },
-                    { value: "failure", label: "Failed" },
-                    { value: "refund", label: "Refunded" }
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'settlement', label: 'Settlement' },
+                    { value: 'capture', label: 'Capture' },
+                    { value: 'expire', label: 'Expired' },
+                    { value: 'cancel', label: 'Cancelled' },
+                    { value: 'deny', label: 'Denied' },
+                    { value: 'failure', label: 'Failed' },
+                    { value: 'refund', label: 'Refunded' },
                 ],
-                placeholder: "All Status"
+                placeholder: 'All Status',
             },
             payment_method: {
-                label: "Payment Method",
+                label: 'Payment Method',
                 options: [
-                    { value: "credit_card", label: "Credit Card" },
-                    { value: "bank_transfer", label: "Bank Transfer" },
-                    { value: "gopay", label: "GoPay" },
-                    { value: "ovo", label: "OVO" },
-                    { value: "dana", label: "DANA" }
+                    { value: 'credit_card', label: 'Credit Card' },
+                    { value: 'bank_transfer', label: 'Bank Transfer' },
+                    { value: 'gopay', label: 'GoPay' },
+                    { value: 'ovo', label: 'OVO' },
+                    { value: 'dana', label: 'DANA' },
                 ],
-                placeholder: "All Payment Methods"
-            }
+                placeholder: 'All Payment Methods',
+            },
         },
         numberRange: {
             amount: {
-                label: "Amount Range",
+                label: 'Amount Range',
                 min: 0,
-                step: 1000
-            }
+                step: 1000,
+            },
         },
         dateRange: {
             enabled: true,
-            label: "Transaction Date"
+            label: 'Transaction Date',
         },
         sort: {
             enabled: true,
             options: [
-                { value: "created_at", label: "Transaction Date" },
-                { value: "amount", label: "Amount" },
-                { value: "status", label: "Status" }
+                { value: 'created_at', label: 'Transaction Date' },
+                { value: 'amount', label: 'Amount' },
+                { value: 'status', label: 'Status' },
             ],
-            defaultSort: "created_at",
-            defaultOrder: "desc"
-        }
+            defaultSort: 'created_at',
+            defaultOrder: 'desc',
+        },
     };
 
     const handleStatusChange = (transactionId: number, newStatus: string) => {
@@ -166,13 +172,9 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
             <Head title="Manage Transactions" />
 
             <div className="space-y-4">
-                <AdminFilter 
-                    config={filterConfig}
-                    filters={filters}
-                    route="admin.transactions.index"
-                />
+                <AdminFilter config={filterConfig} filters={filters} route="admin.transactions.index" />
 
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Daftar Transaksi</h1>
                 </div>
 
@@ -207,16 +209,13 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
                                         <TableCell>{transaction.transactionable.title}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center">
-                                                <DollarSign className="h-4 w-4 mr-1" />
+                                                <DollarSign className="mr-1 h-4 w-4" />
                                                 {transaction.amount.toLocaleString()}
                                             </div>
                                         </TableCell>
                                         <TableCell>{transaction.payment_method}</TableCell>
                                         <TableCell>
-                                            <Select
-                                                value={transaction.status}
-                                                onValueChange={(value) => handleStatusChange(transaction.id, value)}
-                                            >
+                                            <Select value={transaction.status} onValueChange={(value) => handleStatusChange(transaction.id, value)}>
                                                 <SelectTrigger className="w-32">
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -242,7 +241,7 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
                         </Table>
                         {transactions.links && transactions.links.length > 0 && (
                             <div className="mt-4">
-                                <Pagination links={transactions.links} />
+                                <Pagination links={transactions.links} onPageChange={handlePagination} />
                             </div>
                         )}
                     </CardContent>

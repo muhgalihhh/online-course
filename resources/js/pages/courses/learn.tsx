@@ -474,9 +474,11 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                     Simpan Progress
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem>
-                                                    <MessageSquare className="mr-2 h-4 w-4" />
-                                                    Diskusi
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={route('courses.discussion.index', { course: course.id })}>
+                                                        <MessageSquare className="mr-2 h-4 w-4" />
+                                                        Diskusi
+                                                    </Link>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

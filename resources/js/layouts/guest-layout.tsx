@@ -1,6 +1,9 @@
+import { PageTransition } from '@/components/animations';
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { CartSidebar } from '@/components/cart-sidebar';
+import LiveChatWidget from '@/components/live-chat-widget';
+import { FacebookIcon, InstagramIcon, TikTokIcon, TwitterIcon } from '@/components/social-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,12 +16,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/toaster';
-import WeatherButton from '@/components/weather-button';
+import WeatherDropdown from '@/components/weather-dropdown';
 import { CartProvider, useCart } from '@/contexts/cart-context';
 import { useAuth } from '@/hooks/use-auth';
 import { useToastNotifications } from '@/hooks/use-toast-notifications';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, GraduationCap, HelpCircle, LogOut, Menu, Settings, ShoppingCart, User, X } from 'lucide-react';
+import { BookOpen, Globe, GraduationCap, HelpCircle, LogOut, Menu, Settings, ShoppingCart, Smartphone, User, X } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface Institution {
@@ -30,20 +33,102 @@ interface Institution {
     address?: string;
     website?: string;
     photo_path?: string;
+    // Social media links
+    tiktok_url?: string;
+    instagram_url?: string;
+    facebook_url?: string;
+    twitter_url?: string;
+    // Mobile app links
+    ios_app_url?: string;
+    android_app_url?: string;
 }
 
 interface PageProps {
     institution?: Institution;
+    [key: string]: unknown;
 }
 
 interface GuestLayoutProps {
     children: React.ReactNode;
 }
 
+// Helper component for mobile grouped navigation (dropdown / accordion style)
+interface MobileGroupItem {
+    name: string;
+    requiresAuth?: boolean;
+    children: { name: string; href: string; requiresAuth?: boolean }[];
+}
+
+interface MobileNavGroupProps {
+    item: MobileGroupItem;
+    isActiveLink: (href: string) => boolean;
+    isAuthenticated: boolean;
+    closeMenu: () => void;
+}
+
+const MobileNavGroup: React.FC<MobileNavGroupProps> = ({ item, isActiveLink, isAuthenticated, closeMenu }) => {
+    const isAnyActive = item.children.some((c) => isActiveLink(c.href));
+    const [open, setOpen] = useState(isAnyActive);
+    return (
+        <div className="space-y-2">
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className={`flex w-full items-center justify-between text-left text-sm font-medium transition-colors hover:text-primary ${
+                    isAnyActive ? 'font-semibold text-primary' : 'text-muted-foreground'
+                }`}
+            >
+                <span className="flex items-center gap-2">
+                    {isAnyActive && <span className="h-2 w-2 rounded-full bg-primary" />}
+                    {item.name}
+                </span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                >
+                    <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                    />
+                </svg>
+            </button>
+            {open && (
+                <div className="ml-4 space-y-2 border-l pl-4">
+                    {item.children.map((child) => {
+                        const isActive = isActiveLink(child.href);
+                        const handleClick = (e: React.MouseEvent) => {
+                            if (child.requiresAuth && !isAuthenticated) {
+                                e.preventDefault();
+                                // redirect to login
+                            }
+                            closeMenu();
+                        };
+                        return (
+                            <Link
+                                key={child.name}
+                                href={child.href}
+                                onClick={handleClick}
+                                className={`block text-sm transition-colors hover:text-primary ${
+                                    isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
+                                }`}
+                            >
+                                {child.name}
+                            </Link>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Inner component that uses cart context
 const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, isAdmin } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
     const { toggleCart, getPendingCount } = useCart();
 
@@ -75,13 +160,38 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
         return url.startsWith(href);
     };
 
-    const navigationItems = [
+    const navigationItems: Array<
+        | { name: string; href: string; requiresAuth?: boolean; children?: undefined }
+        | { name: string; requiresAuth?: boolean; children: { name: string; href: string; requiresAuth?: boolean }[] }
+    > = [
         { name: 'Beranda', href: '/', requiresAuth: false },
-        { name: 'Kelas Pro', href: '/kelas-pro', requiresAuth: false },
-        { name: 'Kelas Free', href: '/kelas-free', requiresAuth: false },
-        { name: 'Kelas Anda', href: isAuthenticated ? '/user/my-courses' : '/dashboard', requiresAuth: false },
-        { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
-        { name: 'Lembaga Lain', href: '/lembaga-lain', requiresAuth: false },
+        {
+            name: 'Kelas',
+            children: [
+                { name: 'Kelas Free', href: '/kelas-free', requiresAuth: false },
+                { name: 'Kelas Pro', href: '/kelas-pro', requiresAuth: false },
+            ],
+        },
+        {
+            name: isAdmin ? 'Dashboard Admin' : 'Kelas Anda',
+            href: isAdmin ? '/admin/dashboard' : isAuthenticated ? '/user/my-courses' : '/dashboard',
+            requiresAuth: false,
+        },
+        {
+            name: 'Informasi',
+            children: [
+                { name: 'Tentang Kami', href: '/tentang', requiresAuth: false },
+                { name: 'Galeri', href: '/galeri', requiresAuth: false },
+                { name: 'FAQ', href: '/faq', requiresAuth: false },
+            ],
+        },
+        {
+            name: 'Lainnya',
+            children: [
+                { name: 'Akomodasi', href: '/accommodations', requiresAuth: false },
+                { name: 'Lembaga Lain', href: '/lembaga-lain', requiresAuth: false },
+            ],
+        },
     ];
 
     return (
@@ -102,6 +212,55 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                         {/* Desktop Navigation */}
                         <nav className="hidden items-center space-x-8 md:flex">
                             {navigationItems.map((item) => {
+                                // Dropdown group
+                                if ('children' in item && item.children) {
+                                    const isAnyActive = item.children.some((c) => isActiveLink(c.href));
+                                    return (
+                                        <DropdownMenu key={item.name}>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    className={`relative text-sm font-medium transition-all hover:text-primary ${
+                                                        isAnyActive ? 'font-semibold text-primary' : 'text-muted-foreground'
+                                                    } flex items-center gap-1`}
+                                                >
+                                                    {item.name}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className={`h-3 w-3 transition-transform ${isAnyActive ? 'rotate-180' : ''}`}
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                    {isAnyActive && (
+                                                        <span className="absolute right-0 -bottom-[21px] left-0 h-[3px] rounded-t-sm bg-primary" />
+                                                    )}
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start">
+                                                {item.children.map((child) => {
+                                                    const isActive = isActiveLink(child.href);
+                                                    return (
+                                                        <DropdownMenuItem key={child.name} asChild>
+                                                            <Link
+                                                                href={child.href}
+                                                                className={`text-sm ${isActive ? 'font-semibold text-primary' : ''}`}
+                                                            >
+                                                                {child.name}
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    );
+                                                })}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    );
+                                }
+
+                                // Simple link item
                                 const isActive = isActiveLink(item.href);
                                 const handleClick = (e: React.MouseEvent) => {
                                     if (item.requiresAuth && !isAuthenticated) {
@@ -109,9 +268,6 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                         router.visit('/login', {
                                             preserveState: true,
                                             preserveScroll: true,
-                                            onSuccess: () => {
-                                                // Flash message is handled by server
-                                            },
                                         });
                                     }
                                 };
@@ -133,15 +289,17 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
 
                         {/* Desktop Actions */}
                         <div className="hidden items-center space-x-4 md:flex">
-                            <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" onClick={toggleCart}>
-                                <ShoppingCart className="h-4 w-4" />
-                                {pendingCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold text-white">
-                                        {pendingCount}
-                                    </span>
-                                )}
-                            </Button>
-                            <WeatherButton defaultLocation={institution?.address || 'Pare, Kediri'} />
+                            {!isAdmin && (
+                                <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" onClick={toggleCart}>
+                                    <ShoppingCart className="h-4 w-4" />
+                                    {pendingCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold text-white">
+                                            {pendingCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            )}
+                            <WeatherDropdown defaultLocation={institution?.address || 'Pare, Kediri'} />
                             <AppearanceToggleDropdown />
                             <div className="h-6 w-px bg-border" />
                             {isAuthenticated && user ? (
@@ -169,9 +327,9 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link href="/user/my-courses" className="cursor-pointer">
+                                            <Link href={isAdmin ? '/admin/dashboard' : '/user/my-courses'} className="cursor-pointer">
                                                 <BookOpen className="mr-2 h-4 w-4" />
-                                                <span>Kelas Saya</span>
+                                                <span>{isAdmin ? 'Dashboard Admin' : 'Kelas Saya'}</span>
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
@@ -217,17 +375,23 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                         <div className="border-t py-4 md:hidden">
                             <nav className="space-y-4">
                                 {navigationItems.map((item) => {
+                                    if ('children' in item && item.children) {
+                                        return (
+                                            <MobileNavGroup
+                                                key={item.name}
+                                                item={item}
+                                                isActiveLink={isActiveLink}
+                                                isAuthenticated={isAuthenticated}
+                                                closeMenu={() => setIsMobileMenuOpen(false)}
+                                            />
+                                        );
+                                    }
+                                    // Simple item
                                     const isActive = isActiveLink(item.href);
                                     const handleClick = (e: React.MouseEvent) => {
                                         if (item.requiresAuth && !isAuthenticated) {
                                             e.preventDefault();
-                                            router.visit('/login', {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                                onSuccess: () => {
-                                                    // Flash message is handled by server
-                                                },
-                                            });
+                                            router.visit('/login', { preserveState: true, preserveScroll: true });
                                         }
                                         setIsMobileMenuOpen(false);
                                     };
@@ -248,25 +412,27 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                     );
                                 })}
                                 <div className="space-y-4 border-t pt-4">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="relative w-full justify-start"
-                                        onClick={() => {
-                                            setIsMobileMenuOpen(false);
-                                            toggleCart();
-                                        }}
-                                    >
-                                        <ShoppingCart className="mr-2 h-4 w-4" />
-                                        Keranjang
-                                        {pendingCount > 0 && (
-                                            <Badge variant="outline" className="ml-auto border-yellow-500 bg-yellow-500 text-white">
-                                                {pendingCount}
-                                            </Badge>
-                                        )}
-                                    </Button>
+                                    {!isAdmin && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="relative w-full justify-start"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false);
+                                                toggleCart();
+                                            }}
+                                        >
+                                            <ShoppingCart className="mr-2 h-4 w-4" />
+                                            Keranjang
+                                            {pendingCount > 0 && (
+                                                <Badge variant="outline" className="ml-auto border-yellow-500 bg-yellow-500 text-white">
+                                                    {pendingCount}
+                                                </Badge>
+                                            )}
+                                        </Button>
+                                    )}
                                     <div className="px-2">
-                                        <WeatherButton defaultLocation={institution?.address || 'Pare, Kediri'} />
+                                        <WeatherDropdown defaultLocation={institution?.address || 'Pare, Kediri'} />
                                     </div>
                                     {isAuthenticated && user ? (
                                         <div className="space-y-2">
@@ -289,11 +455,11 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                                     Dashboard
                                                 </Link>
                                                 <Link
-                                                    href="/user/my-courses"
+                                                    href={isAdmin ? '/admin/dashboard' : '/user/my-courses'}
                                                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                                                 >
                                                     <BookOpen className="h-4 w-4" />
-                                                    Kelas Saya
+                                                    {isAdmin ? 'Dashboard Admin' : 'Kelas Saya'}
                                                 </Link>
                                                 <Link
                                                     href="/user/profile"
@@ -336,7 +502,9 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
             </header>
 
             {/* Main Content */}
-            <main>{children}</main>
+            <main>
+                <PageTransition>{children}</PageTransition>
+            </main>
 
             {/* Footer */}
             <footer className="border-t bg-muted/30">
@@ -357,10 +525,70 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                 {institution?.description ||
                                     'Platform pembelajaran online personal yang menyediakan kursus berkualitas dari dasar hingga advanced. Dapatkan akses ke materi pembelajaran terbaik dengan harga terjangkau.'}
                             </p>
-                            <div className="flex gap-4">
-                                <Button size="sm" variant="outline" className="h-9 w-9 p-0">
-                                    <BookOpen className="h-4 w-4" />
-                                </Button>
+                            <div className="flex flex-wrap gap-3">
+                                {/* Social Media Links */}
+                                {institution?.facebook_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.facebook_url} target="_blank" rel="noopener noreferrer" title="Facebook">
+                                            <FacebookIcon className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {institution?.instagram_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.instagram_url} target="_blank" rel="noopener noreferrer" title="Instagram">
+                                            <InstagramIcon className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {institution?.twitter_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.twitter_url} target="_blank" rel="noopener noreferrer" title="Twitter">
+                                            <TwitterIcon className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {institution?.tiktok_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.tiktok_url} target="_blank" rel="noopener noreferrer" title="TikTok">
+                                            <TikTokIcon className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {institution?.website && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.website} target="_blank" rel="noopener noreferrer" title="Website">
+                                            <Globe className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {/* Mobile App Links */}
+                                {institution?.ios_app_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.ios_app_url} target="_blank" rel="noopener noreferrer" title="iOS App">
+                                            <Smartphone className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {institution?.android_app_url && (
+                                    <Button size="sm" variant="outline" className="h-9 w-9 p-0" asChild>
+                                        <a href={institution.android_app_url} target="_blank" rel="noopener noreferrer" title="Android App">
+                                            <Smartphone className="h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                )}
+                                {/* Default Education Icon if no social media */}
+                                {!institution?.facebook_url &&
+                                    !institution?.instagram_url &&
+                                    !institution?.twitter_url &&
+                                    !institution?.tiktok_url &&
+                                    !institution?.website &&
+                                    !institution?.ios_app_url &&
+                                    !institution?.android_app_url && (
+                                        <Button size="sm" variant="outline" className="h-9 w-9 p-0">
+                                            <BookOpen className="h-4 w-4" />
+                                        </Button>
+                                    )}
                             </div>
                         </div>
 
@@ -444,6 +672,9 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
 
             {/* Toast Notifications */}
             <Toaster />
+
+            {/* Live Chat Widget */}
+            <LiveChatWidget />
 
             {/* Cart Sidebar */}
             <CartSidebar />

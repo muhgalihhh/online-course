@@ -30,8 +30,21 @@ class PaymentController extends Controller
         $course = Course::query()->where('status', 'published')->findOrFail($courseId);
         $user = $request->user();
 
+        Log::info('Payment transaction request', [
+            'user_id' => $user->id,
+            'course_id' => $courseId,
+            'course_price' => $course->price,
+            'is_pro' => $course->is_pro,
+            'user_agent' => $request->userAgent(),
+        ]);
+
         // Prevent free courses from being added to cart/payment
         if (!$course->is_pro || (int) $course->price <= 0) {
+            Log::info('Attempt to pay for free course', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+            ]);
+
             return response()->json([
                 'message' => 'Kursus ini gratis. Tidak memerlukan pembayaran.',
                 'is_free' => true,
@@ -41,6 +54,11 @@ class PaymentController extends Controller
         // Check if user is already enrolled
         $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
         if ($alreadyEnrolled) {
+            Log::info('User already enrolled in course', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+            ]);
+
             return response()->json([
                 'message' => 'Anda sudah terdaftar di kursus ini.',
                 'is_enrolled' => true,
@@ -55,57 +73,85 @@ class PaymentController extends Controller
             ->exists();
 
         if ($hasCompletedTransaction) {
+            Log::info('User has completed transaction but not enrolled', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+            ]);
+
             return response()->json([
                 'message' => 'Anda sudah membeli kursus ini. Silakan hubungi admin jika belum terdaftar.',
                 'has_completed_transaction' => true,
             ], 409);
         }
 
-        // Check for existing pending transaction
-        $existingTransaction = Transaction::where('user_id', $user->id)
-            ->where('transactionable_id', $courseId)
-            ->where('transactionable_type', Course::class)
-            ->whereIn('status', ['pending', 'processing'])
-            ->first();
+        try {
+            // Use improved MidtransService logic with real-time validation
+            $result = $this->midtrans->createCourseTransaction($user, $course, $request->string('payment_method')->toString());
 
-        if ($existingTransaction) {
-            // Check actual status from Midtrans
-            $statusInfo = $this->midtrans->getTransactionStatus($existingTransaction->midtrans_order_id);
-
-            // If transaction is expired or cancelled, allow creating new one
-            if ($statusInfo && in_array($statusInfo['status'], ['expired', 'cancelled', 'failed'])) {
-                // Mark old transaction as expired/cancelled
-                $existingTransaction->update(['status' => $statusInfo['status']]);
-            } else {
-                // Transaction still valid, return existing token
-                return response()->json([
-                    'order_id' => $existingTransaction->midtrans_order_id,
-                    'snap_token' => $existingTransaction->payment_details['snap_token'] ?? null,
-                    'redirect_url' => $existingTransaction->payment_details['redirect_url'] ?? null,
-                    'client_key' => (string) config('midtrans.client_key'),
-                    'is_production' => (bool) config('midtrans.is_production'),
-                    'enabled_pay_button' => (bool) config('midtrans.enable_pay_button'),
-                    'existing_transaction' => true,
+            // Check if transaction was expired and needs to be recreated
+            if (isset($result['error']) && isset($result['expired_transaction'])) {
+                Log::info('Previous transaction expired, user needs to create new one', [
+                    'user_id' => $user->id,
+                    'course_id' => $courseId,
+                    'expired_order_id' => $result['expired_transaction']->midtrans_order_id,
                 ]);
+
+                return response()->json([
+                    'message' => $result['error'],
+                    'transaction_expired' => true,
+                    'can_retry' => true,
+                ], 410); // 410 Gone - indicates resource expired
             }
+
+            // Check for missing essential data
+            if (empty($result['order_id']) || empty($result['snap_token'])) {
+                throw new \Exception('Invalid response from Midtrans: missing order_id or snap_token');
+            }
+
+            Log::info('Transaction created/retrieved successfully', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+                'order_id' => $result['order_id'],
+                'is_existing' => $result['is_existing'] ?? false,
+                'snap_token_present' => !empty($result['snap_token'])
+            ]);
+
+            return response()->json([
+                'order_id' => $result['order_id'],
+                'snap_token' => $result['snap_token'],
+                'redirect_url' => $result['redirect_url'],
+                'client_key' => (string) config('midtrans.client_key'),
+                'is_production' => (bool) config('midtrans.is_production'),
+                'enabled_pay_button' => (bool) config('midtrans.enable_pay_button'),
+                'existing_transaction' => $result['is_existing'] ?? false,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create transaction', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal membuat transaksi. Silakan coba lagi.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+            ], 500);
         }
-
-        $result = $this->midtrans->createCourseTransaction($user, $course, $request->string('payment_method')->toString());
-
-        return response()->json([
-            'order_id' => $result['order_id'],
-            'snap_token' => $result['snap_token'],
-            'redirect_url' => $result['redirect_url'],
-            'client_key' => (string) config('midtrans.client_key'),
-            'is_production' => (bool) config('midtrans.is_production'),
-            'enabled_pay_button' => (bool) config('midtrans.enable_pay_button'),
-        ]);
     }
 
     public function handleMidtransWebhook(Request $request): JsonResponse
     {
         $payload = $request->all();
         $orderId = (string) ($payload['order_id'] ?? '');
+
+        Log::info('Midtrans webhook received', [
+            'order_id' => $orderId,
+            'transaction_status' => $payload['transaction_status'] ?? null,
+            'payment_type' => $payload['payment_type'] ?? null,
+            'fraud_status' => $payload['fraud_status'] ?? null,
+        ]);
 
         $transaction = Transaction::query()->where('midtrans_order_id', $orderId)->first();
         if (!$transaction) {
@@ -118,6 +164,13 @@ class PaymentController extends Controller
 
         $newStatus = $this->mapMidtransStatusToLocal($midtransStatus, $fraudStatus);
 
+        Log::info('Updating transaction status', [
+            'order_id' => $orderId,
+            'old_status' => $transaction->status,
+            'new_status' => $newStatus,
+            'midtrans_status' => $midtransStatus,
+        ]);
+
         $details = $transaction->payment_details ?? [];
         $details['last_notification'] = $payload;
         $transaction->update([
@@ -128,6 +181,12 @@ class PaymentController extends Controller
 
         // Fire event and trigger immediate auto-enrollment when payment is completed
         if ($newStatus === 'completed') {
+            Log::info('Payment completed, triggering auto-enrollment', [
+                'order_id' => $orderId,
+                'user_id' => $transaction->user_id,
+                'course_id' => $transaction->transactionable_id,
+            ]);
+
             // Fire event for any listeners
             TransactionCompleted::dispatch($transaction);
 
@@ -160,6 +219,9 @@ class PaymentController extends Controller
             ->where('status', 'published')
             ->findOrFail($courseId);
 
+        // Ensure thumbnail attribute is included
+        $course->append('thumbnail');
+
         $user = $request->user();
 
         // Check if course is free - redirect to show page
@@ -171,7 +233,6 @@ class PaymentController extends Controller
         // Check if already enrolled (payment completed)
         $alreadyEnrolled = $course->enrollments()->where('user_id', $user->id)->exists();
         if ($alreadyEnrolled) {
-            // Redirect to course learning page instead of showing payment
             return redirect()->route('courses.learn', $courseId)
                 ->with('success', 'Anda sudah terdaftar di kursus ini.');
         }
@@ -207,50 +268,71 @@ class PaymentController extends Controller
             ]);
         }
 
-        // Check for existing pending transaction
-        $existingTransaction = Transaction::where('user_id', $user->id)
-            ->where('transactionable_id', $courseId)
-            ->where('transactionable_type', Course::class)
-            ->whereIn('status', ['pending', 'processing'])
-            ->first();
+        // Use improved MidtransService to get/create transaction
+        try {
+            $result = $this->midtrans->createCourseTransaction($user, $course);
 
-        $snapToken = null;
-        $transactionExpired = false;
+            // Handle expired transaction case
+            if (isset($result['error']) && isset($result['expired_transaction'])) {
+                Log::info('Showing expired transaction page', [
+                    'user_id' => $user->id,
+                    'course_id' => $courseId,
+                    'expired_order_id' => $result['expired_transaction']->midtrans_order_id,
+                ]);
 
-        if ($existingTransaction) {
-            // Check actual status from Midtrans
-            $statusInfo = $this->midtrans->getTransactionStatus($existingTransaction->midtrans_order_id);
-
-            if ($statusInfo && in_array($statusInfo['status'], ['expired', 'cancelled', 'failed'])) {
-                // Transaction expired or failed
-                $transactionExpired = true;
-                $existingTransaction = null;
-            } else {
-                // Get snap token for existing transaction
-                try {
-                    $snapToken = $this->midtrans->getSnapToken($existingTransaction->midtrans_order_id);
-                    if (!$snapToken) {
-                        // Can't get token, mark as expired
-                        $transactionExpired = true;
-                        $existingTransaction = null;
-                    }
-                } catch (\Exception $e) {
-                    // If can't get token, mark as expired
-                    $transactionExpired = true;
-                    $existingTransaction = null;
-                }
+                return Inertia::render('payment/index', [
+                    'course' => $course,
+                    'transaction' => null,
+                    'snapToken' => null,
+                    'clientKey' => (string) config('midtrans.client_key'),
+                    'isProduction' => (bool) config('midtrans.is_production'),
+                    'isAlreadyEnrolled' => false,
+                    'transactionExpired' => true,
+                    'expiredMessage' => $result['error'],
+                ]);
             }
-        }
 
-        return Inertia::render('payment/index', [
-            'course' => $course,
-            'transaction' => $existingTransaction,
-            'snapToken' => $snapToken,
-            'clientKey' => (string) config('midtrans.client_key'),
-            'isProduction' => (bool) config('midtrans.is_production'),
-            'isAlreadyEnrolled' => false,
-            'transactionExpired' => $transactionExpired,
-        ]);
+            // Valid transaction found or created
+            if (!empty($result['order_id']) && !empty($result['snap_token'])) {
+                Log::info('Showing payment page with valid transaction', [
+                    'user_id' => $user->id,
+                    'course_id' => $courseId,
+                    'order_id' => $result['order_id'],
+                    'is_existing' => $result['is_existing'] ?? false,
+                ]);
+
+                return Inertia::render('payment/index', [
+                    'course' => $course,
+                    'transaction' => $result['transaction'],
+                    'snapToken' => $result['snap_token'],
+                    'clientKey' => (string) config('midtrans.client_key'),
+                    'isProduction' => (bool) config('midtrans.is_production'),
+                    'isAlreadyEnrolled' => false,
+                    'transactionExpired' => false,
+                ]);
+            }
+
+            // Fallback - something went wrong, show page without transaction
+            throw new \Exception('No valid transaction could be created or found');
+
+        } catch (\Exception $e) {
+            Log::error('Error in showPaymentPage', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+                'error' => $e->getMessage()
+            ]);
+
+            return Inertia::render('payment/index', [
+                'course' => $course,
+                'transaction' => null,
+                'snapToken' => null,
+                'clientKey' => (string) config('midtrans.client_key'),
+                'isProduction' => (bool) config('midtrans.is_production'),
+                'isAlreadyEnrolled' => false,
+                'transactionExpired' => false,
+                'error' => 'Gagal memuat halaman pembayaran. Silakan coba lagi.',
+            ]);
+        }
     }
 
     /**
@@ -263,6 +345,15 @@ class PaymentController extends Controller
         if (!$user) {
             Log::warning('getUserTransactions: No authenticated user found');
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Prevent admin from accessing user transactions/cart
+        if ($user->isAdmin()) {
+            Log::warning('getUserTransactions: Admin tried to access user transactions', ['user_id' => $user->id]);
+            return response()->json([
+                'error' => 'Admin tidak diperbolehkan mengakses keranjang atau transaksi.',
+                'message' => 'Access denied for admin users'
+            ], 403);
         }
 
         Log::info('getUserTransactions: Loading transactions for user', ['user_id' => $user->id]);
@@ -385,6 +476,71 @@ class PaymentController extends Controller
             'transaction_time' => $statusInfo['transaction_time'],
             'is_expired' => in_array($statusInfo['status'], ['expired', 'cancelled', 'failed']),
         ]);
+    }
+
+    /**
+     * Refresh snap token for existing transaction
+     */
+    public function refreshSnapToken(Request $request, string $orderId): JsonResponse
+    {
+        $user = $request->user();
+
+        $transaction = Transaction::where('midtrans_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'processing', 'expired'])
+            ->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'message' => 'Transaksi tidak ditemukan atau sudah tidak berlaku.',
+            ], 404);
+        }
+
+        // Check if transaction is for a course
+        if ($transaction->transactionable_type !== Course::class) {
+            return response()->json([
+                'message' => 'Jenis transaksi tidak didukung.',
+            ], 422);
+        }
+
+        $course = $transaction->transactionable;
+
+        try {
+            // Always create new transaction for refresh scenarios
+            // Mark old transaction as expired first
+            $transaction->update(['status' => 'expired']);
+
+            Log::info('Refreshing token by creating new transaction', [
+                'old_order_id' => $transaction->midtrans_order_id,
+                'old_status' => $transaction->status,
+                'user_id' => $user->id,
+                'course_id' => $course->id
+            ]);
+
+            // Create new transaction
+            $transactionData = $this->midtrans->createCourseTransaction($user, $course);
+
+            return response()->json([
+                'message' => 'Token pembayaran berhasil diperbaharui.',
+                'snap_token' => $transactionData['snap_token'],
+                'order_id' => $transactionData['order_id'],
+                'transaction' => $transactionData['transaction'],
+                'is_existing' => false, // Always new transaction in refresh scenarios
+                'redirect_url' => $transactionData['redirect_url'],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to refresh snap token', [
+                'order_id' => $orderId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal memperbaharui token pembayaran. Silakan coba lagi.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

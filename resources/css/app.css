@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './pare-theme.css';
 @import './security.css';
+@import './tawk-chat.css';
 
 @plugin 'tailwindcss-animate';
 
@@ -62,86 +63,86 @@
 }
 
 :root {
-    /* Light theme inspired by PARE EDU HUB logo */
-    --background: oklch(0.98 0.01 45);
-    --foreground: oklch(0.2 0.05 240);
+    /* Light theme favoring white + blue; orange used sparingly */
+    --background: oklch(0.99 0.005 250);
+    --foreground: oklch(0.22 0.05 260); /* deep navy text */
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.2 0.05 240);
+    --card-foreground: oklch(0.22 0.05 260);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.2 0.05 240);
-    /* Primary: Golden/Amber color from logo */
-    --primary: oklch(0.7 0.15 60);
-    --primary-foreground: oklch(0.15 0.05 240);
-    /* Secondary: Light gold accent */
-    --secondary: oklch(0.95 0.02 50);
-    --secondary-foreground: oklch(0.2 0.05 240);
-    --muted: oklch(0.96 0.01 240);
-    --muted-foreground: oklch(0.5 0.02 240);
-    /* Accent: Warm gold */
-    --accent: oklch(0.92 0.03 55);
-    --accent-foreground: oklch(0.2 0.05 240);
-    --destructive: oklch(0.65 0.2 25);
-    --destructive-foreground: oklch(0.98 0.01 45);
-    --border: oklch(0.9 0.01 240);
-    --input: oklch(0.94 0.01 240);
-    --ring: oklch(0.7 0.15 60);
-    /* Chart colors inspired by logo palette */
-    --chart-1: oklch(0.7 0.15 60); /* Gold */
-    --chart-2: oklch(0.45 0.1 240); /* Navy */
-    --chart-3: oklch(0.6 0.12 45); /* Amber */
-    --chart-4: oklch(0.35 0.08 235); /* Deep blue */
-    --chart-5: oklch(0.8 0.1 50); /* Light gold */
+    --popover-foreground: oklch(0.22 0.05 260);
+    /* Primary: electric blue now primary */
+    --primary: oklch(0.68 0.2 255);
+    --primary-foreground: oklch(0.99 0 0); /* white */
+    /* Secondary: toned-down orange for accents */
+    --secondary: oklch(0.7 0.12 47);
+    --secondary-foreground: oklch(0.99 0 0);
+    --muted: oklch(0.96 0.01 255);
+    --muted-foreground: oklch(0.52 0.03 255);
+    /* Accent: soft blue for hovers */
+    --accent: oklch(0.75 0.14 255);
+    --accent-foreground: oklch(0.22 0.05 260);
+    --destructive: oklch(0.6 0.2 25);
+    --destructive-foreground: oklch(0.99 0 0);
+    --border: oklch(0.9 0.01 255);
+    --input: oklch(0.94 0.01 255);
+    --ring: oklch(0.68 0.2 255); /* blue focus ring */
+    /* Charts prioritize blue hues */
+    --chart-1: oklch(0.68 0.2 255); /* Blue */
+    --chart-2: oklch(0.7 0.12 47); /* Orange (reduced chroma) */
+    --chart-3: oklch(0.85 0.1 255); /* Light blue */
+    --chart-4: oklch(0.38 0.08 255); /* Deep blue */
+    --chart-5: oklch(0.78 0.1 55); /* Soft amber */
     --radius: 0.625rem;
-    /* Sidebar with navy blue theme */
-    --sidebar: oklch(0.97 0.01 240);
-    --sidebar-foreground: oklch(0.2 0.05 240);
-    --sidebar-primary: oklch(0.25 0.06 240);
-    --sidebar-primary-foreground: oklch(0.98 0.01 45);
-    --sidebar-accent: oklch(0.92 0.03 55);
-    --sidebar-accent-foreground: oklch(0.2 0.05 240);
-    --sidebar-border: oklch(0.88 0.02 240);
-    --sidebar-ring: oklch(0.7 0.15 60);
+    /* Sidebar mostly blue, minimal orange */
+    --sidebar: oklch(0.98 0.01 255);
+    --sidebar-foreground: oklch(0.22 0.05 260);
+    --sidebar-primary: oklch(0.35 0.09 255); /* deeper blue */
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.75 0.14 255); /* soft blue */
+    --sidebar-accent-foreground: oklch(0.22 0.05 260);
+    --sidebar-border: oklch(0.9 0.02 255);
+    --sidebar-ring: oklch(0.68 0.2 255);
 }
 
 .dark {
-    /* Dark theme inspired by PARE EDU HUB logo */
-    --background: oklch(0.15 0.02 240);
-    --foreground: oklch(0.95 0.01 50);
-    --card: oklch(0.18 0.02 240);
-    --card-foreground: oklch(0.95 0.01 50);
-    --popover: oklch(0.18 0.02 240);
-    --popover-foreground: oklch(0.95 0.01 50);
-    /* Primary: Bright gold for dark theme */
-    --primary: oklch(0.8 0.12 55);
-    --primary-foreground: oklch(0.15 0.02 240);
-    /* Secondary: Dark navy with subtle warmth */
-    --secondary: oklch(0.25 0.03 240);
-    --secondary-foreground: oklch(0.9 0.02 50);
-    --muted: oklch(0.25 0.02 240);
-    --muted-foreground: oklch(0.65 0.01 240);
-    /* Accent: Warm gold accent */
-    --accent: oklch(0.3 0.03 240);
-    --accent-foreground: oklch(0.85 0.08 55);
-    --destructive: oklch(0.6 0.18 25);
-    --destructive-foreground: oklch(0.95 0.01 50);
-    --border: oklch(0.3 0.02 240);
-    --input: oklch(0.3 0.02 240);
-    --ring: oklch(0.75 0.12 55);
-    /* Chart colors for dark theme */
-    --chart-1: oklch(0.8 0.12 55); /* Bright gold */
-    --chart-2: oklch(0.5 0.08 240); /* Medium navy */
-    --chart-3: oklch(0.7 0.1 50); /* Warm amber */
-    --chart-4: oklch(0.4 0.06 235); /* Deep blue */
-    --chart-5: oklch(0.85 0.08 55); /* Light gold */
-    /* Sidebar with deep navy theme */
-    --sidebar: oklch(0.12 0.02 240);
-    --sidebar-foreground: oklch(0.9 0.02 50);
-    --sidebar-primary: oklch(0.8 0.12 55);
-    --sidebar-primary-foreground: oklch(0.15 0.02 240);
-    --sidebar-accent: oklch(0.25 0.03 240);
-    --sidebar-accent-foreground: oklch(0.85 0.08 55);
-    --sidebar-border: oklch(0.25 0.02 240);
-    --sidebar-ring: oklch(0.75 0.12 55);
+    /* Dark theme prioritizing blue; orange only for accents */
+    --background: oklch(0.16 0.03 257); /* deep navy */
+    --foreground: oklch(0.95 0.01 260);
+    --card: oklch(0.18 0.03 257);
+    --card-foreground: oklch(0.95 0.01 260);
+    --popover: oklch(0.18 0.03 257);
+    --popover-foreground: oklch(0.95 0.01 260);
+    /* Primary: strong electric blue */
+    --primary: oklch(0.58 0.18 255);
+    --primary-foreground: oklch(0.98 0 0);
+    /* Secondary: softened orange */
+    --secondary: oklch(0.67 0.12 47);
+    --secondary-foreground: oklch(0.1 0.02 260);
+    --muted: oklch(0.28 0.03 257);
+    --muted-foreground: oklch(0.7 0.03 260);
+    /* Accent: softer blue */
+    --accent: oklch(0.6 0.15 255);
+    --accent-foreground: oklch(0.98 0 0);
+    --destructive: oklch(0.55 0.2 25);
+    --destructive-foreground: oklch(0.98 0 0);
+    --border: oklch(0.32 0.03 257);
+    --input: oklch(0.32 0.03 257);
+    --ring: oklch(0.58 0.18 255);
+    /* Charts: blue-dominant */
+    --chart-1: oklch(0.58 0.18 255); /* Blue */
+    --chart-2: oklch(0.67 0.12 47); /* Orange */
+    --chart-3: oklch(0.78 0.1 255); /* Light blue */
+    --chart-4: oklch(0.43 0.08 255); /* Deep blue */
+    --chart-5: oklch(0.7 0.12 55); /* Soft amber */
+    /* Sidebar mostly blue */
+    --sidebar: oklch(0.13 0.03 257);
+    --sidebar-foreground: oklch(0.92 0.01 260);
+    --sidebar-primary: oklch(0.58 0.18 255);
+    --sidebar-primary-foreground: oklch(0.1 0.02 260);
+    --sidebar-accent: oklch(0.6 0.15 255);
+    --sidebar-accent-foreground: oklch(0.98 0 0);
+    --sidebar-border: oklch(0.28 0.02 257);
+    --sidebar-ring: oklch(0.58 0.18 255);
 }
 
 @layer base {

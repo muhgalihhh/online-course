@@ -81,6 +81,14 @@ class Course extends Model
     }
 
     /**
+     * Discussions (threads and replies) for this course.
+     */
+    public function discussions(): HasMany
+    {
+        return $this->hasMany(CourseDiscussion::class);
+    }
+
+    /**
      * Transaksi yang terkait dengan kursus ini.
      */
     public function transactions(): MorphMany

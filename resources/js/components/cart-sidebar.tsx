@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export function CartSidebar() {
     const { isOpen, setIsOpen, cartItems, isLoading, getTotalAmount, getPendingCount, loadTransactions } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isAdmin } = useAuth();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -149,9 +149,11 @@ export function CartSidebar() {
                         <SheetDescription>
                             {!isAuthenticated
                                 ? 'Silakan login untuk melihat keranjang'
-                                : cartItems.length > 0
-                                  ? `${cartItems.length} kursus dalam keranjang`
-                                  : 'Keranjang Anda kosong'}
+                                : isAdmin
+                                  ? 'Admin tidak memiliki akses ke keranjang'
+                                  : cartItems.length > 0
+                                    ? `${cartItems.length} kursus dalam keranjang`
+                                    : 'Keranjang Anda kosong'}
                         </SheetDescription>
                     </SheetHeader>
 
@@ -168,6 +170,20 @@ export function CartSidebar() {
                                     }}
                                 >
                                     Login Sekarang
+                                </Button>
+                            </div>
+                        ) : isAdmin ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <Lock className="mb-4 h-12 w-12 text-muted-foreground" />
+                                <p className="mb-4 text-muted-foreground">Admin tidak dapat mengakses keranjang belanja</p>
+                                <Button
+                                    variant="default"
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        router.visit('/admin/courses');
+                                    }}
+                                >
+                                    Kelola Kursus
                                 </Button>
                             </div>
                         ) : isLoading ? (

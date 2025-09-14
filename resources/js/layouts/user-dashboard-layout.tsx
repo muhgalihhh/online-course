@@ -1,3 +1,4 @@
+import { PageTransition } from '@/components/animations';
 import AppLogo from '@/components/app-logo';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
 import { CartSidebar } from '@/components/cart-sidebar';
@@ -44,7 +45,7 @@ interface UserDashboardLayoutProps {
 // Inner component that uses cart context
 const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
     const { institution, url } = usePage<PageProps & { url: string }>().props;
     const { toggleCart, getPendingCount } = useCart();
 
@@ -63,7 +64,7 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
 
     const navigationItems = [
         { name: 'Dashboard', href: '/dashboard' },
-        { name: 'Kelas Saya', href: '/user/my-courses' },
+        { name: isAdmin ? 'Dashboard Admin' : 'Kelas Saya', href: isAdmin ? '/admin/dashboard' : '/user/my-courses' },
         { name: 'Tentang Kami', href: '/tentang' },
     ];
 
@@ -155,9 +156,9 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/user/my-courses" className="cursor-pointer">
+                                        <Link href={isAdmin ? '/admin/dashboard' : '/user/my-courses'} className="cursor-pointer">
                                             <BookOpen className="mr-2 h-4 w-4" />
-                                            <span>Kelas Saya</span>
+                                            <span>{isAdmin ? 'Dashboard Admin' : 'Kelas Saya'}</span>
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -255,7 +256,9 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
             </header>
 
             {/* Main Content */}
-            <main>{children}</main>
+            <main>
+                <PageTransition>{children}</PageTransition>
+            </main>
 
             {/* Footer */}
             <footer className="border-t bg-muted/30">
@@ -293,8 +296,11 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/user/my-courses" className="text-muted-foreground transition-colors hover:text-primary">
-                                        Kelas Saya
+                                    <Link
+                                        href={isAdmin ? '/admin/dashboard' : '/user/my-courses'}
+                                        className="text-muted-foreground transition-colors hover:text-primary"
+                                    >
+                                        {isAdmin ? 'Dashboard Admin' : 'Kelas Saya'}
                                     </Link>
                                 </li>
                                 <li>

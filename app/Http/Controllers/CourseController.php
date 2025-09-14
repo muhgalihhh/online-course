@@ -7,7 +7,9 @@ use App\Models\Category;
 use App\Models\Institution;
 use App\Models\CourseReview;
 use App\Models\Enrollment;
+use App\Models\Transaction;
 use App\Services\VideoSecurityService;
+use App\Services\CoursePaymentStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,10 +20,14 @@ use Inertia\Inertia;
 class CourseController extends Controller
 {
     protected $videoSecurityService;
+    protected $paymentStatusService;
 
-    public function __construct(VideoSecurityService $videoSecurityService)
-    {
+    public function __construct(
+        VideoSecurityService $videoSecurityService,
+        CoursePaymentStatusService $paymentStatusService
+    ) {
         $this->videoSecurityService = $videoSecurityService;
+        $this->paymentStatusService = $paymentStatusService;
     }
     /**
      * Display all courses (catalog)
@@ -92,7 +98,17 @@ class CourseController extends Controller
             $course->average_rating = (float) ($course->reviews->avg('rating') ?? 0);
             $course->total_reviews = $course->reviews->count();
             $course->total_students = $course->enrollments()->count();
-            $course->is_enrolled = (bool) ($course->is_enrolled ?? false);
+
+            // Get payment status for authenticated users
+            $paymentStatus = Auth::check()
+                ? $this->paymentStatusService->getCourseStatus(Auth::user(), $course)
+                : ['status' => 'can_purchase', 'button_text' => 'Beli Sekarang', 'transaction' => null];
+
+            $course->is_enrolled = $paymentStatus['status'] === 'enrolled';
+            $course->payment_status = $paymentStatus['status'];
+            $course->button_text = $paymentStatus['button_text'];
+            $course->transaction = $paymentStatus['transaction'];
+
             return $course;
         });
 
@@ -116,7 +132,12 @@ class CourseController extends Controller
         $course = Course::with([
             'category',
             'institution',
-            'chapters.courseMaterials',
+            'chapters' => function ($query) {
+                $query->orderBy('order', 'asc');
+            },
+            'chapters.courseMaterials' => function ($query) {
+                $query->orderBy('order', 'asc');
+            },
             'reviews.user'
         ])->findOrFail($id);
 
@@ -134,50 +155,49 @@ class CourseController extends Controller
             return $chapter->courseMaterials->count();
         });
 
-        // Check if user is enrolled (if logged in)
+        // Check enrollment and payment status using service
         $isEnrolled = false;
-        $hasCompletedTransaction = false;
+        $paymentStatus = null;
+        $pendingTransaction = null;
 
         if (Auth::check()) {
-            $isEnrolled = $course->enrollments()
-                ->where('user_id', Auth::id())
-                ->exists();
-
-            // Also check if user has completed transaction but not enrolled yet
-            if (!$isEnrolled) {
-                $completedTransaction = \App\Models\Transaction::where('user_id', Auth::id())
-                    ->where('transactionable_id', $course->id)
-                    ->where('transactionable_type', Course::class)
-                    ->where('status', 'completed')
-                    ->first();
-
-                if ($completedTransaction) {
-                    $hasCompletedTransaction = true;
-
-                    // Try to auto-enroll user if they have completed transaction
-                    try {
-                        $paymentController = app(\App\Http\Controllers\PaymentController::class);
-                        $paymentController->autoEnrollUserToCourse($completedTransaction);
-
-                        // Re-check enrollment status after auto-enrollment attempt
-                        $isEnrolled = $course->enrollments()
-                            ->where('user_id', Auth::id())
-                            ->exists();
-
-                        if ($isEnrolled) {
-                            $hasCompletedTransaction = false; // Clear this since user is now enrolled
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('Failed to auto-enroll user in course show method', [
-                            'user_id' => Auth::id(),
-                            'course_id' => $course->id,
-                            'transaction_id' => $completedTransaction->id,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-            }
+            $paymentStatusData = $this->paymentStatusService->getCourseStatus(Auth::user(), $course);
+            $isEnrolled = $paymentStatusData['status'] === 'enrolled';
+            $paymentStatus = $paymentStatusData['status'];
+            $pendingTransaction = $paymentStatusData['transaction'];
         }
+
+        // Prepare chapters with materials for preview
+        // If user is not enrolled, only show preview materials
+        $chaptersWithMaterials = $course->chapters->map(function ($chapter) use ($isEnrolled) {
+            $materials = $chapter->courseMaterials;
+
+            // If user is not enrolled, only show preview materials
+            if (!$isEnrolled) {
+                $materials = $materials->filter(function ($material) {
+                    return $material->is_preview;
+                });
+            }
+
+            // Add chapter info with filtered materials
+            $chapter->course_materials = $materials->values(); // Reset array keys
+            $chapter->total_materials = $chapter->courseMaterials->count();
+            $chapter->preview_materials_count = $chapter->courseMaterials->where('is_preview', true)->count();
+
+            // Remove the original courseMaterials relation to avoid confusion
+            unset($chapter->courseMaterials);
+
+            return $chapter;
+        });
+
+        // Only include chapters that have materials to show
+        if (!$isEnrolled) {
+            $chaptersWithMaterials = $chaptersWithMaterials->filter(function ($chapter) {
+                return $chapter->course_materials->count() > 0;
+            });
+        }
+
+        $course->chapters = $chaptersWithMaterials->values();
 
         // Get related courses
         $relatedCourses = Course::with(['category', 'institution'])
@@ -196,7 +216,8 @@ class CourseController extends Controller
         return Inertia::render('courses/show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
-            'hasCompletedTransaction' => $hasCompletedTransaction,
+            'paymentStatus' => $paymentStatus,
+            'pendingTransaction' => $pendingTransaction,
             'relatedCourses' => $relatedCourses
         ]);
     }

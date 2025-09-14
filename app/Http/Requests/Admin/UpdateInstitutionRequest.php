@@ -29,6 +29,14 @@ class UpdateInstitutionRequest extends FormRequest
             'address' => 'nullable|string|max:500',
             'description' => 'nullable|string|max:1000',
             'photo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // Social media links
+            'tiktok_url' => 'nullable|url|max:255',
+            'instagram_url' => 'nullable|url|max:255',
+            'facebook_url' => 'nullable|url|max:255',
+            'twitter_url' => 'nullable|url|max:255',
+            // App store links
+            'ios_app_url' => 'nullable|url|max:255',
+            'android_app_url' => 'nullable|url|max:255',
         ];
     }
 
@@ -45,6 +53,12 @@ class UpdateInstitutionRequest extends FormRequest
             'address' => 'alamat institusi',
             'description' => 'deskripsi institusi',
             'photo_path' => 'foto institusi',
+            'tiktok_url' => 'Tiktok',
+            'instagram_url' => 'Instagram',
+            'facebook_url' => 'Facebook',
+            'twitter_url' => 'Twitter/X',
+            'ios_app_url' => 'Link aplikasi iOS',
+            'android_app_url' => 'Link aplikasi Android',
         ];
     }
 }

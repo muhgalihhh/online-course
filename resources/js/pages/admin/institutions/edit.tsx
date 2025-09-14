@@ -18,6 +18,12 @@ interface Institution {
     email: string;
     website: string;
     photo_path?: string;
+    tiktok_url?: string | null;
+    instagram_url?: string | null;
+    facebook_url?: string | null;
+    twitter_url?: string | null;
+    ios_app_url?: string | null;
+    android_app_url?: string | null;
 }
 
 interface InstitutionEditProps extends PageProps {
@@ -26,6 +32,11 @@ interface InstitutionEditProps extends PageProps {
 
 export default function InstitutionEdit({ institution }: InstitutionEditProps) {
     const [preview, setPreview] = useState<string | null>(null);
+    const resolvePhotoUrl = (path?: string | null) => {
+        if (!path) return '';
+        if (path.startsWith('http') || path.startsWith('/storage/')) return path;
+        return `/storage/${path.replace(/^\/+/, '')}`;
+    };
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PATCH',
         name: institution.name || '',
@@ -35,6 +46,12 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
         email: institution.email || '',
         website: institution.website || '',
         photo_path: null as File | null,
+        tiktok_url: institution.tiktok_url || '',
+        instagram_url: institution.instagram_url || '',
+        facebook_url: institution.facebook_url || '',
+        twitter_url: institution.twitter_url || '',
+        ios_app_url: institution.ios_app_url || '',
+        android_app_url: institution.android_app_url || '',
     });
 
     useEffect(() => {
@@ -42,10 +59,12 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
             const objectUrl = URL.createObjectURL(data.photo_path);
             setPreview(objectUrl);
             return () => URL.revokeObjectURL(objectUrl);
+        } else if (institution.photo_path) {
+            setPreview(resolvePhotoUrl(institution.photo_path));
         } else {
             setPreview(null);
         }
-    }, [data.photo_path]);
+    }, [data.photo_path, institution.photo_path]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,12 +109,12 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                             <div className="space-y-2">
                                 <Label htmlFor="photo_path">Foto Institusi</Label>
                                 <div className="flex items-center space-x-4">
-                                    {(preview || institution.photo_path) && (
+                                    {preview && (
                                         <div className="relative h-32 w-32 overflow-hidden rounded-lg border-2 border-gray-200">
-                                            <img src={preview || institution.photo_path} alt="Preview" className="h-full w-full object-cover" />
+                                            <img src={preview} alt="Preview" className="h-full w-full object-cover" />
                                         </div>
                                     )}
-                                    {!preview && !institution.photo_path && (
+                                    {!preview && (
                                         <div className="flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
                                             <Building2 className="h-8 w-8 text-gray-400" />
                                         </div>
@@ -185,6 +204,84 @@ export default function InstitutionEdit({ institution }: InstitutionEditProps) {
                                     placeholder="https://example.com"
                                 />
                                 {errors.website && <p className="text-sm text-red-600">{errors.website}</p>}
+                            </div>
+
+                            {/* Social Media Links */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tiktok_url">TikTok</Label>
+                                    <Input
+                                        id="tiktok_url"
+                                        type="url"
+                                        value={data.tiktok_url}
+                                        onChange={(e) => setData('tiktok_url', e.target.value)}
+                                        placeholder="https://www.tiktok.com/@username"
+                                    />
+                                    {errors.tiktok_url && <p className="text-sm text-red-600">{errors.tiktok_url}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="instagram_url">Instagram</Label>
+                                    <Input
+                                        id="instagram_url"
+                                        type="url"
+                                        value={data.instagram_url}
+                                        onChange={(e) => setData('instagram_url', e.target.value)}
+                                        placeholder="https://instagram.com/username"
+                                    />
+                                    {errors.instagram_url && <p className="text-sm text-red-600">{errors.instagram_url}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="facebook_url">Facebook</Label>
+                                    <Input
+                                        id="facebook_url"
+                                        type="url"
+                                        value={data.facebook_url}
+                                        onChange={(e) => setData('facebook_url', e.target.value)}
+                                        placeholder="https://facebook.com/page"
+                                    />
+                                    {errors.facebook_url && <p className="text-sm text-red-600">{errors.facebook_url}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="twitter_url">Twitter/X</Label>
+                                    <Input
+                                        id="twitter_url"
+                                        type="url"
+                                        value={data.twitter_url}
+                                        onChange={(e) => setData('twitter_url', e.target.value)}
+                                        placeholder="https://twitter.com/username"
+                                    />
+                                    {errors.twitter_url && <p className="text-sm text-red-600">{errors.twitter_url}</p>}
+                                </div>
+                            </div>
+
+                            {/* App Links */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="ios_app_url">Link Aplikasi iOS (App Store)</Label>
+                                    <Input
+                                        id="ios_app_url"
+                                        type="url"
+                                        value={data.ios_app_url}
+                                        onChange={(e) => setData('ios_app_url', e.target.value)}
+                                        placeholder="https://apps.apple.com/app/idXXXXXXXXX"
+                                    />
+                                    {errors.ios_app_url && <p className="text-sm text-red-600">{errors.ios_app_url}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="android_app_url">Link Aplikasi Android (Google Play)</Label>
+                                    <Input
+                                        id="android_app_url"
+                                        type="url"
+                                        value={data.android_app_url}
+                                        onChange={(e) => setData('android_app_url', e.target.value)}
+                                        placeholder="https://play.google.com/store/apps/details?id=package"
+                                    />
+                                    {errors.android_app_url && <p className="text-sm text-red-600">{errors.android_app_url}</p>}
+                                </div>
                             </div>
 
                             <div className="flex justify-end space-x-2">

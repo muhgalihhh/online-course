@@ -1,8 +1,12 @@
+import { AnimatedCard, ScrollAnimation } from '@/components/animations';
+import { fadeIn, scaleVariants, slideInLeft, slideInRight } from '@/components/animations/variants';
 import CustomAlert from '@/components/custom-alert';
+import { AppStoreIcon, GooglePlayIcon } from '@/components/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import WeatherWidget from '@/components/weather-widget';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import WeatherCard from '@/components/weather-card';
 import { useAuth } from '@/hooks/use-auth';
 import GuestLayout from '@/layouts/guest-layout';
 import { Course } from '@/types';
@@ -11,12 +15,15 @@ import {
     BookMarked,
     BookOpen,
     CheckCircle,
+    ChevronDown,
+    Clock,
     CloudRain,
     Code,
     Database,
     Download,
     Globe,
     GraduationCap,
+    HelpCircle,
     Layers,
     MessageCircle,
     Palette,
@@ -37,6 +44,27 @@ interface Category {
     courses_count?: number;
 }
 
+interface GalleryItem {
+    id: number;
+    title: string;
+    description: string;
+    file_type: 'image' | 'video';
+    file_url?: string;
+    youtube_thumbnail?: string;
+    youtube_embed_url?: string;
+    is_youtube_video: boolean;
+    is_image: boolean;
+    is_video: boolean;
+}
+
+interface FaqItem {
+    id: number;
+    question: string;
+    answer: string;
+    category: string;
+    category_name: string;
+}
+
 interface Institution {
     id: number;
     name: string;
@@ -46,10 +74,24 @@ interface Institution {
     address?: string;
     website?: string;
     photo_path?: string;
+    // Social media links
+    tiktok_url?: string;
+    instagram_url?: string;
+    facebook_url?: string;
+    twitter_url?: string;
+    youtube_url?: string;
+    whatsapp_url?: string;
+    telegram_url?: string;
+    linkedin_url?: string;
+    // Mobile app links
+    ios_app_url?: string;
+    android_app_url?: string;
 }
 
 interface PageProps {
     topCourses?: Course[];
+    galleryItems?: GalleryItem[];
+    faqItems?: FaqItem[];
     institution?: Institution;
     categories?: Category[];
     stats?: {
@@ -65,10 +107,11 @@ interface PageProps {
             role: string;
         };
     };
+    [key: string]: unknown;
 }
 
 export default function Welcome() {
-    const { topCourses, institution, categories, auth, stats } = usePage<PageProps>().props;
+    const { topCourses, galleryItems, faqItems, institution, categories, auth, stats } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
     const [alertState, setAlertState] = useState<{
         open: boolean;
@@ -82,6 +125,7 @@ export default function Welcome() {
         description: '',
         type: 'info',
     });
+    const [openFaqIds, setOpenFaqIds] = useState<number[]>([]);
 
     // Array gambar hero untuk rotasi background
     const heroImages = ['/hero-1.jpg', '/hero-2.jpg', '/hero-3.jpg'];
@@ -99,6 +143,11 @@ export default function Welcome() {
 
         return () => clearInterval(interval);
     }, [heroImages]);
+
+    // Function untuk toggle FAQ
+    const toggleFaq = (faqId: number) => {
+        setOpenFaqIds((prev) => (prev.includes(faqId) ? prev.filter((id) => id !== faqId) : [...prev, faqId]));
+    };
 
     const features = [
         {
@@ -208,57 +257,70 @@ export default function Welcome() {
     };
 
     const CourseCard = ({ course }: { course: Course }) => (
-        <Card className="flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
-            <CardHeader className="p-0">
-                <div className="relative">
-                    <img
-                        src={course.thumbnail || 'https://via.placeholder.com/400x225'}
-                        alt={course.title}
-                        className="aspect-[16/9] w-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                        <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
+        <AnimatedCard className="flex h-full flex-col overflow-hidden">
+            <Card className="transition-all">
+                <CardHeader className="p-0">
+                    <div className="relative">
+                        <img
+                            src={course.thumbnail || 'https://via.placeholder.com/400x225'}
+                            alt={course.title}
+                            className="aspect-[16/9] w-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2">
+                            <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col p-4">
-                <Badge variant="outline" className="mb-2 w-fit">
-                    {course.category.name}
-                </Badge>
-                <h3 className="mb-2 line-clamp-2 text-lg font-semibold">{course.title}</h3>
-                <p className="mb-3 line-clamp-2 flex-1 text-sm text-muted-foreground">{course.description}</p>
-                <div className="mb-3 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{(course.average_rating || 0).toFixed(1)}</span>
-                        <span>({course.total_reviews})</span>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col p-4">
+                    <Badge variant="outline" className="mb-2 w-fit">
+                        {course.category.name}
+                    </Badge>
+                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold">{course.title}</h3>
+                    <p className="mb-3 line-clamp-2 flex-1 text-sm text-muted-foreground">{course.description}</p>
+                    <div className="mb-3 flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-semibold">{(course.average_rating || 0).toFixed(1)}</span>
+                            <span>({course.total_reviews})</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            <span>{course.total_students.toLocaleString()}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{course.total_students.toLocaleString()}</span>
-                    </div>
-                </div>
-                <div className="space-y-3">
-                    <div className="flex items-center justify-end">
-                        <p className="text-lg font-bold text-primary">{course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link href={`/courses/${course.id}`}>Detail</Link>
-                        </Button>
-                        {course.is_enrolled ? (
-                            <Button size="sm" className="flex-1" asChild>
-                                <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-end">
+                            <p className="text-lg font-bold text-primary">
+                                {course.is_pro ? `Rp ${course.price.toLocaleString('id-ID')}` : 'Gratis'}
+                            </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="flex-1" asChild>
+                                <Link href={`/courses/${course.id}`}>Detail</Link>
                             </Button>
-                        ) : (
-                            <Button size="sm" className="flex-1" onClick={() => handleEnrollCourse(course)}>
-                                {course.is_pro ? 'Pesan' : 'Ikuti'}
-                            </Button>
-                        )}
+                            {course.is_enrolled ? (
+                                <Button size="sm" className="flex-1" asChild>
+                                    <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
+                                </Button>
+                            ) : course.payment_status === 'paid_processing' ? (
+                                <Button size="sm" className="flex-1" variant="secondary" disabled>
+                                    <Clock className="mr-1 h-3 w-3" />
+                                    Sedang Diproses
+                                </Button>
+                            ) : course.payment_status === 'pending_payment' ? (
+                                <Button size="sm" className="flex-1" variant="outline" onClick={() => handleEnrollCourse(course)}>
+                                    Lanjutkan Pembayaran
+                                </Button>
+                            ) : (
+                                <Button size="sm" className="flex-1" onClick={() => handleEnrollCourse(course)}>
+                                    {course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus'}
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </AnimatedCard>
     );
 
     return (
@@ -279,7 +341,7 @@ export default function Welcome() {
                 <div className="relative z-10 container mx-auto px-4">
                     <div className="grid items-start gap-12 lg:grid-cols-3">
                         {/* Main Hero Content */}
-                        <div className="space-y-8 lg:col-span-2">
+                        <ScrollAnimation variants={slideInLeft} className="space-y-8 lg:col-span-2">
                             <div className="space-y-4">
                                 <Badge variant="secondary" className="w-fit border-white/30 bg-white/20 text-white">
                                     <Star className="mr-1 h-3 w-3" />
@@ -287,63 +349,110 @@ export default function Welcome() {
                                 </Badge>
                                 {/* Institution Logo */}
                                 {(institution?.photo_path || institution?.name) && (
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <img
-                                                src={institution?.photo_path ? institution.photo_path : '/logo.png'}
-                                                alt={`Logo ${institution?.name || 'Platform'}`}
-                                                className="h-24 w-auto rounded-xl bg-white/10 object-contain p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm md:h-32"
-                                                loading="lazy"
-                                            />
+                                    <ScrollAnimation variants={scaleVariants} delay={0.2}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative">
+                                                <img
+                                                    src={'/logo.png'}
+                                                    alt={`Logo ${institution?.name || 'Platform'}`}
+                                                    className="h-24 w-auto rounded-xl bg-white/10 object-contain p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-sm md:h-32"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        </div>
+                                    </ScrollAnimation>
+                                )}
+                                <ScrollAnimation variants={fadeIn} delay={0.3}>
+                                    <h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">
+                                        Tingkatkan Skill dengan{' '}
+                                        <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                                            {institution?.name || 'Pare EduHub'}
+                                        </span>
+                                    </h1>
+                                </ScrollAnimation>
+                                <ScrollAnimation variants={fadeIn} delay={0.4}>
+                                    <p className="text-xl text-gray-100">
+                                        Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi. Dari materi dasar hingga
+                                        advanced, semua dirancang khusus untuk pengembangan karir digital Anda.
+                                    </p>
+                                </ScrollAnimation>
+                            </div>
+
+                            <ScrollAnimation variants={slideInLeft} delay={0.5}>
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                    <Button size="lg" className="bg-primary text-base hover:bg-primary/90" asChild>
+                                        <Link href="/register">Mulai Belajar Sekarang</Link>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        className="border-white/30 bg-white/10 text-base text-white hover:bg-white/20"
+                                        asChild
+                                    >
+                                        <Link href="/courses">Lihat Semua Kursus</Link>
+                                    </Button>
+                                </div>
+                            </ScrollAnimation>
+
+                            {/* Mobile App Download Buttons */}
+                            {(institution?.ios_app_url || institution?.android_app_url) && (
+                                <ScrollAnimation variants={fadeIn} delay={0.6}>
+                                    <div className="space-y-4">
+                                        <p className="text-base font-medium text-gray-200">Download Aplikasi Mobile:</p>
+                                        <div className="flex flex-col gap-4 sm:flex-row">
+                                            {institution?.ios_app_url && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="lg"
+                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20"
+                                                    asChild
+                                                >
+                                                    <a href={institution.ios_app_url} target="_blank" rel="noopener noreferrer">
+                                                        <AppStoreIcon className="mr-2 h-5 w-5" />
+                                                        App Store
+                                                    </a>
+                                                </Button>
+                                            )}
+                                            {institution?.android_app_url && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="lg"
+                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20"
+                                                    asChild
+                                                >
+                                                    <a href={institution.android_app_url} target="_blank" rel="noopener noreferrer">
+                                                        <GooglePlayIcon className="mr-2 h-5 w-5" />
+                                                        Google Play
+                                                    </a>
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                                <h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">
-                                    Tingkatkan Skill dengan{' '}
-                                    <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                                        {institution?.name || 'Pare EduHub'}
-                                    </span>
-                                </h1>
-                                <p className="text-xl text-gray-100">
-                                    Platform pembelajaran online personal yang menyediakan kursus berkualitas tinggi. Dari materi dasar hingga
-                                    advanced, semua dirancang khusus untuk pengembangan karir digital Anda.
-                                </p>
-                            </div>
+                                </ScrollAnimation>
+                            )}
 
-                            <div className="flex flex-col gap-4 sm:flex-row">
-                                <Button size="lg" className="bg-primary text-base hover:bg-primary/90" asChild>
-                                    <Link href="/register">Mulai Belajar Sekarang</Link>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="border-white/30 bg-white/10 text-base text-white hover:bg-white/20"
-                                    asChild
-                                >
-                                    <Link href="/courses">Lihat Semua Kursus</Link>
-                                </Button>
-                            </div>
-
-                            <div className="flex items-center gap-8 text-sm text-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <Shield className="h-4 w-4" />
-                                    <span>100% Terpercaya</span>
+                            <ScrollAnimation variants={fadeIn} delay={0.7}>
+                                <div className="flex items-center gap-8 text-sm text-gray-200">
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="h-4 w-4" />
+                                        <span>100% Terpercaya</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Zap className="h-4 w-4" />
+                                        <span>Akses Cepat</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Download className="h-4 w-4" />
+                                        <span>Materi PDF</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4" />
-                                    <span>Akses Cepat</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Download className="h-4 w-4" />
-                                    <span>Materi PDF</span>
-                                </div>
-                            </div>
-                        </div>
+                            </ScrollAnimation>
+                        </ScrollAnimation>
 
                         {/* Weather Widget in Hero */}
-                        <div className="lg:col-span-1">
-                            <WeatherWidget defaultLocation={institution?.address || 'Pare, Kediri'} />
-                        </div>
+                        <ScrollAnimation variants={slideInRight} className="lg:col-span-1">
+                            <WeatherCard defaultLocation={institution?.address || 'Pare, Kediri'} />
+                        </ScrollAnimation>
                     </div>
                 </div>
             </section>
@@ -448,22 +557,173 @@ export default function Welcome() {
             {topCourses && topCourses.length > 0 && (
                 <section className="bg-muted/30 py-16">
                     <div className="container mx-auto px-4">
-                        <div className="mb-12 text-center">
+                        <ScrollAnimation variants={fadeIn} className="mb-12 text-center">
                             <h2 className="mb-4 text-3xl font-bold">Kursus Terpopuler</h2>
                             <p className="mx-auto max-w-2xl text-muted-foreground">
                                 Temukan kursus terbaik dengan rating tinggi dan ulasan positif dari ribuan siswa
                             </p>
+                        </ScrollAnimation>
+
+                        <ScrollAnimation variants={fadeIn} delay={0.2}>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {topCourses.map((course) => (
+                                    <CourseCard key={course.id} course={course} />
+                                ))}
+                            </div>
+                        </ScrollAnimation>
+
+                        <ScrollAnimation variants={fadeIn} delay={0.3} className="mt-8 text-center">
+                            <Button size="lg" asChild>
+                                <Link href="/courses">Lihat Semua Kursus</Link>
+                            </Button>
+                        </ScrollAnimation>
+                    </div>
+                </section>
+            )}
+
+            {/* Gallery Section */}
+            {galleryItems && galleryItems.length > 0 && (
+                <section className="py-16">
+                    <div className="container mx-auto px-4">
+                        <ScrollAnimation variants={fadeIn} className="mb-12 text-center">
+                            <h2 className="mb-4 text-3xl font-bold">Galeri Kami</h2>
+                            <p className="mx-auto max-w-2xl text-muted-foreground">
+                                Lihat momen berharga dan aktivitas pembelajaran di {institution?.name || 'Pare EduHub'}
+                            </p>
+                        </ScrollAnimation>
+
+                        <ScrollAnimation variants={fadeIn} delay={0.2}>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {galleryItems.map((item) => (
+                                    <Card key={item.id} className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
+                                        <div className="relative aspect-video overflow-hidden">
+                                            {item.is_image && item.file_url && (
+                                                <img
+                                                    src={item.file_url}
+                                                    alt={item.title}
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            )}
+                                            {item.is_youtube_video && item.youtube_thumbnail && (
+                                                <div className="relative h-full w-full">
+                                                    <img
+                                                        src={item.youtube_thumbnail}
+                                                        alt={item.title}
+                                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-all duration-300 group-hover:bg-black/20">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 transition-transform duration-300 group-hover:scale-110">
+                                                            <div className="ml-1 h-0 w-0 border-t-[6px] border-b-[6px] border-l-[8px] border-t-transparent border-b-transparent border-l-red-600"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {item.is_video && !item.is_youtube_video && item.file_url && (
+                                                <div className="relative h-full w-full bg-gray-100">
+                                                    <video className="h-full w-full object-cover" preload="metadata">
+                                                        <source src={item.file_url} />
+                                                    </video>
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
+                                                            <div className="ml-1 h-0 w-0 border-t-[6px] border-b-[6px] border-l-[8px] border-t-transparent border-b-transparent border-l-gray-700"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Type badge */}
+                                            <div className="absolute top-3 right-3">
+                                                <Badge variant="secondary" className="bg-white/90 text-gray-900">
+                                                    {item.is_image ? (
+                                                        <>
+                                                            <Palette className="mr-1 h-3 w-3" />
+                                                            Foto
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="mr-1 flex h-3 w-3 items-center justify-center">
+                                                                <div className="h-0 w-0 border-t-[4px] border-b-[4px] border-l-[6px] border-t-transparent border-b-transparent border-l-current"></div>
+                                                            </div>
+                                                            Video
+                                                        </>
+                                                    )}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        <CardContent className="p-6">
+                                            <h3 className="mb-2 line-clamp-2 text-lg font-semibold transition-colors group-hover:text-primary">
+                                                {item.title}
+                                            </h3>
+                                            <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </ScrollAnimation>
+
+                        <ScrollAnimation variants={fadeIn} delay={0.3} className="mt-8 text-center">
+                            <Button variant="outline" size="lg" asChild>
+                                <Link href="/galeri">Lihat Semua Galeri</Link>
+                            </Button>
+                        </ScrollAnimation>
+                    </div>
+                </section>
+            )}
+
+            {/* FAQ Section */}
+            {faqItems && faqItems.length > 0 && (
+                <section className="bg-muted/30 py-16">
+                    <div className="container mx-auto px-4">
+                        <div className="mb-12 text-center">
+                            <h2 className="mb-4 text-3xl font-bold">Pertanyaan yang Sering Diajukan</h2>
+                            <p className="mx-auto max-w-2xl text-muted-foreground">
+                                Temukan jawaban untuk pertanyaan umum seputar pembelajaran di {institution?.name || 'Pare EduHub'}
+                            </p>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {topCourses.map((course) => (
-                                <CourseCard key={course.id} course={course} />
+                        <div className="mx-auto max-w-3xl space-y-4">
+                            {faqItems.map((faq) => (
+                                <Collapsible key={faq.id} open={openFaqIds.includes(faq.id)} onOpenChange={() => toggleFaq(faq.id)}>
+                                    <CollapsibleTrigger asChild>
+                                        <Card className="cursor-pointer transition-all duration-300 hover:shadow-md">
+                                            <CardHeader className="flex flex-row items-center justify-between py-4">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                                        <HelpCircle className="h-4 w-4 text-primary" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h3 className="text-left text-base font-semibold text-foreground">{faq.question}</h3>
+                                                        <Badge variant="outline" className="mt-1 text-xs">
+                                                            {faq.category_name}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <ChevronDown
+                                                    className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${
+                                                        openFaqIds.includes(faq.id) ? 'rotate-180' : ''
+                                                    }`}
+                                                />
+                                            </CardHeader>
+                                        </Card>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <Card className="mt-2 border-l-4 border-l-primary">
+                                            <CardContent className="pt-4">
+                                                <div
+                                                    className="prose prose-sm max-w-none text-muted-foreground"
+                                                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                                                />
+                                            </CardContent>
+                                        </Card>
+                                    </CollapsibleContent>
+                                </Collapsible>
                             ))}
                         </div>
 
                         <div className="mt-8 text-center">
-                            <Button size="lg" asChild>
-                                <Link href="/courses">Lihat Semua Kursus</Link>
+                            <Button variant="outline" size="lg" asChild>
+                                <Link href="/faq">Lihat Semua FAQ</Link>
                             </Button>
                         </div>
                     </div>

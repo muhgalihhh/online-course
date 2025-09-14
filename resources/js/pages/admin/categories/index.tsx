@@ -1,15 +1,15 @@
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Pagination } from '@/components/pagination';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DeleteConfirmation } from '@/components/delete-confirmation';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { Pagination } from '@/components/pagination';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 
 interface Category {
     id: number;
@@ -43,31 +43,38 @@ export default function CategoryIndex({ categories, filters }: CategoryIndexProp
         categoryName: '',
     });
 
+    const handlePagination = (url: string) => {
+        router.get(url, filters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const filterConfig: FilterConfig = {
         search: {
-            placeholder: "Search by name or description...",
+            placeholder: 'Search by name or description...',
         },
         numberRange: {
             course_count: {
-                label: "Course Count Range",
+                label: 'Course Count Range',
                 min: 0,
-                step: 1
-            }
+                step: 1,
+            },
         },
         dateRange: {
             enabled: true,
-            label: "Creation Date"
+            label: 'Creation Date',
         },
         sort: {
             enabled: true,
             options: [
-                { value: "created_at", label: "Creation Date" },
-                { value: "name", label: "Name" },
-                { value: "courses_count", label: "Course Count" }
+                { value: 'created_at', label: 'Creation Date' },
+                { value: 'name', label: 'Name' },
+                { value: 'courses_count', label: 'Course Count' },
             ],
-            defaultSort: "created_at",
-            defaultOrder: "desc"
-        }
+            defaultSort: 'created_at',
+            defaultOrder: 'desc',
+        },
     };
 
     const handleDelete = (categoryId: number, categoryName: string) => {
@@ -94,17 +101,13 @@ export default function CategoryIndex({ categories, filters }: CategoryIndexProp
             <Head title="Manage Categories" />
 
             <div className="space-y-4">
-                <AdminFilter 
-                    config={filterConfig}
-                    filters={filters}
-                    route="admin.categories.index"
-                />
+                <AdminFilter config={filterConfig} filters={filters} route="admin.categories.index" />
 
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Daftar Kategori</h1>
                     <Link href={route('admin.categories.create')}>
                         <Button>
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="mr-2 h-4 w-4" />
                             Tambah Kategori
                         </Button>
                     </Link>
@@ -141,11 +144,7 @@ export default function CategoryIndex({ categories, filters }: CategoryIndexProp
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
-                                                <Button 
-                                                    variant="destructive" 
-                                                    size="sm"
-                                                    onClick={() => handleDelete(category.id, category.name)}
-                                                >
+                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(category.id, category.name)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -156,7 +155,7 @@ export default function CategoryIndex({ categories, filters }: CategoryIndexProp
                         </Table>
                         {categories.links && categories.links.length > 0 && (
                             <div className="mt-4">
-                                <Pagination links={categories.links} />
+                                <Pagination links={categories.links} onPageChange={handlePagination} />
                             </div>
                         )}
                     </CardContent>

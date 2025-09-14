@@ -34,6 +34,7 @@ interface Course {
     institution: Institution;
     category: Category;
     thumbnail_path?: string;
+    thumbnail?: string;
 }
 
 interface CourseEditProps extends PageProps {
@@ -165,13 +166,9 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                 <div className="grid gap-6 md:grid-cols-2">
                                     <div>
                                         <div className="group relative">
-                                            {preview || course.thumbnail_path ? (
+                                            {preview || course.thumbnail ? (
                                                 <div className="relative aspect-video overflow-hidden rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-                                                    <img
-                                                        src={preview || course.thumbnail_path}
-                                                        alt="Preview"
-                                                        className="h-full w-full object-cover"
-                                                    />
+                                                    <img src={preview || course.thumbnail} alt="Preview" className="h-full w-full object-cover" />
                                                     {preview && (
                                                         <Button
                                                             type="button"
@@ -202,7 +199,7 @@ export default function CourseEdit({ course, categories, institutions }: CourseE
                                             onChange={(e) => setData('thumbnail_path', e.target.files ? e.target.files[0] : null)}
                                             className="hidden"
                                         />
-                                        {!preview && course.thumbnail_path && (
+                                        {!preview && course.thumbnail && (
                                             <p className="mt-2 text-center text-sm text-muted-foreground">
                                                 Upload gambar baru untuk mengganti thumbnail yang ada
                                             </p>

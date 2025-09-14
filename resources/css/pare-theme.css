@@ -1,26 +1,28 @@
 /* PARE EDU HUB - Additional Color Utilities */
 
 /* Gold Gradient Backgrounds (inspired by logo) */
+
+/* Updated: favor blue gradients; orange only as accent */
 .bg-gradient-gold {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--chart-3) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
 .bg-gradient-navy-gold {
-    background: linear-gradient(135deg, var(--chart-2) 0%, var(--primary) 100%);
+    background: linear-gradient(135deg, var(--chart-4) 0%, var(--primary) 100%);
 }
 
 .bg-gradient-gold-light {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--chart-3) 100%);
 }
 
 /* Logo-inspired Hero Sections */
 .hero-gradient {
-    background: linear-gradient(135deg, var(--chart-2) 0%, var(--primary) 50%, var(--chart-3) 100%);
+    background: linear-gradient(135deg, var(--chart-4) 0%, var(--primary) 60%, var(--chart-3) 100%);
 }
 
 /* Custom text colors matching logo */
 .text-gold {
-    color: var(--primary);
+    color: var(--secondary); /* orange becomes secondary */
 }
 
 .text-navy {
@@ -48,9 +50,9 @@
 
 /* Button variants inspired by logo */
 .btn-gold {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-    border: 1px solid var(--primary);
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border: 1px solid var(--secondary);
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     font-weight: 500;
@@ -58,14 +60,14 @@
 }
 
 .btn-gold:hover {
-    background-color: var(--chart-3);
-    border-color: var(--chart-3);
+    background-color: var(--chart-2); /* slightly darker orange */
+    border-color: var(--chart-2);
 }
 
 .btn-navy {
-    background-color: var(--chart-2);
+    background-color: var(--primary);
     color: var(--background);
-    border: 1px solid var(--chart-2);
+    border: 1px solid var(--primary);
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     font-weight: 500;
@@ -73,7 +75,7 @@
 }
 
 .btn-navy:hover {
-    background-color: var(--chart-4);
+    background-color: var(--chart-4); /* deeper blue */
     border-color: var(--chart-4);
 }
 
@@ -106,7 +108,7 @@
 
 /* Status indicators */
 .status-success {
-    background-color: var(--chart-3);
+    background-color: var(--primary);
     color: var(--primary-foreground);
 }
 

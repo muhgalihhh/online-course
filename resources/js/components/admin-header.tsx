@@ -10,7 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import WeatherButton from '@/components/weather-button';
+import WeatherDropdown from '@/components/weather-dropdown';
 import { useInitials } from '@/hooks/use-initials';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { type User as UserType } from '@/types';
@@ -22,7 +22,7 @@ interface AdminHeaderProps {
     onToggleSidebar?: () => void;
 }
 
-export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderProps) {
+export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     const page = usePage<{ auth: { user: UserType } }>();
     const { auth } = page.props;
     const getInitials = useInitials();
@@ -47,7 +47,7 @@ export function AdminHeader({ breadcrumbs = [], onToggleSidebar }: AdminHeaderPr
 
                 {/* Right side - Notifications and Profile */}
                 <div className="flex items-center gap-2">
-                    <WeatherButton />
+                    <WeatherDropdown />
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

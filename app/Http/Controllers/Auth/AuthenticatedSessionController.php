@@ -39,36 +39,43 @@ class AuthenticatedSessionController extends Controller
         // Check if there's an intended URL
         $intended = session()->pull('url.intended');
 
-        // Don't redirect to API routes or invalid intended URLs for admin users
-        if ($intended && $user->isAdmin() && str_starts_with($intended, url('/api'))) {
-            $intended = null;
+        // Normalize and validate intended URL against role
+        if ($intended) {
+            // Disallow API as landing pages
+            if (str_starts_with($intended, url('/api'))) {
+                $intended = null;
+            } else {
+                $isAdmin = $user->isAdmin();
+                $isAdminArea = str_starts_with($intended, url('/admin'));
+                $isUserArea = str_starts_with($intended, url('/user'));
+
+                // If role and intended area mismatch, ignore intended
+                if ($isAdmin && $isUserArea) {
+                    $intended = null;
+                } elseif (!$isAdmin && $isAdminArea) {
+                    $intended = null;
+                }
+            }
         }
 
         // For Inertia requests, return a proper Inertia response
         if ($request->inertia()) {
-            if ($intended && !str_starts_with($intended, url('/api'))) {
+            if ($intended) {
                 return Inertia::location($intended);
             }
 
             // Redirect based on role for Inertia requests
-            if ($user->isAdmin()) {
-                return Inertia::location(route('admin.dashboard'));
-            }
-
-            return Inertia::location(route('user.dashboard'));
+            return Inertia::location($user->isAdmin() ? route('admin.dashboard') : route('user.dashboard'));
         }
 
         // For regular requests, use standard redirects
-        if ($intended && !str_starts_with($intended, url('/api'))) {
+        if ($intended) {
             return redirect($intended);
         }
 
         // Otherwise, redirect based on role
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang kembali, ' . $user->name . '!');
-        }
-
-        return redirect()->route('user.dashboard')->with('success', 'Selamat datang kembali, ' . $user->name . '!');
+        return redirect()->route($user->isAdmin() ? 'admin.dashboard' : 'user.dashboard')
+            ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
     }
 
     /**

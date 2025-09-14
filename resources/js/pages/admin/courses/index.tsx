@@ -1,16 +1,16 @@
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
+import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Pagination } from '@/components/pagination';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Eye, Image as ImageIcon, Send, FileX } from 'lucide-react';
-import { Pagination } from '@/components/pagination';
+import { Edit, Eye, FileX, Image as ImageIcon, Plus, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { DeleteConfirmation } from '@/components/delete-confirmation';
-import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 
 interface Course {
     id: number;
@@ -52,61 +52,72 @@ interface CourseIndexProps extends PageProps {
 }
 
 export default function CourseIndex({ courses, categories, institutions, filters }: CourseIndexProps) {
-    const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; courseId: number | null; courseTitle: string }>({ isOpen: false, courseId: null, courseTitle: '' });
+    const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; courseId: number | null; courseTitle: string }>({
+        isOpen: false,
+        courseId: null,
+        courseTitle: '',
+    });
+
+    const handlePagination = (url: string) => {
+        router.get(url, filters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
     const filterConfig: FilterConfig = {
         search: {
-            placeholder: "Search by title or description...",
+            placeholder: 'Search by title or description...',
         },
         select: {
             category_id: {
-                label: "Category",
-                options: categories?.map(cat => ({ value: cat.id.toString(), label: cat.name })) || [],
-                placeholder: "All Categories"
+                label: 'Category',
+                options: categories?.map((cat) => ({ value: cat.id.toString(), label: cat.name })) || [],
+                placeholder: 'All Categories',
             },
             institution_id: {
-                label: "Institution",
-                options: institutions?.map(inst => ({ value: inst.id.toString(), label: inst.name })) || [],
-                placeholder: "All Institutions"
+                label: 'Institution',
+                options: institutions?.map((inst) => ({ value: inst.id.toString(), label: inst.name })) || [],
+                placeholder: 'All Institutions',
             },
             is_pro: {
-                label: "Course Type",
+                label: 'Course Type',
                 options: [
-                    { value: "true", label: "Pro Course" },
-                    { value: "false", label: "Free Course" }
+                    { value: 'true', label: 'Pro Course' },
+                    { value: 'false', label: 'Free Course' },
                 ],
-                placeholder: "All Types"
+                placeholder: 'All Types',
             },
             status: {
-                label: "Status",
+                label: 'Status',
                 options: [
-                    { value: "published", label: "Published" },
-                    { value: "draft", label: "Draft" }
+                    { value: 'published', label: 'Published' },
+                    { value: 'draft', label: 'Draft' },
                 ],
-                placeholder: "All Status"
-            }
+                placeholder: 'All Status',
+            },
         },
         numberRange: {
             price: {
-                label: "Price Range",
+                label: 'Price Range',
                 min: 0,
-                step: 1000
-            }
+                step: 1000,
+            },
         },
         dateRange: {
             enabled: true,
-            label: "Creation Date"
+            label: 'Creation Date',
         },
         sort: {
             enabled: true,
             options: [
-                { value: "created_at", label: "Creation Date" },
-                { value: "title", label: "Title" },
-                { value: "price", label: "Price" }
+                { value: 'created_at', label: 'Creation Date' },
+                { value: 'title', label: 'Title' },
+                { value: 'price', label: 'Price' },
             ],
-            defaultSort: "created_at",
-            defaultOrder: "desc"
-        }
+            defaultSort: 'created_at',
+            defaultOrder: 'desc',
+        },
     };
 
     const confirmDelete = () => {
@@ -125,17 +136,13 @@ export default function CourseIndex({ courses, categories, institutions, filters
             <Head title="Manage Courses" />
 
             <div className="space-y-4">
-                <AdminFilter 
-                    config={filterConfig}
-                    filters={filters}
-                    route="admin.courses.index"
-                />
+                <AdminFilter config={filterConfig} filters={filters} route="admin.courses.index" />
 
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Daftar Kursus</h1>
                     <Link href={route('admin.courses.create')}>
                         <Button>
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="mr-2 h-4 w-4" />
                             Tambah Kursus
                         </Button>
                     </Link>
@@ -165,8 +172,11 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                     <TableRow key={course.id}>
                                         <TableCell>
                                             <Avatar className="h-12 w-12 rounded-lg">
-                                                <AvatarImage 
-                                                    src={course.thumbnail || (course.thumbnail_path ? `/storage/${course.thumbnail_path}` : '')} 
+                                                <AvatarImage
+                                                    src={
+                                                        course.thumbnail ||
+                                                        (course.thumbnail_path ? `/${course.thumbnail_path.replace(/^\/+/, '')}` : '')
+                                                    }
                                                     alt={course.title}
                                                     className="object-cover"
                                                 />
@@ -178,16 +188,14 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                         <TableCell>
                                             <div>
                                                 <p className="font-medium">{course.title}</p>
-                                                <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs">{course.description}</p>
+                                                <p className="line-clamp-1 max-w-xs text-xs text-muted-foreground">{course.description}</p>
                                             </div>
                                         </TableCell>
                                         <TableCell>{course.institution.name}</TableCell>
                                         <TableCell>{course.category.name}</TableCell>
                                         <TableCell>Rp {course.price.toLocaleString()}</TableCell>
                                         <TableCell>
-                                            <Badge variant={course.is_pro ? 'default' : 'secondary'}>
-                                                {course.is_pro ? 'Pro' : 'Free'}
-                                            </Badge>
+                                            <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={course.status === 'published' ? 'success' : 'warning'}>
@@ -207,7 +215,7 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
                                                 </Link>
-                                                <Button 
+                                                <Button
                                                     variant={course.status === 'draft' ? 'default' : 'secondary'}
                                                     size="sm"
                                                     onClick={() => router.patch(route('admin.courses.toggle-publish', course.id))}
@@ -215,8 +223,8 @@ export default function CourseIndex({ courses, categories, institutions, filters
                                                 >
                                                     {course.status === 'draft' ? <Send className="h-4 w-4" /> : <FileX className="h-4 w-4" />}
                                                 </Button>
-                                                <Button 
-                                                    variant="destructive" 
+                                                <Button
+                                                    variant="destructive"
                                                     size="sm"
                                                     onClick={() => setDeleteDialog({ isOpen: true, courseId: course.id, courseTitle: course.title })}
                                                     title="Delete"
@@ -231,7 +239,7 @@ export default function CourseIndex({ courses, categories, institutions, filters
                         </Table>
                         {courses.links && courses.links.length > 0 && (
                             <div className="mt-4">
-                                <Pagination links={courses.links} />
+                                <Pagination links={courses.links} onPageChange={handlePagination} />
                             </div>
                         )}
                     </CardContent>

@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'midtrans.webhook' => \App\Http\Middleware\VerifyMidtransWebhook::class,
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
             'anti.piracy' => \App\Http\Middleware\AntiPiracyMiddleware::class,
+            'prevent.admin' => \App\Http\Middleware\PreventAdminAccess::class,
         ]);
         $middleware->redirectGuestsTo('/login');
 

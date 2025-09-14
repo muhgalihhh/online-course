@@ -46,10 +46,12 @@ export interface Course {
     category_id: number;
     user_id: number;
     thumbnail_path: string | null;
+    thumbnail: string | null; // Added accessor attribute
     thumbnail_url: string;
     description: string;
     level: string;
     price: number;
+    is_pro: boolean;
     status: string;
     created_at: string;
     updated_at: string;
@@ -125,6 +127,38 @@ export interface Enrollment {
     course_id: number;
     created_at: string;
     updated_at: string;
+}
+
+// Generic type for Laravel pagination
+export interface PaginatedData<T> {
+    data: T[];
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    current_page: number;
+    from: number;
+    to: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    first_page_url: string;
+    last_page_url: string;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+    path: string;
+}
+
+// BreadcrumbItem type for admin components
+export interface BreadcrumbItem {
+    label: string;
+    href?: string;
+}
+
+// SharedData type for admin settings
+export interface SharedData {
+    [key: string]: any;
 }
 
 // Tipe generik untuk PageProps dari Inertia

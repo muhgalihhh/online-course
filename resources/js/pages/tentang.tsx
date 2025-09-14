@@ -1,3 +1,4 @@
+import { AppStoreIcon, FacebookIcon, GooglePlayIcon, InstagramIcon, TikTokIcon, TwitterIcon } from '@/components/social-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import GuestLayout from '@/layouts/guest-layout';
 import { usePage } from '@inertiajs/react';
-import { Clock, GraduationCap, Mail, MapPin, MessageSquare, Phone, Star } from 'lucide-react';
+import { Clock, Globe, GraduationCap, Mail, MapPin, MessageSquare, Phone, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Institution {
@@ -18,6 +19,14 @@ interface Institution {
     address?: string;
     website?: string;
     photo_path?: string;
+    // Social media links
+    tiktok_url?: string;
+    instagram_url?: string;
+    facebook_url?: string;
+    twitter_url?: string;
+    // Mobile app links
+    ios_app_url?: string;
+    android_app_url?: string;
 }
 
 interface Review {
@@ -105,13 +114,13 @@ export default function Tentang() {
                 let error: unknown = {};
                 try {
                     error = await response.json();
-                } catch (e) {
+                } catch {
                     // ignore JSON parse error
                 }
                 console.error('Review submit failed', error, response.status);
                 toast({
                     title: 'Error',
-                    description: (error as any)?.message || 'Terjadi kesalahan saat mengirim review.',
+                    description: (error as { message?: string })?.message || 'Terjadi kesalahan saat mengirim review.',
                     variant: 'destructive',
                 });
             }
@@ -294,12 +303,12 @@ export default function Tentang() {
                                                             <span className="font-medium">{review.user.name}</span>
                                                             <div className="flex">
                                                                 {[...Array(5)].map((_, i) => (
-                                                                    <span
+                                                                    <Star
                                                                         key={i}
-                                                                        className={`text-sm ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                                                                    >
-                                                                        ⭐
-                                                                    </span>
+                                                                        className={`h-4 w-4 ${
+                                                                            i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                                                        }`}
+                                                                    />
                                                                 ))}
                                                             </div>
                                                         </div>
@@ -320,6 +329,103 @@ export default function Tentang() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </div>
+                </div>
+            </section>
+
+            {/* Call to Action Section with Social Media */}
+            <section className="bg-primary/5 py-16">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-4xl text-center">
+                        <h2 className="mb-4 text-3xl font-bold">Mari Terhubung dengan Kami</h2>
+                        <p className="mb-8 text-xl text-muted-foreground">
+                            Ikuti media sosial kami untuk mendapatkan update terbaru tentang kursus dan tips pembelajaran
+                        </p>
+
+                        {/* Social Media Links */}
+                        <div className="mb-8 flex flex-wrap justify-center gap-4">
+                            {institution?.facebook_url && (
+                                <Button variant="outline" size="lg" asChild className="group">
+                                    <a href={institution.facebook_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                        <FacebookIcon className="h-5 w-5 transition-colors group-hover:text-blue-600" />
+                                        Facebook
+                                    </a>
+                                </Button>
+                            )}
+                            {institution?.instagram_url && (
+                                <Button variant="outline" size="lg" asChild className="group">
+                                    <a href={institution.instagram_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                        <InstagramIcon className="h-5 w-5 transition-colors group-hover:text-pink-600" />
+                                        Instagram
+                                    </a>
+                                </Button>
+                            )}
+                            {institution?.twitter_url && (
+                                <Button variant="outline" size="lg" asChild className="group">
+                                    <a href={institution.twitter_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                        <TwitterIcon className="h-5 w-5 transition-colors group-hover:text-blue-400" />
+                                        Twitter
+                                    </a>
+                                </Button>
+                            )}
+                            {institution?.tiktok_url && (
+                                <Button variant="outline" size="lg" asChild className="group">
+                                    <a href={institution.tiktok_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                        <TikTokIcon className="h-5 w-5 transition-colors group-hover:text-black" />
+                                        TikTok
+                                    </a>
+                                </Button>
+                            )}
+                            {institution?.website && (
+                                <Button variant="outline" size="lg" asChild className="group">
+                                    <a href={institution.website} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                        <Globe className="h-5 w-5 transition-colors group-hover:text-primary" />
+                                        Website
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Mobile App Links */}
+                        {(institution?.ios_app_url || institution?.android_app_url) && (
+                            <div className="mb-8">
+                                <h3 className="mb-4 text-lg font-semibold">Download Aplikasi Mobile</h3>
+                                <div className="flex flex-wrap justify-center gap-4">
+                                    {institution?.ios_app_url && (
+                                        <Button variant="outline" size="lg" asChild className="group">
+                                            <a href={institution.ios_app_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                                <AppStoreIcon className="h-5 w-5" />
+                                                App Store
+                                            </a>
+                                        </Button>
+                                    )}
+                                    {institution?.android_app_url && (
+                                        <Button variant="outline" size="lg" asChild className="group">
+                                            <a href={institution.android_app_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                                <GooglePlayIcon className="h-5 w-5" />
+                                                Google Play
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Main CTA */}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+                            <Button size="lg" className="gap-2" asChild>
+                                <a href="/kelas-pro">
+                                    <GraduationCap className="h-5 w-5" />
+                                    Lihat Kelas Pro
+                                </a>
+                            </Button>
+                            <Button size="lg" variant="outline" className="gap-2" asChild>
+                                <a href="/kelas-free">
+                                    <GraduationCap className="h-5 w-5" />
+                                    Mulai Kelas Gratis
+                                </a>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -367,7 +473,6 @@ export default function Tentang() {
                                                         src={mapSrc}
                                                         width="100%"
                                                         height="100%"
-                                                        loading="lazy"
                                                         referrerPolicy="no-referrer-when-downgrade"
                                                         className="border-0"
                                                         title={`Lokasi ${mapAddress}`}

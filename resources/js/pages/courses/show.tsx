@@ -8,34 +8,23 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useCart } from '@/contexts/cart-context';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import GuestLayout from '@/layouts/guest-layout';
+import { type Transaction } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import {
-    Award,
-    BarChart,
-    BookOpen,
-    Building,
-    ChevronRight,
-    Clock,
-    Download,
-    FileText,
-    Globe,
-    Lock,
-    PlayCircle,
-    ShoppingCart,
-    Star,
-    Users,
-} from 'lucide-react';
+import { BookOpen, Building, ChevronRight, Clock, Download, FileText, Globe, Lock, PlayCircle, ShoppingCart, Star, Users } from 'lucide-react';
 import { useState } from 'react';
 
 interface CourseMaterial {
     id: number;
     title: string;
-    type: 'video' | 'pdf' | 'quiz' | 'assignment';
+    type: 'pdf' | 'image' | 'video_local' | 'video_youtube';
     duration?: number;
     file_path?: string;
+    youtube_url?: string;
+    is_preview: boolean;
 }
 
 interface Chapter {
@@ -100,16 +89,20 @@ interface RelatedCourse {
 interface PageProps {
     course: Course;
     isEnrolled: boolean;
-    hasCompletedTransaction?: boolean;
+    paymentStatus?: string;
+    pendingTransaction?: Transaction;
     relatedCourses: RelatedCourse[];
     [key: string]: unknown;
 }
 
 export default function CourseShow() {
-    const { course, isEnrolled, hasCompletedTransaction = false, relatedCourses } = usePage<PageProps>().props;
+    const { course, isEnrolled, paymentStatus, pendingTransaction, relatedCourses } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
     const { toast } = useToast();
+    const { loadTransactions } = useCart();
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState<CourseMaterial | null>(null);
     const [reviewForm, setReviewForm] = useState({
         rating: 0,
         comment: '',
@@ -117,10 +110,16 @@ export default function CourseShow() {
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
 
-    const handleEnroll = () => {
+    const handleEnroll = async () => {
         if (!isAuthenticated) {
             setShowLoginDialog(true);
         } else {
+            // Check if there's a pending payment to continue
+            if (paymentStatus === 'pending_payment' && pendingTransaction) {
+                router.visit(`/payments/courses/${course.id}`);
+                return;
+            }
+
             // For free courses, directly enroll without payment
             if (!course.is_pro && course.price === 0) {
                 router.post(
@@ -137,14 +136,110 @@ export default function CourseShow() {
                     },
                 );
             } else {
-                // Navigate to enrollment/payment page for pro courses
-                router.visit(`/courses/${course.id}/enroll`);
+                // For pro courses, proceed to payment page directly
+                // The payment controller will handle existing transaction validation
+                try {
+                    // Check for any existing pending transaction
+                    const response = await fetch(`/payments/courses/${course.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Transaction created or found
+                        if (data.existing_transaction) {
+                            toast({
+                                title: 'Melanjutkan Pembayaran',
+                                description: 'Melanjutkan dengan transaksi yang sudah ada.',
+                            });
+                        } else {
+                            toast({
+                                title: 'Transaksi Dibuat',
+                                description: 'Transaksi pembayaran berhasil dibuat.',
+                            });
+                        }
+
+                        // Always redirect to payment page
+                        await loadTransactions();
+                        router.visit(`/payments/courses/${course.id}`);
+                    } else if (response.status === 410) {
+                        // Transaction expired
+                        toast({
+                            title: 'Transaksi Expired',
+                            description: data.message || 'Transaksi sebelumnya sudah expired. Akan dibuat transaksi baru.',
+                        });
+
+                        // Still redirect to payment page to create new transaction
+                        await loadTransactions();
+                        router.visit(`/payments/courses/${course.id}`);
+                    } else if (response.status === 409) {
+                        // Already enrolled or has completed transaction
+                        if (data.is_enrolled) {
+                            toast({
+                                title: 'Sudah Terdaftar',
+                                description: 'Anda sudah terdaftar di kursus ini.',
+                            });
+                            router.visit(`/courses/${course.id}/learn`);
+                            return;
+                        } else if (data.has_completed_transaction) {
+                            toast({
+                                title: 'Pembayaran Selesai',
+                                description: 'Pembayaran sudah selesai. Mengarahkan ke halaman kursus...',
+                            });
+                            router.visit(`/courses/${course.id}`);
+                            return;
+                        }
+                    } else if (response.status === 422 && data.is_free) {
+                        toast({
+                            title: 'Kursus Gratis',
+                            description: 'Kursus ini gratis dan tidak memerlukan pembayaran.',
+                        });
+                        return;
+                    } else {
+                        // Other errors
+                        toast({
+                            title: 'Error',
+                            description: data.message || 'Gagal membuat transaksi. Silakan coba lagi.',
+                            variant: 'destructive',
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to create transaction:', error);
+                    toast({
+                        title: 'Error',
+                        description: 'Terjadi kesalahan. Silakan coba lagi.',
+                        variant: 'destructive',
+                    });
+                }
             }
         }
     };
 
     const handleLoginRedirect = () => {
         router.visit('/login');
+    };
+
+    const handlePreviewMaterial = (material: CourseMaterial) => {
+        console.log('Preview material clicked:', material);
+        setSelectedPreviewMaterial(material);
+        setShowPreviewModal(true);
+    };
+
+    const closePreviewModal = () => {
+        setShowPreviewModal(false);
+        setSelectedPreviewMaterial(null);
+    };
+
+    const extractYouTubeVideoId = (url: string) => {
+        // Extract video ID from various YouTube URL formats
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return match && match[2].length === 11 ? match[2] : url;
     };
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -193,7 +288,7 @@ export default function CourseShow() {
                     variant: 'destructive',
                 });
             }
-        } catch (_error) {
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Terjadi kesalahan saat mengirim review.',
@@ -206,14 +301,13 @@ export default function CourseShow() {
 
     const getMaterialIcon = (type: string) => {
         switch (type) {
-            case 'video':
+            case 'video_local':
+            case 'video_youtube':
                 return <PlayCircle className="h-4 w-4" />;
             case 'pdf':
                 return <FileText className="h-4 w-4" />;
-            case 'quiz':
-                return <BarChart className="h-4 w-4" />;
-            case 'assignment':
-                return <Award className="h-4 w-4" />;
+            case 'image':
+                return <FileText className="h-4 w-4" />;
             default:
                 return <FileText className="h-4 w-4" />;
         }
@@ -314,7 +408,7 @@ export default function CourseShow() {
 
                         {/* Sidebar - Course Card */}
                         <div className="lg:col-span-1">
-                            <Card className="sticky top-20">
+                            <Card className="sticky top-20" id="enrollment-section">
                                 <CardHeader className="p-0">
                                     <img
                                         src={course.thumbnail || 'https://via.placeholder.com/400x225'}
@@ -329,8 +423,11 @@ export default function CourseShow() {
                                         </p>
                                         {course.is_pro && <p className="text-sm text-muted-foreground">Harga sudah termasuk pajak</p>}
                                         {isEnrolled && <p className="mt-2 text-sm text-green-600">Anda sudah terdaftar di kursus ini</p>}
-                                        {hasCompletedTransaction && !isEnrolled && (
+                                        {paymentStatus === 'paid_processing' && (
                                             <p className="mt-2 text-sm text-blue-600">Pembayaran sudah berhasil, sedang diproses pendaftaran</p>
+                                        )}
+                                        {paymentStatus === 'pending_payment' && pendingTransaction && (
+                                            <p className="mt-2 text-sm text-orange-600">Anda memiliki pembayaran yang belum diselesaikan</p>
                                         )}
                                     </div>
 
@@ -338,15 +435,20 @@ export default function CourseShow() {
                                         <Button size="lg" className="w-full" asChild>
                                             <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
                                         </Button>
-                                    ) : hasCompletedTransaction ? (
+                                    ) : paymentStatus === 'paid_processing' ? (
                                         <Button size="lg" className="w-full gap-2" disabled>
                                             <Clock className="h-5 w-5" />
                                             Sedang Diproses
                                         </Button>
+                                    ) : paymentStatus === 'pending_payment' && pendingTransaction ? (
+                                        <Button size="lg" className="w-full gap-2" onClick={handleEnroll}>
+                                            <ShoppingCart className="h-5 w-5" />
+                                            Lanjutkan Pembayaran
+                                        </Button>
                                     ) : (
                                         <Button size="lg" className="w-full gap-2" onClick={handleEnroll}>
                                             <ShoppingCart className="h-5 w-5" />
-                                            {course.is_pro ? 'Daftar Sekarang' : 'Ikuti Kursus Gratis'}
+                                            {course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus Gratis'}
                                         </Button>
                                     )}
 
@@ -417,18 +519,39 @@ export default function CourseShow() {
                                                                 <div className="flex items-center gap-3">
                                                                     {isEnrolled ? (
                                                                         getMaterialIcon(material.type)
+                                                                    ) : material.is_preview ? (
+                                                                        getMaterialIcon(material.type)
                                                                     ) : (
                                                                         <Lock className="h-4 w-4 text-muted-foreground" />
                                                                     )}
-                                                                    <span className={!isEnrolled ? 'text-muted-foreground' : ''}>
+                                                                    <span
+                                                                        className={!isEnrolled && !material.is_preview ? 'text-muted-foreground' : ''}
+                                                                    >
                                                                         {material.title}
                                                                     </span>
+                                                                    {material.is_preview && !isEnrolled && (
+                                                                        <Badge variant="secondary" className="text-xs">
+                                                                            Preview
+                                                                        </Badge>
+                                                                    )}
                                                                 </div>
-                                                                {material.duration && (
-                                                                    <span className="text-sm text-muted-foreground">
-                                                                        {formatDuration(material.duration)}
-                                                                    </span>
-                                                                )}
+                                                                <div className="flex items-center gap-2">
+                                                                    {material.duration && (
+                                                                        <span className="text-sm text-muted-foreground">
+                                                                            {formatDuration(material.duration)}
+                                                                        </span>
+                                                                    )}
+                                                                    {!isEnrolled && material.is_preview && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => handlePreviewMaterial(material)}
+                                                                            className="ml-2"
+                                                                        >
+                                                                            Preview
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -627,6 +750,138 @@ export default function CourseShow() {
                             Batal
                         </Button>
                         <Button onClick={handleLoginRedirect}>Login</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Preview Material Modal */}
+            <Dialog open={showPreviewModal} onOpenChange={closePreviewModal}>
+                <DialogContent className="max-h-[80vh] max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            {selectedPreviewMaterial && getMaterialIcon(selectedPreviewMaterial.type)}
+                            {selectedPreviewMaterial?.title}
+                            <Badge variant="secondary" className="ml-2">
+                                Preview
+                            </Badge>
+                        </DialogTitle>
+                        <DialogDescription>Ini adalah preview dari materi kursus. Daftar untuk mengakses semua materi lengkap.</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-auto">
+                        {selectedPreviewMaterial ? (
+                            <div className="space-y-4">
+                                {(selectedPreviewMaterial.type === 'video_youtube' || selectedPreviewMaterial.type === 'video_local') && (
+                                    <div className="space-y-4">
+                                        {selectedPreviewMaterial.type === 'video_youtube' && selectedPreviewMaterial.youtube_url ? (
+                                            <div className="aspect-video overflow-hidden rounded-lg bg-black">
+                                                <iframe
+                                                    src={`https://www.youtube.com/embed/${extractYouTubeVideoId(selectedPreviewMaterial.youtube_url)}`}
+                                                    className="h-full w-full"
+                                                    title={selectedPreviewMaterial.title}
+                                                    frameBorder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowFullScreen
+                                                />
+                                            </div>
+                                        ) : selectedPreviewMaterial.type === 'video_local' && selectedPreviewMaterial.file_path ? (
+                                            <div className="aspect-video overflow-hidden rounded-lg bg-black">
+                                                <video controls className="h-full w-full" poster="/hero-1.jpg">
+                                                    <source src={`/storage/${selectedPreviewMaterial.file_path}`} type="video/mp4" />
+                                                    Browser Anda tidak mendukung video HTML5.
+                                                </video>
+                                            </div>
+                                        ) : (
+                                            <div className="flex aspect-video items-center justify-center rounded-lg bg-gray-100">
+                                                <div className="text-center text-gray-500">
+                                                    <PlayCircle className="mx-auto mb-2 h-12 w-12" />
+                                                    <p>Video preview tidak tersedia</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                            <p className="text-sm text-blue-800">
+                                                <strong>Preview Video:</strong> Ini adalah cuplian dari materi video. Daftar kursus untuk mengakses
+                                                video lengkap dengan kualitas HD dan materi pendukung lainnya.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedPreviewMaterial.type === 'pdf' && (
+                                    <div className="space-y-4">
+                                        {selectedPreviewMaterial.file_path ? (
+                                            <div className="h-[500px] overflow-hidden rounded-lg border">
+                                                <iframe
+                                                    src={`/storage/${selectedPreviewMaterial.file_path}`}
+                                                    className="h-full w-full"
+                                                    title={selectedPreviewMaterial.title}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-lg border bg-gray-50 p-8 text-center">
+                                                <FileText className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                                <p className="text-gray-600">PDF preview tidak tersedia</p>
+                                            </div>
+                                        )}
+                                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                            <p className="text-sm text-blue-800">
+                                                <strong>Preview PDF:</strong> Ini adalah sebagian dari materi PDF. Daftar kursus untuk mengakses
+                                                dokumen lengkap dan dapat mendownload file.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedPreviewMaterial.type === 'image' && (
+                                    <div className="space-y-4">
+                                        {selectedPreviewMaterial.file_path ? (
+                                            <div className="overflow-hidden rounded-lg border">
+                                                <img
+                                                    src={`/storage/${selectedPreviewMaterial.file_path}`}
+                                                    alt={selectedPreviewMaterial.title}
+                                                    className="h-auto max-h-[500px] w-full object-contain"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-lg border bg-gray-50 p-8 text-center">
+                                                <FileText className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                                <p className="text-gray-600">Gambar preview tidak tersedia</p>
+                                            </div>
+                                        )}
+                                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                            <p className="text-sm text-blue-800">
+                                                <strong>Preview Gambar:</strong> Ini adalah preview dari materi gambar. Daftar kursus untuk mengakses
+                                                gambar dengan resolusi penuh dan materi pendukung lainnya.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center">
+                                <p>Tidak ada material yang dipilih untuk preview</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="flex-col space-y-2">
+                        <div className="flex w-full items-center justify-between">
+                            <Button variant="outline" onClick={closePreviewModal}>
+                                Tutup Preview
+                            </Button>
+                            {!isEnrolled && (
+                                <Button
+                                    onClick={() => {
+                                        closePreviewModal();
+                                        // Scroll to enrollment section
+                                        document.getElementById('enrollment-section')?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                >
+                                    Daftar Kursus Sekarang
+                                </Button>
+                            )}
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

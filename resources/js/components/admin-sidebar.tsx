@@ -11,6 +11,9 @@ import {
     ArrowLeftRight,
     Book,
     Files,
+    HelpCircle,
+    Home,
+    Image,
     LayoutDashboard,
     LayoutGrid,
     LineChart,
@@ -104,6 +107,26 @@ const menuGroups: MenuGroup[] = [
                 label: 'Categories',
                 icon: LayoutGrid,
                 href: 'admin.categories.index',
+            },
+        ],
+    },
+    {
+        label: 'Content Management',
+        items: [
+            {
+                label: 'Gallery',
+                icon: Image,
+                href: 'admin.galleries.index',
+            },
+            {
+                label: 'Accommodations',
+                icon: Home,
+                href: 'admin.accommodations.index',
+            },
+            {
+                label: 'FAQ',
+                icon: HelpCircle,
+                href: 'admin.faqs.index',
             },
         ],
     },

@@ -1,5 +1,6 @@
 // resources/js/pages/admin/users/index.tsx
 
+import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { DeleteConfirmation } from '@/components/delete-confirmation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,9 +22,8 @@ import AdminLayout from '@/layouts/admin-layout';
 import { User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import qs from 'qs';
+import { useState } from 'react';
 
 type IndexPageProps = {
     users: {
@@ -48,40 +48,47 @@ export default function Index({ users, filters }: IndexPageProps) {
     const [deleteDialog, setDeleteDialog] = useState({
         isOpen: false,
         userId: null as number | null,
-        userName: ''
+        userName: '',
     });
     const { toast } = useToast();
     const getInitials = useInitials();
 
+    const handlePagination = (url: string) => {
+        router.get(url, filters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const filterConfig: FilterConfig = {
         search: {
-            placeholder: "Search by name or email...",
+            placeholder: 'Search by name or email...',
         },
         select: {
             role: {
-                label: "Role",
+                label: 'Role',
                 options: [
-                    { value: "admin", label: "Admin" },
-                    { value: "user", label: "User" }
+                    { value: 'admin', label: 'Admin' },
+                    { value: 'user', label: 'User' },
                 ],
-                placeholder: "All Roles"
-            }
+                placeholder: 'All Roles',
+            },
         },
         dateRange: {
             enabled: true,
-            label: "Registration Date"
+            label: 'Registration Date',
         },
         sort: {
             enabled: true,
             options: [
-                { value: "created_at", label: "Registration Date" },
-                { value: "name", label: "Name" },
-                { value: "email", label: "Email" },
-                { value: "role", label: "Role" }
+                { value: 'created_at', label: 'Registration Date' },
+                { value: 'name', label: 'Name' },
+                { value: 'email', label: 'Email' },
+                { value: 'role', label: 'Role' },
             ],
-            defaultSort: "created_at",
-            defaultOrder: "desc"
-        }
+            defaultSort: 'created_at',
+            defaultOrder: 'desc',
+        },
     };
 
     const confirmDelete = () => {
@@ -101,7 +108,7 @@ export default function Index({ users, filters }: IndexPageProps) {
                         variant: 'destructive',
                     });
                     setDeleteDialog({ isOpen: false, userId: null, userName: '' });
-                }
+                },
             });
         }
     };
@@ -117,16 +124,12 @@ export default function Index({ users, filters }: IndexPageProps) {
             <Head title="Users" />
 
             <div className="space-y-4">
-                <AdminFilter 
-                    config={filterConfig}
-                    filters={filters}
-                    route="admin.users.index"
-                />
+                <AdminFilter config={filterConfig} filters={filters} route="admin.users.index" />
 
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">User List</h2>
                     <Link href={route('admin.users.create')} className={buttonVariants({ size: 'sm' })}>
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Tambah User
                     </Link>
                 </div>
@@ -147,14 +150,8 @@ export default function Index({ users, filters }: IndexPageProps) {
                                 <TableRow key={user.id}>
                                     <TableCell>
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage 
-                                                src={user.profile_photo_url} 
-                                                alt={user.name}
-                                                className="object-cover"
-                                            />
-                                            <AvatarFallback className="bg-blue-100 text-blue-600">
-                                                {getInitials(user.name)}
-                                            </AvatarFallback>
+                                            <AvatarImage src={user.profile_photo_url} alt={user.name} className="object-cover" />
+                                            <AvatarFallback className="bg-blue-100 text-blue-600">{getInitials(user.name)}</AvatarFallback>
                                         </Avatar>
                                     </TableCell>
                                     <TableCell>{user.name}</TableCell>
@@ -175,15 +172,17 @@ export default function Index({ users, filters }: IndexPageProps) {
                                                 <DropdownMenuItem asChild>
                                                     <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem 
+                                                <DropdownMenuItem
                                                     variant="destructive"
-                                                    onClick={() => setDeleteDialog({
-                                                        isOpen: true,
-                                                        userId: user.id,
-                                                        userName: user.name
-                                                    })}
+                                                    onClick={() =>
+                                                        setDeleteDialog({
+                                                            isOpen: true,
+                                                            userId: user.id,
+                                                            userName: user.name,
+                                                        })
+                                                    }
                                                 >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -204,7 +203,7 @@ export default function Index({ users, filters }: IndexPageProps) {
                             if (label.includes('Previous')) {
                                 return (
                                     <PaginationItem key={index}>
-                                        <PaginationPrevious href={url} disabled={!url} />
+                                        <PaginationPrevious onClick={url ? () => handlePagination(url) : undefined} disabled={!url} />
                                     </PaginationItem>
                                 );
                             }
@@ -212,7 +211,7 @@ export default function Index({ users, filters }: IndexPageProps) {
                             if (label.includes('Next')) {
                                 return (
                                     <PaginationItem key={index}>
-                                        <PaginationNext href={url} disabled={!url} />
+                                        <PaginationNext onClick={url ? () => handlePagination(url) : undefined} disabled={!url} />
                                     </PaginationItem>
                                 );
                             }
@@ -227,7 +226,7 @@ export default function Index({ users, filters }: IndexPageProps) {
 
                             return (
                                 <PaginationItem key={index}>
-                                    <PaginationLink href={url} isActive={active}>
+                                    <PaginationLink onClick={url ? () => handlePagination(url) : undefined} isActive={active}>
                                         {page}
                                     </PaginationLink>
                                 </PaginationItem>

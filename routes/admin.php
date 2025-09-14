@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\HelpSupportController as AdminHelpSupportController;
+use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\Admin\AccommodationController as AdminAccommodationController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +47,19 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Other Institution Management (full CRUD)
     Route::resource('other-institutions', AdminOtherInstitutionController::class);
+
+    // Gallery Management
+    Route::resource('galleries', AdminGalleryController::class);
+    Route::patch('/galleries/{gallery}/toggle-active', [AdminGalleryController::class, 'toggleActive'])->name('galleries.toggle-active');
+
+    // Accommodation Management
+    Route::resource('accommodations', AdminAccommodationController::class);
+    Route::post('/accommodations/{accommodation}/toggle-status', [AdminAccommodationController::class, 'toggleStatus'])->name('accommodations.toggle-status');
+
+    // FAQ Management
+    Route::resource('faqs', \App\Http\Controllers\Admin\FaqController::class);
+    Route::post('/faqs/{faq}/toggle-status', [\App\Http\Controllers\Admin\FaqController::class, 'toggleStatus'])->name('faqs.toggle-status');
+    Route::post('/faqs/bulk-action', [\App\Http\Controllers\Admin\FaqController::class, 'bulkAction'])->name('faqs.bulk-action');
 
     // Transaction Management (Read-only)
     Route::resource('transactions', AdminTransactionController::class)->only(['index', 'show']);

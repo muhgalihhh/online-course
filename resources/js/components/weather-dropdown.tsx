@@ -6,6 +6,9 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import axios from 'axios';
@@ -28,10 +31,26 @@ interface SimpleWeatherData {
 const API_KEY = 'c652cbba36019afd965ac4cb698ba98f';
 const API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
+// Daftar kota populer untuk suggestion
+const popularCities = [
+    { name: 'Jakarta', region: 'DKI Jakarta' },
+    { name: 'Surabaya', region: 'Jawa Timur' },
+    { name: 'Bandung', region: 'Jawa Barat' },
+    { name: 'Medan', region: 'Sumatera Utara' },
+    { name: 'Semarang', region: 'Jawa Tengah' },
+    { name: 'Makassar', region: 'Sulawesi Selatan' },
+    { name: 'Yogyakarta', region: 'DI Yogyakarta' },
+    { name: 'Denpasar', region: 'Bali' },
+    { name: 'Malang', region: 'Jawa Timur' },
+    { name: 'Kediri', region: 'Jawa Timur' },
+    { name: 'Pare', region: 'Jawa Timur' },
+];
+
 export default function WeatherDropdown({ defaultLocation = 'Pare, Kediri' }: WeatherDropdownProps) {
     const [data, setData] = useState<SimpleWeatherData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [currentLocation, setCurrentLocation] = useState(defaultLocation);
 
     const fetchWeather = async (loc: string) => {
         try {
@@ -49,11 +68,16 @@ export default function WeatherDropdown({ defaultLocation = 'Pare, Kediri' }: We
                 humidity: w.main.humidity,
                 windSpeed: Math.round(w.wind.speed * 3.6),
             });
-        } catch (e) {
+        } catch {
             setError('Gagal memuat cuaca');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLocationChange = (location: string) => {
+        setCurrentLocation(location);
+        fetchWeather(location);
     };
 
     useEffect(() => {
@@ -70,13 +94,7 @@ export default function WeatherDropdown({ defaultLocation = 'Pare, Kediri' }: We
             <DropdownMenuContent className="w-72" align="end">
                 <DropdownMenuLabel className="flex items-center justify-between">
                     <span className="text-sm font-medium">Cuaca</span>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => fetchWeather(data?.location || defaultLocation)}
-                        disabled={loading}
-                    >
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => fetchWeather(currentLocation)} disabled={loading}>
                         <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
                         <span className="sr-only">Refresh</span>
                     </Button>
@@ -124,6 +142,26 @@ export default function WeatherDropdown({ defaultLocation = 'Pare, Kediri' }: We
                 <DropdownMenuItem className="text-xs text-muted-foreground" onSelect={(e) => e.preventDefault()}>
                     Data oleh OpenWeatherMap
                 </DropdownMenuItem>
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Pilih Lokasi Lain
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-48">
+                        <DropdownMenuLabel>Kota Populer</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {popularCities.map((city) => (
+                            <DropdownMenuItem
+                                key={city.name}
+                                onClick={() => handleLocationChange(city.name)}
+                                className="flex flex-col items-start gap-0"
+                            >
+                                <span className="font-medium">{city.name}</span>
+                                <span className="text-xs text-muted-foreground">{city.region}</span>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                </DropdownMenuSub>
             </DropdownMenuContent>
         </DropdownMenu>
     );
