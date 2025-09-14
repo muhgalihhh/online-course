@@ -95,7 +95,8 @@ interface PageProps {
     [key: string]: unknown;
 }
 
-export default function CourseShow() {
+// Component content that uses cart context
+function CourseShowContent() {
     const { course, isEnrolled, paymentStatus, pendingTransaction, relatedCourses } = usePage<PageProps>().props;
     const { isAuthenticated } = useAuth();
     const { toast } = useToast();
@@ -332,7 +333,7 @@ export default function CourseShow() {
     };
 
     return (
-        <GuestLayout>
+        <>
             {/* Hero Section */}
             <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-8">
                 <div className="container mx-auto px-4">
@@ -885,6 +886,15 @@ export default function CourseShow() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        </>
+    );
+}
+
+// Main component that provides the layout wrapper
+export default function CourseShow() {
+    return (
+        <GuestLayout>
+            <CourseShowContent />
         </GuestLayout>
     );
 }

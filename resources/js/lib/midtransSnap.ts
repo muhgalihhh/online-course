@@ -17,20 +17,27 @@ function wait(ms: number) {
 
 async function attemptLoadScript(src: string, clientKey: string, timeout: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
+        console.log('[MidtransSnap] Attempting to load:', src);
+
         // Already present?
         if (typeof window !== 'undefined' && (window as any).snap) {
+            console.log('[MidtransSnap] Snap already available');
             return resolve(true);
         }
 
         // Reuse existing tag if src matches
         const existing = document.querySelector(`script[data-midtrans-snap="true"]`);
         if (existing) {
+            console.log('[MidtransSnap] Existing script found, checking if loaded');
             // If still loading, attach listeners
             if ((window as any).snap) return resolve(true);
         }
 
         const script = existing || document.createElement('script');
-        script.src = src.includes('?') ? `${src}&client-key=${clientKey}` : `${src}?client-key=${clientKey}`;
+        const scriptSrc = src.includes('?') ? `${src}&client-key=${clientKey}` : `${src}?client-key=${clientKey}`;
+        console.log('[MidtransSnap] Script URL:', scriptSrc);
+
+        script.src = scriptSrc;
         script.async = true;
         script.setAttribute('data-client-key', clientKey);
         script.setAttribute('data-midtrans-snap', 'true');
@@ -46,25 +53,31 @@ async function attemptLoadScript(src: string, clientKey: string, timeout: number
             if (done) return;
             done = true;
             cleanup();
+            console.log('[MidtransSnap] Script loaded, checking snap availability:', !!(window as any).snap);
             resolve(!!(window as any).snap);
         };
         const onError = (e) => {
             if (done) return;
             done = true;
             cleanup();
+            console.error('[MidtransSnap] Script loading error:', e);
             reject(e);
         };
 
         script.addEventListener('load', onLoad);
         script.addEventListener('error', onError);
 
-        if (!existing) document.head.appendChild(script);
+        if (!existing) {
+            console.log('[MidtransSnap] Appending script to document head');
+            document.head.appendChild(script);
+        }
 
         // Timeout
         setTimeout(() => {
             if (done) return;
             done = true;
             cleanup();
+            console.warn('[MidtransSnap] Script load timeout, snap available:', !!(window as any).snap);
             resolve(!!(window as any).snap); // resolve false if still not available
         }, timeout);
     });

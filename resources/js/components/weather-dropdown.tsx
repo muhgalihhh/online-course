@@ -28,7 +28,8 @@ interface SimpleWeatherData {
     description: string;
 }
 
-const API_KEY = 'c652cbba36019afd965ac4cb698ba98f';
+// Nonaktifkan API cuaca sementara karena API key tidak valid
+const API_KEY: string = ''; // kosongkan untuk menonaktifkan
 const API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
 // Daftar kota populer untuk suggestion
@@ -53,6 +54,20 @@ export default function WeatherDropdown({ defaultLocation = 'Pare, Kediri' }: We
     const [currentLocation, setCurrentLocation] = useState(defaultLocation);
 
     const fetchWeather = async (loc: string) => {
+        // Skip API call jika API key kosong
+        if (!API_KEY || API_KEY.trim() === '') {
+            setData({
+                location: loc,
+                temperature: 28, // data dummy
+                condition: 'Clear',
+                description: 'cerah',
+                humidity: 60,
+                windSpeed: 5,
+            });
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);

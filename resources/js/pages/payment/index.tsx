@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ensureSnapReady } from '../../lib/midtransSnap';
 
 // Types (align with backend fields)
 type TransactionStatus = 'idle' | 'creating' | 'pending' | 'processing' | 'completed' | 'expired' | 'failed' | 'cancelled' | 'error';
@@ -88,18 +89,50 @@ function guessExpiry(createdAt: number, paymentMethod?: string | null): number |
 let snapScriptLoading: Promise<void> | null = null;
 function ensureSnapScript(clientKey: string, isProduction: boolean): Promise<void> {
     if (typeof window === 'undefined') return Promise.resolve();
+
+    // Check if already loaded
     const w = window as unknown as { snap?: { embed: (...args: unknown[]) => void } };
-    if (w.snap) return Promise.resolve();
-    if (snapScriptLoading) return snapScriptLoading;
-    snapScriptLoading = new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
-        script.async = true;
-        script.dataset.clientKey = clientKey;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Midtrans Snap script'));
-        document.head.appendChild(script);
-    });
+    if (w.snap) {
+        console.log('[ensureSnapScript] Snap already available');
+        return Promise.resolve();
+    }
+
+    if (snapScriptLoading) {
+        console.log('[ensureSnapScript] Script already loading...');
+        return snapScriptLoading;
+    }
+
+    console.log('[ensureSnapScript] Starting to load script...');
+
+    snapScriptLoading = (async () => {
+        try {
+            const snap = await ensureSnapReady({
+                clientKey,
+                isProduction,
+                timeoutMs: 15000, // Increased timeout
+                maxRetries: 4, // More retries
+                delayBetweenRetriesMs: 2000,
+                pollIntervalMs: 500,
+                maxWaitMs: 10000,
+            });
+
+            if (!snap) {
+                throw new Error('Failed to load Midtrans Snap script - snap object not available');
+            }
+
+            // Additional verification
+            if (typeof snap.embed !== 'function') {
+                throw new Error('Snap object loaded but embed method not available');
+            }
+
+            console.info('[ensureSnapScript] Snap script loaded successfully with embed method');
+        } catch (error) {
+            console.error('[ensureSnapScript] Failed to load Snap script:', error);
+            snapScriptLoading = null; // Reset to allow retry
+            throw error;
+        }
+    })();
+
     return snapScriptLoading;
 }
 
@@ -346,17 +379,44 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
 }
 
 // Component to embed snap (use snap embed option)
-const SnapEmbed: React.FC<{ token: string; onSuccess: () => void; onPending: () => void; onError: (msg?: string) => void }> = ({
-    token,
-    onSuccess,
-    onPending,
-    onError,
-}) => {
+const SnapEmbed: React.FC<{
+    token: string;
+    onSuccess: () => void;
+    onPending: () => void;
+    onError: (msg?: string) => void;
+    clientKey: string;
+    isProduction: boolean;
+}> = ({ token, onSuccess, onPending, onError, clientKey, isProduction }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const invokedRef = useRef(false);
+    const [isSnapReady, setIsSnapReady] = useState(false);
 
+    // First ensure snap script is loaded
     useEffect(() => {
-        if (!token) return;
+        const loadSnap = async () => {
+            try {
+                console.log('[SnapEmbed] Loading snap script...');
+                await ensureSnapScript(clientKey, isProduction);
+                console.log('[SnapEmbed] Snap script loaded successfully');
+                setIsSnapReady(true);
+            } catch (error) {
+                console.error('[SnapEmbed] Failed to load Snap script:', error);
+                onError('Gagal memuat script pembayaran. Silakan refresh halaman.');
+            }
+        };
+
+        loadSnap();
+    }, [clientKey, isProduction, onError]);
+
+    // Then embed when ready
+    useEffect(() => {
+        if (!token || !isSnapReady) {
+            console.log('[SnapEmbed] Not ready yet:', { token: !!token, isSnapReady });
+            return;
+        }
+
+        console.log('[SnapEmbed] Ready to embed, checking snap object...');
+
         const w = window as unknown as {
             snap?: {
                 embed: (
@@ -371,26 +431,76 @@ const SnapEmbed: React.FC<{ token: string; onSuccess: () => void; onPending: () 
                 ) => void;
             };
         };
-        if (!w.snap) return;
-        if (!containerRef.current) return;
-        if (invokedRef.current) return; // idempotent
+
+        if (!w.snap) {
+            console.error('[SnapEmbed] Snap object not available after loading');
+            onError('Script pembayaran tidak tersedia. Silakan refresh halaman.');
+            return;
+        }
+
+        console.log('[SnapEmbed] Snap object available:', !!w.snap.embed);
+
+        if (!containerRef.current) {
+            console.error('[SnapEmbed] Container not ready');
+            return;
+        }
+
+        console.log('[SnapEmbed] Container ready:', containerRef.current.id);
+
+        if (invokedRef.current) {
+            console.log('[SnapEmbed] Already invoked, skipping');
+            return; // idempotent
+        }
+
         invokedRef.current = true;
+
         try {
+            console.info('[SnapEmbed] Embedding Snap with token:', token.substring(0, 15) + '...');
+
+            // Clear container first
+            containerRef.current.innerHTML = '';
+
             w.snap.embed(token, {
                 embedId: 'snap-container',
-                onSuccess: () => onSuccess(),
-                onPending: () => onPending(),
-                onError: (res) => onError(res?.status_message || 'Snap error'),
+                onSuccess: () => {
+                    console.info('[SnapEmbed] Snap payment success');
+                    onSuccess();
+                },
+                onPending: () => {
+                    console.info('[SnapEmbed] Snap payment pending');
+                    onPending();
+                },
+                onError: (res) => {
+                    console.error('[SnapEmbed] Snap payment error:', res);
+                    onError(res?.status_message || 'Snap error');
+                },
                 onClose: () => {
-                    /* user closed */
+                    console.info('[SnapEmbed] Snap closed by user');
                 },
             });
+
+            console.info('[SnapEmbed] Snap embed called successfully');
         } catch (e) {
+            console.error('[SnapEmbed] Error calling snap.embed:', e);
             onError(e instanceof Error ? e.message : 'Snap error');
         }
-    }, [token, onSuccess, onPending, onError]);
+    }, [token, onSuccess, onPending, onError, isSnapReady]);
 
-    return <div id="snap-container" ref={containerRef} className="w-full" />;
+    return (
+        <div className="w-full">
+            {!isSnapReady && (
+                <div className="flex items-center justify-center p-8">
+                    <div className="text-center">
+                        <div className="mb-2 text-sm text-gray-600">Memuat metode pembayaran...</div>
+                        <div className="h-1 w-48 overflow-hidden rounded bg-gray-200">
+                            <div className="h-full animate-pulse bg-indigo-500"></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <div id="snap-container" ref={containerRef} className={`w-full ${!isSnapReady ? 'hidden' : ''}`} />
+        </div>
+    );
 };
 
 // Time formatting helper
@@ -522,6 +632,8 @@ const PaymentPage: React.FC = () => {
                     <SnapEmbed
                         key={snapToken}
                         token={snapToken!}
+                        clientKey={clientKey}
+                        isProduction={isProduction}
                         onSuccess={() => {
                             /* Will poll -> completed */
                         }}

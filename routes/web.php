@@ -15,6 +15,7 @@ require __DIR__ . '/debug-admin.php';
 require __DIR__ . '/debug-materials.php';
 require __DIR__ . '/test-video.php';
 require __DIR__ . '/quick-admin.php';
+require __DIR__ . '/test-payment.php';
 
 Route::get('/', function () {
     // Fetch institution data for contact info

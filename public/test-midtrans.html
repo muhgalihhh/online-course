@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Midtrans Snap Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #cce7ff; color: #004085; }
+        #snap-container {
+            border: 1px solid #ccc;
+            min-height: 400px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Midtrans Snap Loading</h1>
+
+    <div id="status"></div>
+
+    <button id="loadScript" class="btn">Load Snap Script</button>
+    <button id="testEmbed" class="btn" disabled>Test Embed</button>
+
+    <div id="snap-container"></div>
+
+    <div id="logs">
+        <h3>Logs:</h3>
+        <div id="log-content" style="background: #f8f9fa; padding: 10px; font-family: monospace; white-space: pre-wrap; min-height: 100px;"></div>
+    </div>
+
+    <script>
+        const CLIENT_KEY = 'Mid-client-ynlbj3LDJ0j1oDO6'; // dari .env
+        const IS_PRODUCTION = false;
+
+        let logs = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+            document.getElementById('log-content').textContent = logs.join('\n');
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        async function loadSnapScript() {
+            try {
+                addLog('Starting to load Snap script...');
+                updateStatus('Loading Snap script...', 'info');
+
+                const existingScript = document.querySelector('script[src*="snap.js"]');
+                if (existingScript) {
+                    addLog('Existing script found, removing it first');
+                    existingScript.remove();
+                }
+
+                const baseUrl = IS_PRODUCTION
+                    ? 'https://app.midtrans.com/snap/snap.js'
+                    : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+                const scriptUrl = `${baseUrl}?client-key=${CLIENT_KEY}`;
+                addLog(`Script URL: ${scriptUrl}`);
+
+                const script = document.createElement('script');
+                script.src = scriptUrl;
+                script.async = true;
+                script.setAttribute('data-client-key', CLIENT_KEY);
+                script.setAttribute('data-midtrans-snap', 'true');
+
+                const promise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Script loading timeout (10s)'));
+                    }, 10000);
+
+                    script.onload = () => {
+                        clearTimeout(timeout);
+                        addLog('Script loaded successfully');
+                        resolve(true);
+                    };
+
+                    script.onerror = (error) => {
+                        clearTimeout(timeout);
+                        addLog(`Script loading error: ${error}`, 'error');
+                        reject(error);
+                    };
+                });
+
+                document.head.appendChild(script);
+                addLog('Script element added to head');
+
+                await promise;
+
+                // Check if window.snap is available
+                if (window.snap) {
+                    addLog('window.snap is available');
+                    updateStatus('Snap script loaded successfully!', 'success');
+                    document.getElementById('testEmbed').disabled = false;
+                } else {
+                    throw new Error('window.snap is not available after script load');
+                }
+
+            } catch (error) {
+                addLog(`Error loading Snap script: ${error.message}`, 'error');
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function testEmbed() {
+            if (!window.snap) {
+                addLog('window.snap not available', 'error');
+                updateStatus('Snap not available', 'error');
+                return;
+            }
+
+            // Test dengan dummy token (ini akan error tapi kita bisa lihat apakah embed method tersedia)
+            try {
+                addLog('Testing snap.embed method...');
+                window.snap.embed('dummy-token', {
+                    embedId: 'snap-container',
+                    onSuccess: () => addLog('Snap success callback'),
+                    onPending: () => addLog('Snap pending callback'),
+                    onError: (res) => addLog(`Snap error callback: ${JSON.stringify(res)}`),
+                    onClose: () => addLog('Snap close callback')
+                });
+                addLog('snap.embed called successfully (even with dummy token)');
+                updateStatus('Snap embed method works! (showing error is normal with dummy token)', 'success');
+            } catch (error) {
+                addLog(`Error calling snap.embed: ${error.message}`, 'error');
+                updateStatus(`Snap embed error: ${error.message}`, 'error');
+            }
+        }
+
+        document.getElementById('loadScript').addEventListener('click', loadSnapScript);
+        document.getElementById('testEmbed').addEventListener('click', testEmbed);
+
+        addLog('Test page loaded');
+        updateStatus('Ready to test', 'info');
+    </script>
+</body>
+</html>
