@@ -162,7 +162,8 @@ class PaymentController extends Controller
         $midtransStatus = (string) ($payload['transaction_status'] ?? '');
         $fraudStatus = (string) ($payload['fraud_status'] ?? '');
 
-        $newStatus = $this->mapMidtransStatusToLocal($midtransStatus, $fraudStatus);
+        // Konsisten gunakan mapping dari service (expire => expired)
+        $newStatus = $this->midtrans->mapMidtransStatusToLocal($midtransStatus, $fraudStatus);
 
         Log::info('Updating transaction status', [
             'order_id' => $orderId,
@@ -197,18 +198,7 @@ class PaymentController extends Controller
         return response()->json(['message' => 'OK']);
     }
 
-    private function mapMidtransStatusToLocal(string $transactionStatus, string $fraudStatus): string
-    {
-        return match ($transactionStatus) {
-            'capture' => $fraudStatus === 'challenge' ? 'pending' : 'completed',
-            'settlement' => 'completed',
-            'pending' => 'pending',
-            'deny' => 'failed',
-            'expire' => 'failed',
-            'cancel' => 'cancelled',
-            default => 'pending',
-        };
-    }
+    // Mapping status dipindahkan ke MidtransService::mapMidtransStatusToLocal
 
     /**
      * Show payment page with embedded Midtrans Snap
@@ -505,40 +495,55 @@ class PaymentController extends Controller
 
         $course = $transaction->transactionable;
 
+        // Reuse logic: jika masih pending & punya snap_token -> return existing
+        // Jika pending tapi tidak ada snap_token -> minta user batalkan manual
+        // Jika status final (expired/cancelled/failed) -> buat baru
+        // Jika completed -> tidak boleh refresh
+
+        if (in_array($transaction->status, ['completed'])) {
+            return response()->json([
+                'message' => 'Transaksi sudah selesai. Tidak perlu memperbarui token.',
+            ], 409);
+        }
+
+        if (in_array($transaction->status, ['pending', 'processing'])) {
+            $snapToken = $transaction->payment_details['snap_token'] ?? null;
+            if ($snapToken) {
+                return response()->json([
+                    'message' => 'Menggunakan token lama yang masih valid.',
+                    'snap_token' => $snapToken,
+                    'order_id' => $transaction->midtrans_order_id,
+                    'transaction' => $transaction,
+                    'is_existing' => true,
+                    'redirect_url' => $transaction->payment_details['redirect_url'] ?? null,
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Transaksi masih pending namun token tidak ditemukan. Silakan batalkan dan buat transaksi baru.',
+                'need_cancel' => true,
+            ], 422);
+        }
+
+        // Status final -> buat transaksi baru
         try {
-            // Always create new transaction for refresh scenarios
-            // Mark old transaction as expired first
-            $transaction->update(['status' => 'expired']);
-
-            Log::info('Refreshing token by creating new transaction', [
-                'old_order_id' => $transaction->midtrans_order_id,
-                'old_status' => $transaction->status,
-                'user_id' => $user->id,
-                'course_id' => $course->id
-            ]);
-
-            // Create new transaction
-            $transactionData = $this->midtrans->createCourseTransaction($user, $course);
-
+            $newData = $this->midtrans->createCourseTransaction($user, $course);
             return response()->json([
-                'message' => 'Token pembayaran berhasil diperbaharui.',
-                'snap_token' => $transactionData['snap_token'],
-                'order_id' => $transactionData['order_id'],
-                'transaction' => $transactionData['transaction'],
-                'is_existing' => false, // Always new transaction in refresh scenarios
-                'redirect_url' => $transactionData['redirect_url'],
+                'message' => 'Token baru berhasil dibuat.',
+                'snap_token' => $newData['snap_token'],
+                'order_id' => $newData['order_id'],
+                'transaction' => $newData['transaction'],
+                'is_existing' => false,
+                'redirect_url' => $newData['redirect_url'],
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Failed to refresh snap token', [
-                'order_id' => $orderId,
+            Log::error('Failed to create new transaction on refresh', [
+                'old_order_id' => $orderId,
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
-
             return response()->json([
-                'message' => 'Gagal memperbaharui token pembayaran. Silakan coba lagi.',
-                'error' => $e->getMessage(),
+                'message' => 'Gagal membuat token baru. Coba lagi nanti.',
             ], 500);
         }
     }

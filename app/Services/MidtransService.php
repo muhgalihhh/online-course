@@ -251,6 +251,10 @@ class MidtransService
     /**
      * Create or refresh course transaction for refresh scenarios
      * This is optimized for when user refreshes payment page
+     *
+     * @deprecated Flow diperketat: sebaiknya jangan otomatis membuat transaksi baru
+     *             saat refresh jika masih ada transaksi pending aktif. Gunakan
+     *             logic reuse existing transaction + snap_token dari DB.
      */
     public function createOrRefreshCourseTransaction(User $user, Course $course, ?string $preferredPaymentMethod = null): array
     {
@@ -481,8 +485,9 @@ class MidtransService
 
     /**
      * Map Midtrans transaction status to local status
+     * Made public supaya konsisten dipakai di controller & listener
      */
-    private function mapMidtransStatusToLocal(string $transactionStatus, string $fraudStatus): string
+    public function mapMidtransStatusToLocal(string $transactionStatus, string $fraudStatus): string
     {
         return match ($transactionStatus) {
             'capture' => $fraudStatus === 'challenge' ? 'pending' : 'completed',
@@ -494,5 +499,23 @@ class MidtransService
             'failure' => 'failed',
             default => 'pending',
         };
+    }
+
+    /**
+     * Helper untuk menentukan apakah status transaksi masih aktif (belum final)
+     */
+    public function isActiveStatus(string $status): bool
+    {
+        return in_array($status, ['pending', 'processing'], true);
+    }
+
+    /**
+     * Cek apakah transaksi masih aktif berdasarkan order id
+     */
+    public function isActiveTransaction(?Transaction $transaction): bool
+    {
+        if (!$transaction)
+            return false;
+        return $this->isActiveStatus($transaction->status);
     }
 }
