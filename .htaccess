@@ -1,0 +1,45 @@
+# Laravel Application for Shared Hosting
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect to public folder if accessing root domain
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /public/$1 [L]
+
+</IfModule>
+
+# Security headers
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent access to sensitive files
+
+<Files .env>
+Order Allow,Deny
+Deny from all
+</Files>
+
+<Files composer.json>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files composer.lock>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files package.json>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<FilesMatch "^\.">
+Order Allow,Deny
+Deny from all
+</FilesMatch>
