@@ -329,7 +329,38 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             const data: CheckStatusResponse = await res.json();
             if (data.status === 'completed') {
                 setStatus('completed');
-                // Navigate to learning page after short delay
+
+                // Trigger verify and enroll endpoint
+                try {
+                    const verifyRes = await fetch(`/payments/${orderId}/verify-and-enroll`, {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN':
+                                (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
+                        },
+                        credentials: 'include',
+                    });
+
+                    if (verifyRes.ok) {
+                        const verifyData = await verifyRes.json();
+                        console.log('[Payment] Verification response:', verifyData);
+
+                        if (verifyData.enrolled && verifyData.redirect_url) {
+                            // Successfully enrolled, redirect to course
+                            setTimeout(() => {
+                                window.location.href = verifyData.redirect_url;
+                            }, 1000);
+                            return;
+                        }
+                    }
+                } catch (verifyError) {
+                    console.error('[Payment] Failed to verify and enroll:', verifyError);
+                }
+
+                // Fallback: Navigate to learning page after short delay
                 setTimeout(() => {
                     router.visit(`/courses/${course.id}/learn`);
                 }, 1500);
@@ -463,15 +494,15 @@ const SnapEmbed: React.FC<{
             w.snap.embed(token, {
                 embedId: 'snap-container',
                 onSuccess: () => {
-                    console.info('[SnapEmbed] Snap payment success');
+                    console.info('[SnapEmbed] Snap payment success callback triggered');
                     onSuccess();
                 },
                 onPending: () => {
-                    console.info('[SnapEmbed] Snap payment pending');
+                    console.info('[SnapEmbed] Snap payment pending callback triggered');
                     onPending();
                 },
                 onError: (res) => {
-                    console.error('[SnapEmbed] Snap payment error:', res);
+                    console.error('[SnapEmbed] Snap payment error callback:', res);
                     onError(res?.status_message || 'Snap error');
                 },
                 onClose: () => {

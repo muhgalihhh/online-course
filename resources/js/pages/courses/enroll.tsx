@@ -1,20 +1,12 @@
-import { Link, router } from '@inertiajs/react';
+import CustomAlert from '@/components/custom-alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import GuestLayout from '@/layouts/guest-layout';
-import { 
-    CheckCircle, 
-    Clock, 
-    BookOpen, 
-    Award,
-    ArrowLeft,
-    CreditCard,
-    Shield
-} from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { ArrowLeft, Award, BookOpen, CheckCircle, Clock, CreditCard, Shield } from 'lucide-react';
 import { useState } from 'react';
-import CustomAlert from '@/components/custom-alert';
 
 interface Course {
     id: number;
@@ -49,7 +41,7 @@ export default function EnrollCourse({ course }: PageProps) {
         open: false,
         title: '',
         description: '',
-        type: 'info'
+        type: 'info',
     });
 
     const handleEnrollment = async () => {
@@ -57,18 +49,22 @@ export default function EnrollCourse({ course }: PageProps) {
         if (!course.is_pro || course.price === 0) {
             try {
                 setIsProcessing(true);
-                await router.post(`/courses/${course.id}/enroll-free`, {}, {
-                    preserveScroll: true,
-                    onSuccess: () => router.visit(`/courses/${course.id}/learn`),
-                    onError: (errors) => {
-                        setAlertState({
-                            open: true,
-                            title: 'Gagal Mendaftar',
-                            description: 'Terjadi kesalahan saat mendaftar kursus gratis.',
-                            type: 'error'
-                        });
-                    }
-                });
+                await router.post(
+                    `/courses/${course.id}/enroll-free`,
+                    {},
+                    {
+                        preserveScroll: true,
+                        onSuccess: () => router.visit(`/courses/${course.id}/learn`),
+                        onError: (errors) => {
+                            setAlertState({
+                                open: true,
+                                title: 'Gagal Mendaftar',
+                                description: 'Terjadi kesalahan saat mendaftar kursus gratis.',
+                                type: 'error',
+                            });
+                        },
+                    },
+                );
             } finally {
                 setIsProcessing(false);
             }
@@ -81,9 +77,9 @@ export default function EnrollCourse({ course }: PageProps) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
-                body: JSON.stringify({ payment_method: null })
+                body: JSON.stringify({ payment_method: null }),
             });
 
             if (!response.ok) {
@@ -106,24 +102,57 @@ export default function EnrollCourse({ course }: PageProps) {
             if (!snap) throw new Error('Midtrans Snap tidak tersedia.');
 
             snap.pay(data.snap_token, {
-                onSuccess: function() { router.visit(`/courses/${course.id}/learn`); },
-                onPending: function() { router.visit(`/courses/${course.id}`); },
-                onError: function() {
+                onSuccess: async function () {
+                    console.log('[Payment] Success callback - verifying and enrolling...');
+
+                    // Call verify and enroll endpoint
+                    try {
+                        const verifyRes = await fetch(`/payments/${data.order_id}/verify-and-enroll`, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                            },
+                        });
+
+                        if (verifyRes.ok) {
+                            const verifyData = await verifyRes.json();
+                            console.log('[Payment] Verify response:', verifyData);
+
+                            if (verifyData.enrolled && verifyData.redirect_url) {
+                                window.location.href = verifyData.redirect_url;
+                                return;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('[Payment] Verification failed:', err);
+                    }
+
+                    // Fallback
+                    router.visit(`/courses/${course.id}/learn`);
+                },
+                onPending: function () {
+                    router.visit(`/courses/${course.id}`);
+                },
+                onError: function () {
                     setAlertState({
                         open: true,
                         title: 'Pembayaran Gagal',
                         description: 'Terjadi kesalahan saat memproses pembayaran.',
-                        type: 'error'
+                        type: 'error',
                     });
                 },
-                onClose: function() { /* user closed popup */ }
+                onClose: function () {
+                    /* user closed popup */
+                },
             });
         } catch (error: any) {
             setAlertState({
                 open: true,
                 title: 'Gagal Memulai Pembayaran',
                 description: error?.message || 'Silakan coba lagi.',
-                type: 'error'
+                type: 'error',
             });
         } finally {
             setIsProcessing(false);
@@ -135,9 +164,9 @@ export default function EnrollCourse({ course }: PageProps) {
         if (existing) return;
         await new Promise<void>((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = (isProduction
-                ? 'https://app.midtrans.com/snap/snap.js'
-                : 'https://app.sandbox.midtrans.com/snap/snap.js') + `?client-key=${clientKey}`;
+            script.src =
+                (isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js') +
+                `?client-key=${clientKey}`;
             script.onload = () => resolve();
             script.onerror = () => reject(new Error('Gagal memuat Midtrans Snap.'));
             document.body.appendChild(script);
@@ -150,18 +179,13 @@ export default function EnrollCourse({ course }: PageProps) {
         'Akses ke forum diskusi dan komunitas',
         'Update materi kursus gratis',
         'Dukungan instruktur melalui Q&A',
-        'Download materi dalam format PDF'
+        'Download materi dalam format PDF',
     ];
 
     return (
         <GuestLayout>
             <div className="container mx-auto px-4 py-8">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mb-6"
-                    onClick={() => router.visit(`/courses/${course.id}`)}
-                >
+                <Button variant="ghost" size="sm" className="mb-6" onClick={() => router.visit(`/courses/${course.id}`)}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Kembali ke Detail Kursus
                 </Button>
@@ -171,25 +195,21 @@ export default function EnrollCourse({ course }: PageProps) {
                     <div className="lg:col-span-2">
                         <Card className="border-0 shadow-lg">
                             <CardHeader>
-                                <div className="flex items-center gap-2 mb-2">
+                                <div className="mb-2 flex items-center gap-2">
                                     <Badge variant="outline">{course.category.name}</Badge>
-                                    <Badge variant={course.is_pro ? "default" : "secondary"}>
-                                        {course.is_pro ? "Pro" : "Free"}
-                                    </Badge>
+                                    <Badge variant={course.is_pro ? 'default' : 'secondary'}>{course.is_pro ? 'Pro' : 'Free'}</Badge>
                                 </div>
                                 <CardTitle className="text-2xl">{course.title}</CardTitle>
-                                <CardDescription className="text-base mt-2">
-                                    {course.description}
-                                </CardDescription>
+                                <CardDescription className="mt-2 text-base">{course.description}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-6">
                                     <div>
-                                        <h3 className="font-semibold text-lg mb-4">Yang Akan Anda Dapatkan</h3>
+                                        <h3 className="mb-4 text-lg font-semibold">Yang Akan Anda Dapatkan</h3>
                                         <div className="space-y-3">
                                             {benefits.map((benefit, index) => (
                                                 <div key={index} className="flex items-start gap-3">
-                                                    <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                                                    <CheckCircle className="mt-0.5 h-5 w-5 text-green-500" />
                                                     <span className="text-muted-foreground">{benefit}</span>
                                                 </div>
                                             ))}
@@ -199,7 +219,7 @@ export default function EnrollCourse({ course }: PageProps) {
                                     <Separator />
 
                                     <div>
-                                        <h3 className="font-semibold text-lg mb-4">Informasi Kursus</h3>
+                                        <h3 className="mb-4 text-lg font-semibold">Informasi Kursus</h3>
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -246,19 +266,15 @@ export default function EnrollCourse({ course }: PageProps) {
 
                     {/* Sidebar - Enrollment Card */}
                     <div className="lg:col-span-1">
-                        <Card className="border-0 shadow-lg sticky top-24">
+                        <Card className="sticky top-24 border-0 shadow-lg">
                             <CardHeader>
                                 <CardTitle>Pendaftaran Kursus</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {course.thumbnail && (
-                                    <img 
-                                        src={course.thumbnail} 
-                                        alt={course.title}
-                                        className="w-full rounded-lg aspect-video object-cover"
-                                    />
+                                    <img src={course.thumbnail} alt={course.title} className="aspect-video w-full rounded-lg object-cover" />
                                 )}
-                                
+
                                 <div className="space-y-2">
                                     <p className="text-sm text-muted-foreground">Harga Kursus</p>
                                     <p className="text-3xl font-bold text-primary">
@@ -269,12 +285,7 @@ export default function EnrollCourse({ course }: PageProps) {
                                 <Separator />
 
                                 <div className="space-y-3">
-                                    <Button 
-                                        className="w-full" 
-                                        size="lg"
-                                        onClick={handleEnrollment}
-                                        disabled={isProcessing}
-                                    >
+                                    <Button className="w-full" size="lg" onClick={handleEnrollment} disabled={isProcessing}>
                                         {isProcessing ? (
                                             <>
                                                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
@@ -293,11 +304,9 @@ export default function EnrollCourse({ course }: PageProps) {
                                             </>
                                         )}
                                     </Button>
-                                    
+
                                     {course.is_pro && (
-                                        <p className="text-xs text-center text-muted-foreground">
-                                            Pembayaran aman dengan enkripsi SSL
-                                        </p>
+                                        <p className="text-center text-xs text-muted-foreground">Pembayaran aman dengan enkripsi SSL</p>
                                     )}
                                 </div>
 

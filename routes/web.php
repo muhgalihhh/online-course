@@ -164,6 +164,8 @@ Route::middleware(['auth', 'prevent.admin'])->group(function () {
         ->name('payments.show');
     Route::post('/payments/{orderId}/refresh-token', [\App\Http\Controllers\PaymentController::class, 'refreshSnapToken'])
         ->name('payments.refresh-token');
+    Route::post('/payments/{orderId}/verify-and-enroll', [\App\Http\Controllers\PaymentController::class, 'verifyPaymentAndEnroll'])
+        ->name('payments.verify-enroll');
     Route::get('/transactions/{orderId}', [\App\Http\Controllers\PaymentController::class, 'showTransaction'])
         ->name('transactions.show');
 });

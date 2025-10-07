@@ -182,17 +182,20 @@ class PaymentController extends Controller
 
         // Fire event and trigger immediate auto-enrollment when payment is completed
         if ($newStatus === 'completed') {
-            Log::info('Payment completed, triggering auto-enrollment', [
+            Log::info('Payment completed via webhook, triggering auto-enrollment', [
                 'order_id' => $orderId,
                 'user_id' => $transaction->user_id,
                 'course_id' => $transaction->transactionable_id,
             ]);
 
-            // Fire event for any listeners
-            TransactionCompleted::dispatch($transaction);
+            // Refresh transaction to get latest data
+            $transaction->refresh();
 
-            // Also trigger immediate auto-enrollment to ensure user gets enrolled right away
+            // Trigger immediate auto-enrollment - CRITICAL for webhook flow
             $this->autoEnrollUserToCourse($transaction);
+
+            // Fire event for any additional listeners/jobs
+            TransactionCompleted::dispatch($transaction);
         }
 
         return response()->json(['message' => 'OK']);
@@ -549,6 +552,124 @@ class PaymentController extends Controller
     }
 
     /**
+     * Verify payment status with Midtrans and trigger enrollment
+     * This endpoint is called from frontend after payment success
+     */
+    public function verifyPaymentAndEnroll(Request $request, string $orderId): JsonResponse
+    {
+        $user = $request->user();
+
+        Log::info('Frontend callback: verify payment and enroll', [
+            'order_id' => $orderId,
+            'user_id' => $user->id,
+        ]);
+
+        // Find transaction
+        $transaction = Transaction::where('midtrans_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$transaction) {
+            Log::warning('Transaction not found for verify-enroll', ['order_id' => $orderId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        // Get real-time status from Midtrans
+        try {
+            $statusInfo = $this->midtrans->getTransactionStatus($orderId);
+
+            if ($statusInfo) {
+                $newStatus = $statusInfo['status'];
+
+                // Update transaction status if changed
+                if ($transaction->status !== $newStatus) {
+                    Log::info('Updating transaction status from Midtrans API', [
+                        'order_id' => $orderId,
+                        'old_status' => $transaction->status,
+                        'new_status' => $newStatus,
+                    ]);
+
+                    $details = $transaction->payment_details ?? [];
+                    $details['frontend_verification'] = [
+                        'verified_at' => now()->toISOString(),
+                        'midtrans_response' => $statusInfo,
+                    ];
+
+                    $transaction->update([
+                        'status' => $newStatus,
+                        'payment_details' => $details,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to verify status with Midtrans', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Reload transaction to get updated status
+        $transaction->refresh();
+
+        // Check if payment is completed
+        if ($transaction->status === 'completed') {
+            Log::info('Payment verified as completed, triggering enrollment', [
+                'order_id' => $orderId,
+                'user_id' => $user->id,
+            ]);
+
+            // Trigger auto-enrollment
+            $this->autoEnrollUserToCourse($transaction);
+
+            // Check if enrollment was successful
+            if ($transaction->isCourseTransaction()) {
+                $courseId = $transaction->transactionable_id;
+                $isEnrolled = $user->isEnrolledIn($courseId);
+
+                if ($isEnrolled) {
+                    return response()->json([
+                        'success' => true,
+                        'enrolled' => true,
+                        'message' => 'Pembayaran berhasil dan Anda telah terdaftar di kursus.',
+                        'redirect_url' => route('courses.learn', $courseId),
+                    ]);
+                } else {
+                    // Enrollment failed, but payment completed
+                    Log::error('Enrollment failed despite completed payment', [
+                        'order_id' => $orderId,
+                        'user_id' => $user->id,
+                        'course_id' => $courseId,
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'enrolled' => false,
+                        'message' => 'Pembayaran berhasil, namun proses pendaftaran mengalami kendala. Silakan hubungi admin atau refresh halaman.',
+                        'payment_completed' => true,
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'enrolled' => false,
+                'message' => 'Pembayaran berhasil diverifikasi.',
+            ]);
+        }
+
+        // Payment not completed yet
+        return response()->json([
+            'success' => false,
+            'enrolled' => false,
+            'status' => $transaction->status,
+            'message' => 'Pembayaran belum selesai. Status: ' . $transaction->status,
+        ]);
+    }
+
+    /**
      * Automatically enroll user to course after successful payment
      */
     public function autoEnrollUserToCourse(Transaction $transaction): void
@@ -609,6 +730,9 @@ class PaymentController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Re-throw the exception so caller knows it failed
+            throw $e;
         }
     }
 }
