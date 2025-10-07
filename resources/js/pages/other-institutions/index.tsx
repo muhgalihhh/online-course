@@ -79,10 +79,10 @@ export default function OtherInstitutionsIndex({ institutions, filters }: Props)
 
     return (
         <GuestLayout>
-            <Head title="Lembaga Lain" />
+            <Head title="Pusat Informasi" />
 
             <div className="container mx-auto px-4 py-8">
-                <PageHeader title="Lembaga Lain" description="Temukan berbagai lembaga pendidikan dan pelatihan lainnya" />
+                <PageHeader title="Pusat Informasi" description="Temukan berbagai lembaga pendidikan dan pelatihan lainnya" />
 
                 {/* Search Bar */}
                 <div className="mb-8">

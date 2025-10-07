@@ -46,6 +46,11 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    /* Outline semantic tokens (for outline buttons/badges) */
+    --color-outline-bg: var(--muted);
+    --color-outline-fg: var(--foreground);
+    --color-outline-border: var(--input);
+
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
@@ -63,86 +68,95 @@
 }
 
 :root {
-    /* Light theme favoring white + blue; orange used sparingly */
+    /* Light theme favoring white + dark blue with orange accent */
     --background: oklch(0.99 0.005 250);
-    --foreground: oklch(0.22 0.05 260); /* deep navy text */
+    --foreground: oklch(0.18 0.06 260); /* darker navy text */
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.22 0.05 260);
+    --card-foreground: oklch(0.18 0.06 260);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.22 0.05 260);
-    /* Primary: electric blue now primary */
-    --primary: oklch(0.68 0.2 255);
+    --popover-foreground: oklch(0.18 0.06 260);
+    /* Primary: dark navy blue */
+    --primary: oklch(0.32 0.15 250);
     --primary-foreground: oklch(0.99 0 0); /* white */
-    /* Secondary: toned-down orange for accents */
-    --secondary: oklch(0.7 0.12 47);
+    /* Secondary: orange accent for some variety */
+    --secondary: oklch(0.65 0.15 35);
     --secondary-foreground: oklch(0.99 0 0);
-    --muted: oklch(0.96 0.01 255);
-    --muted-foreground: oklch(0.52 0.03 255);
-    /* Accent: soft blue for hovers */
-    --accent: oklch(0.75 0.14 255);
-    --accent-foreground: oklch(0.22 0.05 260);
+    --muted: oklch(0.96 0.01 250);
+    --muted-foreground: oklch(0.48 0.05 250);
+    /* Accent: warm orange for interactive elements */
+    --accent: oklch(0.7 0.12 40);
+    /* Use foreground for accent-foreground in light mode to ensure readable text on hover of outline/ghost */
+    --accent-foreground: var(--foreground);
     --destructive: oklch(0.6 0.2 25);
     --destructive-foreground: oklch(0.99 0 0);
-    --border: oklch(0.9 0.01 255);
-    --input: oklch(0.94 0.01 255);
-    --ring: oklch(0.68 0.2 255); /* blue focus ring */
-    /* Charts prioritize blue hues */
-    --chart-1: oklch(0.68 0.2 255); /* Blue */
-    --chart-2: oklch(0.7 0.12 47); /* Orange (reduced chroma) */
-    --chart-3: oklch(0.85 0.1 255); /* Light blue */
-    --chart-4: oklch(0.38 0.08 255); /* Deep blue */
-    --chart-5: oklch(0.78 0.1 55); /* Soft amber */
+    --border: oklch(0.9 0.01 250);
+    --input: oklch(0.94 0.01 250);
+    --ring: oklch(0.32 0.15 250); /* dark blue focus ring */
+    /* Outline semantic (light) */
+    --outline-bg: var(--muted);
+    --outline-fg: var(--foreground);
+    --outline-border: var(--input);
+    /* Charts with blue/orange balanced theme */
+    --chart-1: oklch(0.32 0.15 250); /* Dark Blue */
+    --chart-2: oklch(0.65 0.15 35); /* Orange */
+    --chart-3: oklch(0.45 0.12 245); /* Medium Dark Blue */
+    --chart-4: oklch(0.75 0.12 45); /* Light Orange */
+    --chart-5: oklch(0.55 0.1 240); /* Blue-gray */
     --radius: 0.625rem;
-    /* Sidebar mostly blue, minimal orange */
-    --sidebar: oklch(0.98 0.01 255);
-    --sidebar-foreground: oklch(0.22 0.05 260);
-    --sidebar-primary: oklch(0.35 0.09 255); /* deeper blue */
+    /* Sidebar dark blue theme */
+    --sidebar: oklch(0.98 0.01 250);
+    --sidebar-foreground: oklch(0.18 0.06 260);
+    --sidebar-primary: oklch(0.28 0.12 250); /* very dark blue */
     --sidebar-primary-foreground: oklch(0.99 0 0);
-    --sidebar-accent: oklch(0.75 0.14 255); /* soft blue */
-    --sidebar-accent-foreground: oklch(0.22 0.05 260);
-    --sidebar-border: oklch(0.9 0.02 255);
-    --sidebar-ring: oklch(0.68 0.2 255);
+    --sidebar-accent: oklch(0.7 0.12 40); /* warm orange accent */
+    --sidebar-accent-foreground: oklch(0.99 0 0);
+    --sidebar-border: oklch(0.9 0.02 250);
+    --sidebar-ring: oklch(0.32 0.15 250);
 }
 
 .dark {
-    /* Dark theme prioritizing blue; orange only for accents */
-    --background: oklch(0.16 0.03 257); /* deep navy */
+    /* Dark theme with elegant deep blue/navy and warm accents */
+    --background: oklch(0.08 0.03 250); /* very deep navy, more elegant */
     --foreground: oklch(0.95 0.01 260);
-    --card: oklch(0.18 0.03 257);
+    --card: oklch(0.12 0.03 250); /* deeper card background */
     --card-foreground: oklch(0.95 0.01 260);
-    --popover: oklch(0.18 0.03 257);
+    --popover: oklch(0.12 0.03 250);
     --popover-foreground: oklch(0.95 0.01 260);
-    /* Primary: strong electric blue */
-    --primary: oklch(0.58 0.18 255);
+    /* Primary: more elegant muted blue */
+    --primary: oklch(0.35 0.12 250); /* less bright, more sophisticated */
     --primary-foreground: oklch(0.98 0 0);
-    /* Secondary: softened orange */
-    --secondary: oklch(0.67 0.12 47);
-    --secondary-foreground: oklch(0.1 0.02 260);
-    --muted: oklch(0.28 0.03 257);
-    --muted-foreground: oklch(0.7 0.03 260);
-    /* Accent: softer blue */
-    --accent: oklch(0.6 0.15 255);
+    /* Secondary: warm orange for variety */
+    --secondary: oklch(0.55 0.12 35);
+    --secondary-foreground: oklch(0.98 0 0);
+    --muted: oklch(0.18 0.03 250); /* deeper muted */
+    --muted-foreground: oklch(0.65 0.02 260); /* less bright foreground */
+    /* Accent: soft orange for warmth */
+    --accent: oklch(0.45 0.1 40);
     --accent-foreground: oklch(0.98 0 0);
     --destructive: oklch(0.55 0.2 25);
     --destructive-foreground: oklch(0.98 0 0);
-    --border: oklch(0.32 0.03 257);
-    --input: oklch(0.32 0.03 257);
-    --ring: oklch(0.58 0.18 255);
-    /* Charts: blue-dominant */
-    --chart-1: oklch(0.58 0.18 255); /* Blue */
-    --chart-2: oklch(0.67 0.12 47); /* Orange */
-    --chart-3: oklch(0.78 0.1 255); /* Light blue */
-    --chart-4: oklch(0.43 0.08 255); /* Deep blue */
-    --chart-5: oklch(0.7 0.12 55); /* Soft amber */
-    /* Sidebar mostly blue */
-    --sidebar: oklch(0.13 0.03 257);
+    --border: oklch(0.2 0.03 250); /* deeper borders */
+    --input: oklch(0.2 0.03 250);
+    --ring: oklch(0.35 0.12 250); /* match primary */
+    /* Charts: elegant blue/orange theme */
+    --chart-1: oklch(0.35 0.12 250); /* Elegant Blue */
+    --chart-2: oklch(0.55 0.12 35); /* Warm Orange */
+    --chart-3: oklch(0.25 0.08 245); /* Deep Blue */
+    --chart-4: oklch(0.45 0.1 40); /* Soft Orange */
+    --chart-5: oklch(0.4 0.08 240); /* Blue-gray */
+    /* Sidebar elegant dark theme */
+    --sidebar: oklch(0.06 0.03 250); /* even deeper */
     --sidebar-foreground: oklch(0.92 0.01 260);
-    --sidebar-primary: oklch(0.58 0.18 255);
-    --sidebar-primary-foreground: oklch(0.1 0.02 260);
-    --sidebar-accent: oklch(0.6 0.15 255);
+    --sidebar-primary: oklch(0.35 0.12 250); /* match primary */
+    --sidebar-primary-foreground: oklch(0.06 0.02 260); /* deep background text */
+    --sidebar-accent: oklch(0.45 0.1 40); /* soft orange */
     --sidebar-accent-foreground: oklch(0.98 0 0);
-    --sidebar-border: oklch(0.28 0.02 257);
-    --sidebar-ring: oklch(0.58 0.18 255);
+    --sidebar-border: oklch(0.18 0.02 250); /* subtle borders */
+    --sidebar-ring: oklch(0.35 0.12 250);
+    /* Outline semantic (dark) */
+    --outline-bg: var(--muted);
+    --outline-fg: var(--foreground);
+    --outline-border: var(--input);
 }
 
 @layer base {
@@ -152,5 +166,248 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/* Custom Gradient Classes for Welcome Page */
+@layer components {
+    /* CTA Section - Enhanced Navy to Orange gradient */
+    .cta-gradient {
+        @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900;
+    }
+
+    .dark .cta-gradient {
+        @apply from-slate-950 via-slate-900 to-slate-950;
+    }
+
+    /* Primary Button - Navy to Orange gradient */
+    .btn-primary-gradient {
+        @apply bg-gradient-to-r from-slate-800 to-amber-600 text-white shadow-lg hover:from-slate-900 hover:to-amber-700;
+    }
+
+    .dark .btn-primary-gradient {
+        @apply from-slate-700 to-amber-600 text-white hover:from-slate-800 hover:to-amber-700;
+    }
+
+    /* Secondary Button - Orange gradient */
+    .btn-secondary-gradient {
+        @apply bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg hover:from-amber-700 hover:to-orange-700;
+    }
+
+    .dark .btn-secondary-gradient {
+        @apply from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600;
+    }
+
+    /* Stats Section Background */
+    .stats-gradient {
+        @apply bg-gradient-to-br from-slate-50/80 via-white/60 to-slate-100/80;
+    }
+
+    .dark .stats-gradient {
+        @apply from-slate-900/90 via-slate-800/80 to-slate-900/90;
+    }
+
+    /* Stats Icon Gradient */
+    .stats-icon-gradient {
+        @apply bg-gradient-to-br from-slate-700 to-slate-800;
+    }
+
+    .dark .stats-icon-gradient {
+        @apply from-slate-400 to-slate-500;
+    }
+
+    /* Stats Card Background */
+    .stats-card-gradient {
+        @apply border-0 bg-white/90 shadow-lg backdrop-blur-sm;
+    }
+
+    .dark .stats-card-gradient {
+        @apply bg-slate-800/90 shadow-xl;
+    }
+
+    /* Stats Text with better contrast */
+    .stats-text-primary {
+        @apply font-bold text-slate-800;
+    }
+
+    .dark .stats-text-primary {
+        @apply text-slate-100;
+    }
+
+    .stats-text-secondary {
+        @apply text-slate-600;
+    }
+
+    .dark .stats-text-secondary {
+        @apply text-slate-300;
+    }
+
+    /* Features Icon Gradient - more vibrant */
+    .features-icon-gradient {
+        @apply bg-gradient-to-br from-amber-600 to-orange-600;
+    }
+
+    .dark .features-icon-gradient {
+        @apply from-amber-500 to-orange-500;
+    }
+
+    /* Features Card Background with better contrast */
+    .features-card-gradient {
+        @apply bg-white shadow-md;
+    }
+
+    .dark .features-card-gradient {
+        @apply bg-slate-800 shadow-xl;
+    }
+
+    /* Title Text with better contrast */
+    .title-gradient {
+        @apply font-bold text-slate-800;
+    }
+
+    .dark .title-gradient {
+        @apply text-slate-100;
+    }
+
+    /* Course Section Background with subtle contrast */
+    .course-section-gradient {
+        @apply bg-slate-50/50;
+    }
+
+    .dark .course-section-gradient {
+        @apply bg-slate-900/50;
+    }
+
+    /* Course Button Gradients - enhanced with explicit text colors and better hover states */
+    .course-btn-payment {
+        @apply border-transparent bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:border-transparent hover:from-slate-800 hover:to-slate-900;
+    }
+
+    .dark .course-btn-payment {
+        @apply from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800;
+    }
+
+    .course-btn-enroll {
+        @apply border-transparent bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:border-transparent hover:from-amber-700 hover:to-orange-700;
+    }
+
+    .dark .course-btn-enroll {
+        @apply from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600;
+    }
+
+    /* Hover Effects - Fixed contrast issues */
+    .hover-gradient-gray {
+        @apply transition-all duration-200 hover:border-slate-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-slate-100 hover:text-slate-900 hover:shadow-md;
+    }
+
+    .dark .hover-gradient-gray {
+        @apply hover:border-slate-500 hover:from-slate-700 hover:to-slate-600 hover:text-slate-100;
+    }
+
+    /* Outline button (palette-driven for both themes) */
+    .btn-outline-gradient {
+        @apply border-2 bg-transparent transition-colors;
+        border-color: var(--outline-border);
+        color: var(--outline-fg);
+    }
+
+    .btn-outline-gradient:hover {
+        background-color: var(--outline-bg);
+        color: var(--outline-fg);
+        border-color: var(--outline-border);
+    }
+
+    .dark .btn-outline-gradient {
+        border-color: var(--outline-border);
+        color: var(--outline-fg);
+    }
+
+    .dark .btn-outline-gradient:hover {
+        background-color: var(--outline-bg);
+        color: var(--outline-fg);
+        border-color: var(--outline-border);
+    }
+
+    /* Utility classes for button text contrast fixes */
+    .btn-hero-outline {
+        @apply border-white/30 bg-white/10 text-white hover:border-white hover:bg-white/90 hover:text-slate-900;
+    }
+
+    .dark .btn-hero-outline {
+        @apply border-white/20 bg-white/5 hover:bg-white/10 hover:text-white;
+    }
+
+    .btn-app-download {
+        @apply border-white/30 bg-white/10 text-white hover:border-white hover:bg-white/90 hover:text-slate-900;
+    }
+
+    .dark .btn-app-download {
+        @apply border-white/20 bg-white/5 hover:bg-white/15 hover:text-white;
+    }
+
+    /* Status buttons gradient with proper text colors */
+    .btn-success-gradient {
+        @apply bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700;
+    }
+
+    .btn-warning-gradient {
+        @apply bg-gradient-to-r from-yellow-500 to-yellow-600 text-white;
+    }
+
+    /* Gallery overlay gradient */
+    .gallery-overlay-gradient {
+        @apply bg-gradient-to-br from-black/70 via-black/60 to-black/70;
+    }
+
+    /* Gallery title gradient */
+    .gallery-title-gradient {
+        @apply bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent;
+    }
+
+    /* FAQ Card Background */
+    .faq-card-gradient {
+        @apply bg-gradient-to-br from-primary/20 to-primary/5;
+    }
+
+    /* Global Text Utilities - for consistent readability */
+    .text-high-contrast {
+        @apply text-slate-900;
+    }
+
+    .dark .text-high-contrast {
+        @apply text-slate-50;
+    }
+
+    .text-medium-contrast {
+        @apply text-slate-700;
+    }
+
+    .dark .text-medium-contrast {
+        @apply text-slate-300;
+    }
+
+    .text-low-contrast {
+        @apply text-slate-600;
+    }
+
+    .dark .text-low-contrast {
+        @apply text-slate-400;
+    }
+
+    /* Background utilities for consistent sections */
+    .bg-section-light {
+        @apply bg-slate-50/50;
+    }
+
+    .dark .bg-section-light {
+        @apply bg-slate-900/50;
+    }
+
+    .bg-card-elevated {
+        @apply bg-white shadow-lg;
+    }
+
+    .dark .bg-card-elevated {
+        @apply bg-slate-800 shadow-xl;
     }
 }

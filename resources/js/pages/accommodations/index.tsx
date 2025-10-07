@@ -92,13 +92,13 @@ export default function AccommodationsIndex() {
 
     return (
         <GuestLayout>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 {/* Header Section */}
-                <div className="border-b bg-white">
+                <div className="border-b bg-card">
                     <div className="container mx-auto px-4 py-8">
                         <div className="mb-8 text-center">
-                            <h1 className="mb-4 text-4xl font-bold text-gray-900">Akomodasi</h1>
-                            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+                            <h1 className="mb-4 text-4xl font-bold text-foreground">Akomodasi</h1>
+                            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
                                 Temukan akomodasi nyaman untuk mendukung pengalaman belajar Anda
                             </p>
                         </div>
@@ -115,7 +115,7 @@ export default function AccommodationsIndex() {
                                         onChange={(e) => setSearch(e.target.value)}
                                         className="pr-4 pl-10"
                                     />
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                     <Button type="submit" variant="ghost" size="sm" className="absolute top-1/2 right-1 -translate-y-1/2 transform">
                                         <Search className="h-4 w-4" />
                                     </Button>
@@ -163,7 +163,7 @@ export default function AccommodationsIndex() {
 
                 {/* Results Info */}
                 <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>
                             Menampilkan {accommodations.from || 0} - {accommodations.to || 0} dari {accommodations.total} akomodasi
                         </span>
@@ -174,9 +174,9 @@ export default function AccommodationsIndex() {
                 <div className="container mx-auto px-4 pb-8">
                     {accommodations.data.length === 0 ? (
                         <div className="py-16 text-center">
-                            <Bed className="mx-auto mb-4 h-16 w-16 text-gray-400" />
-                            <h3 className="mb-2 text-xl font-semibold text-gray-900">Tidak ada akomodasi ditemukan</h3>
-                            <p className="text-gray-600">Coba ubah kata kunci pencarian atau filter Anda.</p>
+                            <Bed className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                            <h3 className="mb-2 text-xl font-semibold text-foreground">Tidak ada akomodasi ditemukan</h3>
+                            <p className="text-muted-foreground">Coba ubah kata kunci pencarian atau filter Anda.</p>
                         </div>
                     ) : (
                         <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-6'}>
@@ -193,7 +193,7 @@ export default function AccommodationsIndex() {
                                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                             <div className="absolute top-3 right-3">
-                                                <Badge variant="secondary" className="bg-white/90 text-gray-900">
+                                                <Badge variant="secondary" className="bg-background/90 text-foreground">
                                                     <Bed className="mr-1 h-3 w-3" />
                                                     Akomodasi
                                                 </Badge>
@@ -204,23 +204,23 @@ export default function AccommodationsIndex() {
                                     <div className={viewMode === 'list' ? 'flex-1' : ''}>
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
-                                                <h3 className="line-clamp-2 text-lg font-semibold transition-colors group-hover:text-blue-600">
+                                                <h3 className="line-clamp-2 text-lg font-semibold transition-colors group-hover:text-primary">
                                                     {accommodation.name}
                                                 </h3>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <MapPin className="h-4 w-4" />
                                                 <span>{institution?.address || 'Lokasi tidak tersedia'}</span>
                                             </div>
                                         </CardHeader>
 
                                         <CardContent className="pt-0">
-                                            <p className="mb-4 line-clamp-2 text-sm text-gray-600">{accommodation.description}</p>
+                                            <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{accommodation.description}</p>
 
                                             <div className="flex items-center justify-between">
                                                 <div className="text-right">
-                                                    <div className="text-2xl font-bold text-blue-600">{accommodation.formatted_price}</div>
-                                                    <div className="text-sm text-gray-500">per malam</div>
+                                                    <div className="text-2xl font-bold text-primary">{accommodation.formatted_price}</div>
+                                                    <div className="text-sm text-muted-foreground">per malam</div>
                                                 </div>
 
                                                 <div className="flex gap-2">

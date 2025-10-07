@@ -35,6 +35,8 @@
 .tawk-header {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
     border-radius: 16px 16px 0 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
 /* Widget positioning and z-index */
@@ -54,6 +56,24 @@
     border: none !important;
     box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
     border-radius: 50px !important;
+}
+
+/* Ensure header controls are visible and clickable */
+.tawk-header .tawk-button,
+.tawk-header button,
+.tawk-header [role='button'] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Avoid accidental hiding of the minified bubble */
+#tawkchat-minified-container,
+#tawkchat-minified-wrapper {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 /* Notification badge */

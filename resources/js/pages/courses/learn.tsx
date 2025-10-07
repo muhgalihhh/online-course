@@ -12,8 +12,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UserDashboardLayout from '@/layouts/user-dashboard-layout';
 import { Head, Link } from '@inertiajs/react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import {
     AlertCircle,
     Bookmark,
@@ -119,8 +117,12 @@ const extractYouTubeId = (url: string) => {
 };
 
 export default function Learn({ course, completedMaterials, enrollment }: LearnProps) {
-    const [selectedChapter, setSelectedChapter] = useState<Chapter>(course.chapters[0]);
-    const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+    // Prefer the first chapter that has materials as initial selection
+    const firstChapterWithMaterial = course.chapters.find((ch) => ch.materials && ch.materials.length > 0) || course.chapters[0];
+    const firstMaterial = firstChapterWithMaterial?.materials?.[0] || null;
+
+    const [selectedChapter, setSelectedChapter] = useState<Chapter>(firstChapterWithMaterial);
+    const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(firstMaterial);
     const [completedMaterialsState, setCompletedMaterialsState] = useState<number[]>(completedMaterials);
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(() => {
         const saved = localStorage.getItem('learn-sidebar-open');
@@ -142,9 +144,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
         localStorage.setItem('learn-sidebar-open', JSON.stringify(isDesktopSidebarOpen));
     }, [isDesktopSidebarOpen]);
 
-    const formatDate = (dateString: string) => {
-        return format(new Date(dateString), 'dd MMMM yyyy', { locale: id });
-    };
+    // Note: date formatting helper removed as unused to keep bundle lean
 
     const getMaterialIcon = (type: Material['type']) => {
         switch (type) {
@@ -220,7 +220,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                         });
                     }
                 }
-            } catch (error) {
+            } catch {
                 // ignore errors; UI already optimistic
             }
         }
@@ -265,45 +265,73 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
             <TooltipProvider>
                 <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
                     {/* Header */}
-                    <div className="border-b bg-background/95 backdrop-blur">
-                        <div className="container mx-auto px-4 py-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    {/* Desktop Sidebar Toggle */}
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="hidden lg:flex"
-                                                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                                            >
-                                                {isDesktopSidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeft className="h-5 w-5" />}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{isDesktopSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}</TooltipContent>
-                                    </Tooltip>
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <Link href="/dashboard">
-                                            <ChevronLeft className="mr-2 h-4 w-4" />
-                                            Kembali
-                                        </Link>
-                                    </Button>
-                                    <Separator orientation="vertical" className="h-6" />
-                                    <div>
-                                        <h1 className="text-lg font-semibold">{course.title}</h1>
-                                        <p className="text-sm text-muted-foreground">
-                                            {course.category.name} • {course.institution.name}
-                                        </p>
+                    <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+                        <div className="container mx-auto px-2 py-3 sm:px-4 sm:py-4">
+                            <div className="flex min-w-0 items-start justify-between">
+                                <div className="flex min-w-0 flex-1 flex-col">
+                                    {/* Top Row - Navigation and Title */}
+                                    <div className="mb-2 flex min-w-0 items-center gap-2">
+                                        {/* Desktop Sidebar Toggle */}
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="hidden lg:flex"
+                                                    onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                                                >
+                                                    {isDesktopSidebarOpen ? (
+                                                        <PanelLeftClose className="h-5 w-5" />
+                                                    ) : (
+                                                        <PanelLeft className="h-5 w-5" />
+                                                    )}
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>{isDesktopSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}</TooltipContent>
+                                        </Tooltip>
+
+                                        {/* Back Button - Icon only on mobile, full text on desktop */}
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href="/dashboard">
+                                                        <ChevronLeft className="h-4 w-4" />
+                                                        <span className="ml-2 hidden sm:inline">Kembali</span>
+                                                    </Link>
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="sm:hidden">Kembali</TooltipContent>
+                                        </Tooltip>
+
+                                        <Separator orientation="vertical" className="h-6" />
+                                        <div className="min-w-0 flex-1">
+                                            <h1 className="truncate text-base font-semibold sm:text-lg">{course.title}</h1>
+                                            <p className="truncate text-xs text-muted-foreground sm:text-sm">
+                                                {course.category.name} • {course.institution.name}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Row - Progress (Mobile Only) */}
+                                    <div className="flex items-center gap-2 sm:hidden">
+                                        <div className="flex-1">
+                                            <div className="mb-1 flex items-center justify-between">
+                                                <span className="text-xs font-medium">Progress Kelas</span>
+                                                <span className="text-xs text-muted-foreground">{progressPercentage}%</span>
+                                            </div>
+                                            <Progress value={progressPercentage} className="h-1.5" />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+
+                                {/* Right Side - Button and Desktop Progress */}
+                                <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
                                     <div className="lg:hidden">
                                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                                             <SheetTrigger asChild>
-                                                <Button variant="outline" size="sm">
-                                                    <List className="mr-2 h-4 w-4" />
-                                                    Daftar Materi
+                                                <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                                                    <List className="h-4 w-4 sm:mr-2" />
+                                                    <span className="hidden sm:inline">Daftar Materi</span>
                                                 </Button>
                                             </SheetTrigger>
                                             <SheetContent side="left" className="w-[90vw] p-0 sm:w-96">
@@ -316,7 +344,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                         <Progress value={progressPercentage} />
                                                     </div>
                                                 </SheetHeader>
-                                                <ScrollArea className="h-[calc(100vh-120px)]">
+                                                <ScrollArea className="h-[calc(100dvh-120px)]">
                                                     <div className="px-6 py-4">
                                                         {course.chapters.map((chapter, chapterIndex) => {
                                                             const chapterMaterials = chapter.materials;
@@ -432,18 +460,20 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                             </SheetContent>
                                         </Sheet>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-medium">Progress Kelas</p>
+
+                                    {/* Desktop Progress - Hidden on Mobile */}
+                                    <div className="hidden min-w-0 text-right sm:block">
+                                        <p className="truncate text-sm font-medium">Progress Kelas</p>
                                         <p className="text-sm text-muted-foreground">{progressPercentage}% Selesai</p>
                                     </div>
-                                    <Progress value={progressPercentage} className="w-32" />
+                                    <Progress value={progressPercentage} className="hidden w-24 sm:block lg:w-32" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex h-[calc(100vh-73px)]">
+                    <div className="flex h-[calc(100dvh-73px)]">
                         {/* Desktop Sidebar */}
                         <div
                             className={`hidden overflow-hidden border-r bg-card shadow-lg transition-all duration-300 lg:block ${isDesktopSidebarOpen ? 'w-[350px] xl:w-[400px]' : 'w-0'} `}
@@ -507,7 +537,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                 {/* Sidebar Content */}
                                 <ScrollArea className="flex-1">
                                     <div className="space-y-2 p-4">
-                                        {course.chapters.map((chapter, chapterIndex) => {
+                                        {course.chapters.map((chapter) => {
                                             const chapterMaterials = chapter.materials;
                                             const completedInChapter = chapterMaterials.filter((m) => completedMaterialsState.includes(m.id)).length;
                                             const isCurrentChapter = selectedChapter?.id === chapter.id;
@@ -587,7 +617,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                     {/* Materials List */}
                                                     <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down transition-all">
                                                         <div className="mt-2 ml-12 space-y-2">
-                                                            {chapter.materials.map((material, materialIndex) => {
+                                                            {chapter.materials.map((material) => {
                                                                 const isCompleted = completedMaterialsState.includes(material.id);
                                                                 const isSelected = selectedMaterial?.id === material.id;
 
@@ -670,7 +700,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
 
                         {/* Main Content Area */}
                         <div className="flex-1 overflow-auto">
-                            <div className="container mx-auto px-4 py-6 lg:px-6">
+                            <div className="container mx-auto px-4 py-6 pb-28 lg:px-6 lg:pb-6">
                                 <div className="space-y-6">
                                     {/* Main Content Card */}
                                     <Card>
@@ -682,7 +712,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                             {getMaterialIcon(selectedMaterial.type)}
                                                             <CardTitle>{selectedMaterial.title}</CardTitle>
                                                         </div>
-                                                        <Badge variant="outline">
+                                                        <Badge variant="outline" className="hidden sm:inline-flex">
                                                             Bab {selectedChapter.order}: {selectedChapter.title}
                                                         </Badge>
                                                     </div>
@@ -766,8 +796,9 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                             </div>
                                                             {selectedMaterial.file_url || selectedMaterial.file_path ? (
                                                                 <iframe
-                                                                    className="h-[70vh] w-full rounded"
+                                                                    className="h-[60dvh] w-full rounded sm:h-[70vh]"
                                                                     src={selectedMaterial.file_url || selectedMaterial.file_path}
+                                                                    title={`${selectedMaterial.title || 'Dokumen PDF'}`}
                                                                 />
                                                             ) : (
                                                                 <p className="text-muted-foreground">Dokumen tidak tersedia.</p>
@@ -791,7 +822,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                                 <img
                                                                     src={selectedMaterial.file_url || selectedMaterial.file_path}
                                                                     alt={selectedMaterial.title}
-                                                                    className="max-h-[70vh] rounded"
+                                                                    className="max-h-[60dvh] rounded sm:max-h-[70vh]"
                                                                     loading="lazy"
                                                                 />
                                                             ) : (
@@ -804,7 +835,7 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                                                     )}
 
                                                     {/* Navigation Buttons */}
-                                                    <div className="mt-6 flex items-center justify-between">
+                                                    <div className="mt-6 hidden items-center justify-between lg:flex">
                                                         <Button
                                                             variant="outline"
                                                             onClick={navigateToPreviousMaterial}
@@ -869,6 +900,50 @@ export default function Learn({ course, completedMaterials, enrollment }: LearnP
                             </div>
                         </div>
                     </div>
+
+                    {/* Mobile bottom action bar */}
+                    {selectedMaterial && (
+                        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur lg:hidden">
+                            <div className="container mx-auto px-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={navigateToPreviousMaterial}
+                                        disabled={course.chapters[0].materials[0].id === selectedMaterial.id}
+                                    >
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
+                                        Sebelumnya
+                                    </Button>
+
+                                    {!completedMaterialsState.includes(selectedMaterial.id) ? (
+                                        <Button size="sm" onClick={() => handleMaterialComplete(selectedMaterial.id)}>
+                                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                                            Selesai
+                                        </Button>
+                                    ) : (
+                                        <Badge variant="secondary" className="px-3 py-1 text-xs">
+                                            Sudah Selesai
+                                        </Badge>
+                                    )}
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={navigateToNextMaterial}
+                                        disabled={
+                                            course.chapters[course.chapters.length - 1].materials[
+                                                course.chapters[course.chapters.length - 1].materials.length - 1
+                                            ].id === selectedMaterial.id
+                                        }
+                                    >
+                                        Selanjutnya
+                                        <ChevronRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </TooltipProvider>
         </UserDashboardLayout>

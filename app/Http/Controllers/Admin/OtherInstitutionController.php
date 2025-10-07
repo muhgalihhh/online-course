@@ -12,7 +12,7 @@ use Inertia\Response;
 class OtherInstitutionController extends Controller
 {
     /**
-     * Menampilkan daftar semua lembaga lain dengan paginasi.
+     * Menampilkan daftar semua pusat informasi dengan paginasi.
      */
     public function index(Request $request): Response
     {
@@ -56,7 +56,7 @@ class OtherInstitutionController extends Controller
     }
 
     /**
-     * Menampilkan form untuk membuat lembaga lain baru.
+     * Menampilkan form untuk membuat pusat informasi baru.
      */
     public function create(): Response
     {
@@ -64,7 +64,7 @@ class OtherInstitutionController extends Controller
     }
 
     /**
-     * Menyimpan lembaga lain baru ke database.
+     * Menyimpan pusat informasi baru ke database.
      */
     public function store(Request $request)
     {
@@ -88,11 +88,11 @@ class OtherInstitutionController extends Controller
         OtherInstitution::create($validated);
 
         return redirect()->route('admin.other-institutions.index')
-            ->with('success', 'Lembaga lain berhasil ditambahkan.');
+            ->with('success', 'Pusat informasi berhasil ditambahkan.');
     }
 
     /**
-     * Menampilkan detail lembaga lain.
+     * Menampilkan detail pusat informasi.
      */
     public function show(OtherInstitution $otherInstitution): Response
     {
@@ -102,7 +102,7 @@ class OtherInstitutionController extends Controller
     }
 
     /**
-     * Menampilkan form untuk mengedit lembaga lain.
+     * Menampilkan form untuk mengedit pusat informasi.
      */
     public function edit(OtherInstitution $otherInstitution): Response
     {
@@ -112,7 +112,7 @@ class OtherInstitutionController extends Controller
     }
 
     /**
-     * Memperbarui lembaga lain di database.
+     * Memperbarui pusat informasi di database.
      */
     public function update(Request $request, OtherInstitution $otherInstitution)
     {
@@ -141,11 +141,11 @@ class OtherInstitutionController extends Controller
         $otherInstitution->update($validated);
 
         return redirect()->route('admin.other-institutions.index')
-            ->with('success', 'Lembaga lain berhasil diperbarui.');
+            ->with('success', 'Pusat informasi berhasil diperbarui.');
     }
 
     /**
-     * Menghapus lembaga lain dari database.
+     * Menghapus pusat informasi dari database.
      */
     public function destroy(OtherInstitution $otherInstitution)
     {
@@ -157,6 +157,6 @@ class OtherInstitutionController extends Controller
         $otherInstitution->delete();
 
         return redirect()->route('admin.other-institutions.index')
-            ->with('success', 'Lembaga lain berhasil dihapus.');
+            ->with('success', 'Pusat informasi berhasil dihapus.');
     }
 }

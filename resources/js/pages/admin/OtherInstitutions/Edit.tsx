@@ -62,7 +62,7 @@ export default function OtherInstitutionEdit({ otherInstitution }: OtherInstitut
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Lembaga Lain', href: route('admin.other-institutions.index') },
+                { title: 'Pusat Informasi', href: route('admin.other-institutions.index') },
                 { title: 'Edit', href: route('admin.other-institutions.edit', otherInstitution.id) },
             ]}
         >

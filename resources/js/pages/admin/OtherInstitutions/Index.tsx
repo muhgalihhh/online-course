@@ -82,7 +82,7 @@ export default function OtherInstitutionIndex({ otherInstitutions, filters }: Ot
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Lembaga Lain', href: route('admin.other-institutions.index') },
+                { title: 'Pusat Informasi', href: route('admin.other-institutions.index') },
             ]}
         >
             <Head title="Manage Other Institutions" />
@@ -91,7 +91,7 @@ export default function OtherInstitutionIndex({ otherInstitutions, filters }: Ot
                 <AdminFilter config={filterConfig} filters={filters} route="admin.other-institutions.index" />
 
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Daftar Lembaga Lain</h1>
+                    <h1 className="text-2xl font-bold">Daftar Pusat Informasi</h1>
                     <Link href={route('admin.other-institutions.create')}>
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -102,7 +102,7 @@ export default function OtherInstitutionIndex({ otherInstitutions, filters }: Ot
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Lembaga Lain</CardTitle>
+                        <CardTitle>Pusat Informasi</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>

@@ -433,21 +433,21 @@ function CourseShowContent() {
                                     </div>
 
                                     {isEnrolled ? (
-                                        <Button size="lg" className="w-full" asChild>
+                                        <Button size="lg" className="btn-success-gradient w-full text-white shadow-lg" asChild>
                                             <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
                                         </Button>
                                     ) : paymentStatus === 'paid_processing' ? (
-                                        <Button size="lg" className="w-full gap-2" disabled>
+                                        <Button size="lg" className="btn-warning-gradient w-full gap-2 text-white shadow-lg" disabled>
                                             <Clock className="h-5 w-5" />
                                             Sedang Diproses
                                         </Button>
                                     ) : paymentStatus === 'pending_payment' && pendingTransaction ? (
-                                        <Button size="lg" className="w-full gap-2" onClick={handleEnroll}>
+                                        <Button size="lg" className="course-btn-payment w-full gap-2 text-white shadow-lg" onClick={handleEnroll}>
                                             <ShoppingCart className="h-5 w-5" />
                                             Lanjutkan Pembayaran
                                         </Button>
                                     ) : (
-                                        <Button size="lg" className="w-full gap-2" onClick={handleEnroll}>
+                                        <Button size="lg" className="course-btn-enroll w-full gap-2 text-white shadow-lg" onClick={handleEnroll}>
                                             <ShoppingCart className="h-5 w-5" />
                                             {course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus Gratis'}
                                         </Button>
@@ -642,7 +642,11 @@ function CourseShowContent() {
                                                                     rows={4}
                                                                 />
                                                             </div>
-                                                            <Button type="submit" disabled={isSubmittingReview} className="w-full">
+                                                            <Button
+                                                                type="submit"
+                                                                disabled={isSubmittingReview}
+                                                                className="btn-primary-gradient w-full text-white shadow-lg"
+                                                            >
                                                                 {isSubmittingReview ? 'Mengirim...' : 'Kirim Review'}
                                                             </Button>
                                                         </form>
@@ -747,10 +751,16 @@ function CourseShowContent() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowLoginDialog(false)}>
+                        <Button
+                            variant="outline"
+                            className="hover-gradient-gray transition-all duration-200"
+                            onClick={() => setShowLoginDialog(false)}
+                        >
                             Batal
                         </Button>
-                        <Button onClick={handleLoginRedirect}>Login</Button>
+                        <Button className="btn-primary-gradient text-white shadow-lg" onClick={handleLoginRedirect}>
+                            Login
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

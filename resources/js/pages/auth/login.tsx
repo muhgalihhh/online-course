@@ -141,7 +141,7 @@ function LoginFormContent({
                 </div>
             </div>
 
-            <Button type="submit" className="w-full" tabIndex={4} disabled={processing}>
+            <Button type="submit" className="btn-primary-gradient w-full text-white" tabIndex={4} disabled={processing}>
                 {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                 Masuk
             </Button>

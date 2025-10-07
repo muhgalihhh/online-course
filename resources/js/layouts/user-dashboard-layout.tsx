@@ -349,8 +349,8 @@ const UserDashboardLayoutContent: React.FC<UserDashboardLayoutProps> = ({ childr
                 </div>
             </footer>
 
-            {/* Live Chat Widget - Only for Users */}
-            <LiveChatWidget />
+            {/* Live Chat Widget - Minimized by default; opens on click */}
+            <LiveChatWidget autoOpenOnLoad={false} autoCloseAfterFirstMessage={true} />
 
             {/* Toast Notifications */}
             <Toaster />

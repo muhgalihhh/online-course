@@ -1,9 +1,8 @@
 "use client"
 
-import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react"
+import { TrendingDown, TrendingUp } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 interface ChartCardProps {
   title: string
@@ -58,34 +57,34 @@ interface BarChartProps {
   yAxisWidth?: number
 }
 
-export function BarChartComponent({ 
-  data, 
-  index, 
-  categories, 
+export function BarChartComponent({
+  data,
+  index,
+  categories,
   colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"],
   valueFormatter = (value: number) => value.toString(),
-  yAxisWidth = 50 
+  yAxisWidth = 50
 }: BarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis 
-          dataKey={index} 
-          stroke="#888888" 
-          fontSize={12} 
-          tickLine={false} 
-          axisLine={false} 
+        <XAxis
+          dataKey={index}
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
         />
-        <YAxis 
-          stroke="#888888" 
-          fontSize={12} 
-          tickLine={false} 
-          axisLine={false} 
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
           tickFormatter={valueFormatter}
           width={yAxisWidth}
         />
-        <Tooltip 
+        <Tooltip
           content={({ active, payload, label }) => {
             if (active && payload && payload.length) {
               return (
@@ -110,7 +109,7 @@ export function BarChartComponent({
         />
         <Legend />
         {categories.map((category, index) => (
-          <Bar 
+          <Bar
             key={category}
             dataKey={category}
             fill={colors[index % colors.length]}
@@ -131,34 +130,34 @@ interface LineChartProps {
   yAxisWidth?: number
 }
 
-export function LineChartComponent({ 
-  data, 
-  index, 
-  categories, 
+export function LineChartComponent({
+  data,
+  index,
+  categories,
   colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"],
   valueFormatter = (value: number) => value.toString(),
-  yAxisWidth = 50 
+  yAxisWidth = 50
 }: LineChartProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis 
-          dataKey={index} 
-          stroke="#888888" 
-          fontSize={12} 
-          tickLine={false} 
-          axisLine={false} 
+        <XAxis
+          dataKey={index}
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
         />
-        <YAxis 
-          stroke="#888888" 
-          fontSize={12} 
-          tickLine={false} 
-          axisLine={false} 
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
           tickFormatter={valueFormatter}
           width={yAxisWidth}
         />
-        <Tooltip 
+        <Tooltip
           content={({ active, payload, label }) => {
             if (active && payload && payload.length) {
               return (
@@ -183,7 +182,7 @@ export function LineChartComponent({
         />
         <Legend />
         {categories.map((category, index) => (
-          <Line 
+          <Line
             key={category}
             type="monotone"
             dataKey={category}
@@ -203,9 +202,9 @@ interface PieChartProps {
   colors?: string[]
 }
 
-export function PieChartComponent({ 
-  data, 
-  colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"] 
+export function PieChartComponent({
+  data,
+  colors = ["#1e3a8a", "#1e40af", "#3730a3", "#312e81", "#1e3a8a", "#06b6d4"]
 }: PieChartProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -224,7 +223,7 @@ export function PieChartComponent({
             <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
           ))}
         </Pie>
-        <Tooltip 
+        <Tooltip
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
               return (

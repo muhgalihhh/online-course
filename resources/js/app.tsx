@@ -7,7 +7,7 @@ import { ErrorBoundary } from './components/error-boundary';
 import { initializeTheme } from './hooks/use-appearance';
 import { Ziggy } from './ziggy';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'PareEduHub';
 
 if (typeof window !== 'undefined') {
     window.Ziggy = Ziggy;
@@ -26,7 +26,7 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#4B5563',
+        color: '#1e3a8a',
     },
 });
 

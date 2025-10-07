@@ -166,7 +166,12 @@ export default function Profile({ user }: Props) {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <Button type="button" variant="outline" onClick={triggerFileInput} className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={triggerFileInput}
+                                        className="btn-outline-gradient flex items-center gap-2"
+                                    >
                                         <Camera className="h-4 w-4" />
                                         {user.profile_photo_path ? 'Ganti Foto' : 'Upload Foto'}
                                     </Button>

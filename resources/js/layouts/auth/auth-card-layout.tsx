@@ -14,20 +14,20 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 md:p-10">
+        <div className="bg-section-light flex min-h-screen flex-col items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-md space-y-6">
                 <div className="flex flex-col items-center space-y-2">
-                    <Link href={route('home')} className="flex items-center space-x-2">
+                    <Link href={route('home')} className="flex items-center space-x-2 transition-opacity hover:opacity-80">
                         <AppLogoIcon className="h-8 w-8" />
-                        <span className="text-2xl font-semibold">Pare EduHub</span>
+                        <span className="title-gradient text-2xl font-semibold">Pare EduHub</span>
                     </Link>
-                    <p className="text-sm text-muted-foreground">Platform Kursus Online</p>
+                    <p className="text-medium-contrast text-sm">Platform Kursus Online</p>
                 </div>
 
-                <Card>
+                <Card className="bg-card-elevated border-0 shadow-xl">
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-center text-2xl">{title}</CardTitle>
-                        {description && <CardDescription className="text-center">{description}</CardDescription>}
+                        <CardTitle className="title-gradient text-center text-2xl">{title}</CardTitle>
+                        {description && <CardDescription className="text-medium-contrast text-center">{description}</CardDescription>}
                     </CardHeader>
                     <CardContent>{children}</CardContent>
                 </Card>

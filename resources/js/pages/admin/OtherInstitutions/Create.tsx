@@ -45,7 +45,7 @@ export default function OtherInstitutionCreate() {
         <AdminLayout
             breadcrumbs={[
                 { title: 'Admin', href: route('admin.dashboard') },
-                { title: 'Lembaga Lain', href: route('admin.other-institutions.index') },
+                { title: 'Pusat Informasi', href: route('admin.other-institutions.index') },
                 { title: 'Create', href: route('admin.other-institutions.create') },
             ]}
         >

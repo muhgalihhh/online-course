@@ -23,7 +23,7 @@ interface Props {
 export default function OtherInstitutionShow({ institution }: Props) {
     return (
         <GuestLayout>
-            <Head title={`${institution.name} - Lembaga Lain`} />
+            <Head title={`${institution.name} - Pusat Informasi`} />
 
             <div className="container mx-auto px-4 py-8">
                 {/* Back Button */}

@@ -38,12 +38,16 @@ function FaqItem({ faq, isOpen, onToggle }: FaqItemProps) {
         <Card className="transition-shadow duration-200 hover:shadow-md">
             <Collapsible open={isOpen} onOpenChange={onToggle}>
                 <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between p-6 text-left transition-colors duration-200 hover:bg-gray-50">
+                    <div className="flex items-center justify-between p-6 text-left transition-colors duration-200 hover:bg-muted/50">
                         <div className="flex-1">
-                            <h3 className="pr-4 text-lg font-semibold text-gray-900">{faq.question}</h3>
+                            <h3 className="pr-4 text-lg font-semibold text-foreground">{faq.question}</h3>
                         </div>
                         <div className="flex-shrink-0">
-                            {isOpen ? <ChevronDown className="h-5 w-5 text-gray-500" /> : <ChevronRight className="h-5 w-5 text-gray-500" />}
+                            {isOpen ? (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                            ) : (
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            )}
                         </div>
                     </div>
                 </CollapsibleTrigger>
@@ -53,7 +57,7 @@ function FaqItem({ faq, isOpen, onToggle }: FaqItemProps) {
                             {faq.answer.split('\n').map(
                                 (paragraph, index) =>
                                     paragraph.trim() && (
-                                        <p key={index} className="mb-3 leading-relaxed text-gray-700">
+                                        <p key={index} className="mb-3 leading-relaxed text-muted-foreground">
                                             {paragraph}
                                         </p>
                                     ),
@@ -120,16 +124,16 @@ export default function FaqIndex() {
 
     return (
         <GuestLayout>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 {/* Header Section */}
-                <div className="border-b bg-white">
+                <div className="border-b bg-card">
                     <div className="container mx-auto px-4 py-12">
                         <div className="mb-8 text-center">
-                            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                                 <HelpCircle className="h-8 w-8" />
                             </div>
-                            <h1 className="mb-4 text-4xl font-bold text-gray-900">Frequently Asked Questions</h1>
-                            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+                            <h1 className="mb-4 text-4xl font-bold text-foreground">Frequently Asked Questions</h1>
+                            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
                                 Temukan jawaban untuk pertanyaan yang sering ditanyakan seputar platform, kursus, dan layanan kami
                             </p>
                         </div>
@@ -144,7 +148,7 @@ export default function FaqIndex() {
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="h-12 pr-4 pl-10 text-lg"
                                 />
-                                <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                                <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
                                 <Button type="submit" className="absolute top-1/2 right-2 -translate-y-1/2 transform" size="sm">
                                     Cari
                                 </Button>
@@ -165,7 +169,11 @@ export default function FaqIndex() {
                                     </SelectContent>
                                 </Select>
 
-                                <Button variant="outline" onClick={toggleAll} className="text-sm">
+                                <Button
+                                    variant="outline"
+                                    onClick={toggleAll}
+                                    className="hover-gradient-gray text-sm transition-all duration-200 hover:scale-105"
+                                >
                                     {openItems.size === faqs.length ? 'Tutup Semua' : 'Buka Semua'}
                                 </Button>
                             </div>
@@ -177,9 +185,9 @@ export default function FaqIndex() {
                 <div className="container mx-auto px-4 py-8">
                     {faqs.length === 0 ? (
                         <div className="py-16 text-center">
-                            <HelpCircle className="mx-auto mb-4 h-16 w-16 text-gray-400" />
-                            <h3 className="mb-2 text-xl font-semibold text-gray-900">Tidak ada FAQ ditemukan</h3>
-                            <p className="text-gray-600">Coba ubah kata kunci pencarian atau filter kategori Anda.</p>
+                            <HelpCircle className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                            <h3 className="mb-2 text-xl font-semibold text-foreground">Tidak ada FAQ ditemukan</h3>
+                            <p className="text-muted-foreground">Coba ubah kata kunci pencarian atau filter kategori Anda.</p>
                         </div>
                     ) : filters.category ? (
                         // Show filtered results
@@ -196,12 +204,12 @@ export default function FaqIndex() {
                             <div className="space-y-8">
                                 {Object.entries(faqsByCategory).map(([category, categoryFaqs]) => (
                                     <div key={category}>
-                                        <h2 className="mb-6 flex items-center text-2xl font-bold text-gray-900">
-                                            <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                                        <h2 className="mb-6 flex items-center text-2xl font-bold text-foreground">
+                                            <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                                 <HelpCircle className="h-5 w-5" />
                                             </div>
                                             {categories[category] || category}
-                                            <span className="ml-3 rounded-full bg-gray-100 px-2 py-1 text-sm font-normal text-gray-500">
+                                            <span className="ml-3 rounded-full bg-muted px-2 py-1 text-sm font-normal text-muted-foreground">
                                                 {categoryFaqs.length} pertanyaan
                                             </span>
                                         </h2>
@@ -219,15 +227,21 @@ export default function FaqIndex() {
                     {/* Contact Section */}
                     {faqs.length > 0 && (
                         <div className="mx-auto mt-16 max-w-4xl">
-                            <Card className="border-blue-200 bg-blue-50">
+                            <Card className="border-secondary/20 bg-secondary/10">
                                 <CardContent className="p-8 text-center">
-                                    <h3 className="mb-4 text-xl font-semibold text-gray-900">Tidak menemukan jawaban yang Anda cari?</h3>
-                                    <p className="mb-6 text-gray-600">Tim customer service kami siap membantu Anda dengan pertanyaan apapun.</p>
+                                    <h3 className="mb-4 text-xl font-semibold text-foreground">Tidak menemukan jawaban yang Anda cari?</h3>
+                                    <p className="mb-6 text-muted-foreground">
+                                        Tim customer service kami siap membantu Anda dengan pertanyaan apapun.
+                                    </p>
                                     <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                                        <Button size="lg" className="btn-primary-gradient text-white shadow-lg">
                                             Hubungi Customer Service
                                         </Button>
-                                        <Button variant="outline" size="lg">
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className="hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                        >
                                             Kirim Pertanyaan
                                         </Button>
                                     </div>

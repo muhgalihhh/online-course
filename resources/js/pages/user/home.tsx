@@ -276,7 +276,12 @@ const Home: React.FC<HomeProps> = ({ enrollments, user }) => {
                                         <div className="flex gap-2">
                                             <Dialog>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedCourse(course)}>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="btn-outline-gradient flex-1"
+                                                        onClick={() => setSelectedCourse(course)}
+                                                    >
                                                         <Info className="mr-2 h-4 w-4" />
                                                         Detail
                                                     </Button>

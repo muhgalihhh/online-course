@@ -173,28 +173,28 @@ export default function CoursesIndex() {
                     </div>
 
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <Button variant="outline" size="sm" className="hover-gradient-gray flex-1 transition-all duration-200" asChild>
                             <Link href={`/courses/${course.id}`}>Lihat Detail</Link>
                         </Button>
                         {course.is_enrolled ? (
-                            <Button size="sm" className="flex-1" asChild>
+                            <Button size="sm" className="btn-success-gradient flex-1" asChild>
                                 <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
                             </Button>
                         ) : isAdmin ? (
-                            <Button size="sm" className="flex-1" variant="outline" disabled>
+                            <Button size="sm" className="btn-secondary-gradient flex-1" disabled>
                                 Admin
                             </Button>
                         ) : course.payment_status === 'paid_processing' ? (
-                            <Button size="sm" className="flex-1" variant="secondary" disabled>
+                            <Button size="sm" className="btn-warning-gradient flex-1" disabled>
                                 <Clock className="mr-1 h-3 w-3" />
                                 Sedang Diproses
                             </Button>
                         ) : course.payment_status === 'pending_payment' ? (
-                            <Button size="sm" className="flex-1" variant="outline" onClick={() => handleBookCourse(course)}>
+                            <Button size="sm" className="course-btn-payment flex-1" onClick={() => handleBookCourse(course)}>
                                 Lanjutkan Pembayaran
                             </Button>
                         ) : (
-                            <Button size="sm" className="flex-1" onClick={() => handleBookCourse(course)}>
+                            <Button size="sm" className="course-btn-enroll flex-1" onClick={() => handleBookCourse(course)}>
                                 {course.button_text || (course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus')}
                             </Button>
                         )}
@@ -244,23 +244,23 @@ export default function CoursesIndex() {
                             </div>
 
                             <div className="flex gap-2">
-                                <Button variant="outline" size="sm" asChild>
+                                <Button variant="outline" size="sm" className="hover-gradient-gray transition-all duration-200" asChild>
                                     <Link href={`/courses/${course.id}`}>Lihat Detail</Link>
                                 </Button>
                                 {course.is_enrolled ? (
-                                    <Button size="sm" asChild>
+                                    <Button size="sm" className="btn-success-gradient" asChild>
                                         <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
                                     </Button>
                                 ) : isAdmin ? (
-                                    <Button size="sm" variant="outline" disabled>
+                                    <Button size="sm" className="btn-secondary-gradient" disabled>
                                         Admin
                                     </Button>
                                 ) : course.payment_status === 'paid_processing' ? (
-                                    <Button size="sm" variant="secondary" disabled>
+                                    <Button size="sm" className="btn-warning-gradient" disabled>
                                         {course.button_text || 'Sedang Diproses'}
                                     </Button>
                                 ) : (
-                                    <Button size="sm" onClick={() => handleBookCourse(course)}>
+                                    <Button size="sm" className="course-btn-enroll" onClick={() => handleBookCourse(course)}>
                                         {course.button_text || (course.is_pro ? 'Pesan Sekarang' : 'Ikuti Kursus')}
                                     </Button>
                                 )}
@@ -275,11 +275,14 @@ export default function CoursesIndex() {
     return (
         <GuestLayout>
             {/* Header Section */}
-            <section className="bg-gradient-to-br from-primary/10 via-background to-primary/5 py-12">
-                <div className="container mx-auto px-4">
+            <section className="relative overflow-hidden py-16">
+                {/* Gradient Background */}
+                <div className="course-section-gradient absolute inset-0"></div>
+
+                <div className="relative z-10 container mx-auto px-4">
                     <div className="text-center">
-                        <h1 className="mb-4 text-3xl font-bold">Katalog Kursus</h1>
-                        <p className="mx-auto max-w-2xl text-muted-foreground">
+                        <h1 className="title-gradient mb-4 text-3xl font-bold">Katalog Kursus</h1>
+                        <p className="text-high-contrast mx-auto max-w-2xl">
                             Temukan kursus yang sesuai dengan kebutuhan Anda dari berbagai kategori dan tingkat kesulitan
                         </p>
                     </div>
@@ -346,10 +349,20 @@ export default function CoursesIndex() {
 
                             {/* View Mode Toggle */}
                             <div className="ml-auto flex gap-1">
-                                <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('grid')}>
+                                <Button
+                                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                                    className={viewMode === 'grid' ? 'btn-primary-gradient' : 'hover-gradient-gray transition-all duration-200'}
+                                    size="icon"
+                                    onClick={() => setViewMode('grid')}
+                                >
                                     <Grid className="h-4 w-4" />
                                 </Button>
-                                <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}>
+                                <Button
+                                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                                    className={viewMode === 'list' ? 'btn-primary-gradient' : 'hover-gradient-gray transition-all duration-200'}
+                                    size="icon"
+                                    onClick={() => setViewMode('list')}
+                                >
                                     <List className="h-4 w-4" />
                                 </Button>
                             </div>

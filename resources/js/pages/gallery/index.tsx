@@ -133,18 +133,21 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
             <Head title="Galeri" />
 
             {/* Header */}
-            <div className="border-b bg-background">
-                <div className="container mx-auto px-4 py-8">
+            <section className="relative overflow-hidden py-16">
+                {/* Gradient Background */}
+                <div className="course-section-gradient absolute inset-0"></div>
+
+                <div className="relative z-10 container mx-auto px-4">
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold">Galeri</h1>
-                        <p className="mt-2 text-lg text-muted-foreground">Dokumentasi kegiatan dan momen berharga kami</p>
+                        <h1 className="title-gradient mb-4 text-3xl font-bold">Galeri</h1>
+                        <p className="text-high-contrast text-lg">Dokumentasi kegiatan dan momen berharga kami</p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Search and Filter */}
             <div className="container mx-auto px-4 py-6">
-                <div className="rounded-lg border bg-card p-6 shadow-sm">
+                <div className="features-card-gradient rounded-lg border-0 p-6 shadow-lg">
                     <form onSubmit={handleSearch} className="space-y-4 sm:flex sm:items-center sm:space-y-0 sm:space-x-4">
                         <div className="flex-1">
                             <input
@@ -152,17 +155,15 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                                 placeholder="Cari foto atau video..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm ring-offset-background backdrop-blur-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                             />
                         </div>
                         <div className="flex space-x-2">
                             <button
                                 type="button"
                                 onClick={() => handleFilter('')}
-                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
-                                    typeFilter === ''
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+                                    typeFilter === '' ? 'btn-primary-gradient text-white shadow-md' : 'btn-outline-gradient hover:scale-105'
                                 }`}
                             >
                                 Semua
@@ -170,10 +171,8 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                             <button
                                 type="button"
                                 onClick={() => handleFilter('image')}
-                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
-                                    typeFilter === 'image'
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+                                    typeFilter === 'image' ? 'btn-primary-gradient text-white shadow-md' : 'btn-outline-gradient hover:scale-105'
                                 }`}
                             >
                                 Foto
@@ -181,10 +180,8 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                             <button
                                 type="button"
                                 onClick={() => handleFilter('video')}
-                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
-                                    typeFilter === 'video'
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+                                    typeFilter === 'video' ? 'btn-primary-gradient text-white shadow-md' : 'btn-outline-gradient hover:scale-105'
                                 }`}
                             >
                                 Video
@@ -193,14 +190,14 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                         <div className="flex space-x-2">
                             <button
                                 type="submit"
-                                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium whitespace-nowrap text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                className="btn-secondary-gradient inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap text-white shadow-md ring-offset-background transition-all duration-200 hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                             >
                                 Cari
                             </button>
                             <button
                                 type="button"
                                 onClick={handleReset}
-                                className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                className="hover-gradient-gray inline-flex h-10 items-center justify-center rounded-md border border-input bg-background/80 px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background backdrop-blur-sm transition-all duration-200 hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                             >
                                 Reset
                             </button>
@@ -346,11 +343,11 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                                                 }
                                             }}
                                             disabled={!link.url}
-                                            className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+                                            className={`inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap ring-offset-background transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
                                                 link.active
-                                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                                    ? 'btn-primary-gradient text-white shadow-md'
                                                     : link.url
-                                                      ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                                                      ? 'hover-gradient-gray border border-input bg-background/80 backdrop-blur-sm hover:scale-105'
                                                       : 'cursor-not-allowed opacity-50'
                                             }`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
@@ -381,7 +378,7 @@ const GalleryIndex: InertiaPageComponent<GalleryIndexProps> = ({ galleries, filt
                         {(filters.search || filters.type) && (
                             <button
                                 onClick={handleReset}
-                                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium whitespace-nowrap text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                className="btn-primary-gradient inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap text-white shadow-md ring-offset-background transition-all duration-200 hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                             >
                                 Lihat Semua Galeri
                             </button>

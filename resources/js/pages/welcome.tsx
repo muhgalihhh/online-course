@@ -295,24 +295,38 @@ export default function Welcome() {
                             </p>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex-1" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="hover-gradient-gray flex-1 transition-all duration-200 hover:!text-slate-900 dark:hover:!text-slate-100"
+                                asChild
+                            >
                                 <Link href={`/courses/${course.id}`}>Detail</Link>
                             </Button>
                             {course.is_enrolled ? (
-                                <Button size="sm" className="flex-1" asChild>
+                                <Button size="sm" className="btn-success-gradient flex-1" asChild>
                                     <Link href={`/courses/${course.id}/learn`}>Lanjutkan Belajar</Link>
                                 </Button>
                             ) : course.payment_status === 'paid_processing' ? (
-                                <Button size="sm" className="flex-1" variant="secondary" disabled>
+                                <Button size="sm" className="btn-warning-gradient flex-1" variant="secondary" disabled>
                                     <Clock className="mr-1 h-3 w-3" />
                                     Sedang Diproses
                                 </Button>
                             ) : course.payment_status === 'pending_payment' ? (
-                                <Button size="sm" className="flex-1" variant="outline" onClick={() => handleEnrollCourse(course)}>
+                                <Button
+                                    size="sm"
+                                    className="course-btn-payment flex-1 !text-white hover:!text-white"
+                                    variant="outline"
+                                    onClick={() => handleEnrollCourse(course)}
+                                >
                                     Lanjutkan Pembayaran
                                 </Button>
                             ) : (
-                                <Button size="sm" className="flex-1" onClick={() => handleEnrollCourse(course)}>
+                                <Button
+                                    size="sm"
+                                    className="course-btn-enroll flex-1 !text-white hover:!text-white"
+                                    onClick={() => handleEnrollCourse(course)}
+                                >
                                     {course.is_pro ? 'Beli Sekarang' : 'Ikuti Kursus'}
                                 </Button>
                             )}
@@ -335,7 +349,7 @@ export default function Welcome() {
                     }}
                 >
                     {/* Overlay untuk memberikan efek gelap agar teks tetap terbaca */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
+                    <div className="gallery-overlay-gradient absolute inset-0"></div>
                 </div>
 
                 <div className="relative z-10 container mx-auto px-4">
@@ -364,10 +378,7 @@ export default function Welcome() {
                                 )}
                                 <ScrollAnimation variants={fadeIn} delay={0.3}>
                                     <h1 className="text-4xl font-bold tracking-tight text-white lg:text-6xl">
-                                        Tingkatkan Skill dengan{' '}
-                                        <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                                            {institution?.name || 'Pare EduHub'}
-                                        </span>
+                                        Tingkatkan Skill dengan <span className="gallery-title-gradient">{institution?.name || 'Pare EduHub'}</span>
                                     </h1>
                                 </ScrollAnimation>
                                 <ScrollAnimation variants={fadeIn} delay={0.4}>
@@ -380,13 +391,17 @@ export default function Welcome() {
 
                             <ScrollAnimation variants={slideInLeft} delay={0.5}>
                                 <div className="flex flex-col gap-4 sm:flex-row">
-                                    <Button size="lg" className="bg-primary text-base hover:bg-primary/90" asChild>
+                                    <Button
+                                        size="lg"
+                                        className="btn-primary-gradient transform text-base font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105"
+                                        asChild
+                                    >
                                         <Link href="/register">Mulai Belajar Sekarang</Link>
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        className="border-white/30 bg-white/10 text-base text-white hover:bg-white/20"
+                                        className="transform border-white/30 bg-white/10 text-base text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white/20 hover:text-slate-800"
                                         asChild
                                     >
                                         <Link href="/courses">Lihat Semua Kursus</Link>
@@ -404,7 +419,7 @@ export default function Welcome() {
                                                 <Button
                                                     variant="outline"
                                                     size="lg"
-                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20"
+                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-slate-800"
                                                     asChild
                                                 >
                                                     <a href={institution.ios_app_url} target="_blank" rel="noopener noreferrer">
@@ -417,7 +432,7 @@ export default function Welcome() {
                                                 <Button
                                                     variant="outline"
                                                     size="lg"
-                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20"
+                                                    className="min-w-[140px] border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-slate-800"
                                                     asChild
                                                 >
                                                     <a href={institution.android_app_url} target="_blank" rel="noopener noreferrer">
@@ -495,7 +510,12 @@ export default function Welcome() {
 
                         {categories.length > 8 && (
                             <div className="mt-8 text-center">
-                                <Button variant="outline" size="lg" asChild>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="hover-gradient-gray transition-all duration-200 hover:!text-slate-900 dark:hover:!text-slate-100"
+                                    asChild
+                                >
                                     <Link href="/courses">Lihat Semua Kategori</Link>
                                 </Button>
                             </div>
@@ -505,19 +525,22 @@ export default function Welcome() {
             )}
 
             {/* Stats Section */}
-            <section className="bg-muted/30 py-16">
-                <div className="container mx-auto px-4">
+            <section className="relative overflow-hidden py-16">
+                {/* Gradient Background */}
+                <div className="stats-gradient absolute inset-0"></div>
+
+                <div className="relative z-10 container mx-auto px-4">
                     <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
                         {statsData.map((stat, index) => (
-                            <Card key={index} className="border-0 shadow-sm">
+                            <Card key={index} className="stats-card-gradient transition-all duration-300 hover:scale-105">
                                 <CardContent className="p-6 text-center">
                                     <div className="mb-2 flex justify-center">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        <div className="stats-icon-gradient flex h-12 w-12 items-center justify-center rounded-lg text-white">
                                             {stat.icon}
                                         </div>
                                     </div>
-                                    <div className="text-2xl font-bold">{stat.value}</div>
-                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                    <div className="stats-text-primary text-2xl font-bold">{stat.value}</div>
+                                    <div className="stats-text-secondary text-sm">{stat.label}</div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -529,7 +552,7 @@ export default function Welcome() {
             <section className="py-16">
                 <div className="container mx-auto px-4">
                     <div className="mb-12 text-center">
-                        <h2 className="mb-4 text-3xl font-bold">Fitur Unggulan Platform</h2>
+                        <h2 className="title-gradient mb-4 text-3xl font-bold">Fitur Unggulan Platform</h2>
                         <p className="mx-auto max-w-2xl text-muted-foreground">
                             Nikmati berbagai fitur canggih yang dirancang untuk memberikan pengalaman belajar terbaik
                         </p>
@@ -537,12 +560,15 @@ export default function Welcome() {
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {features.map((feature, index) => (
-                            <Card key={index} className="border-0 shadow-lg transition-shadow hover:shadow-xl">
+                            <Card
+                                key={index}
+                                className="features-card-gradient border-0 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                            >
                                 <CardHeader>
-                                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <div className="features-icon-gradient mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white shadow-md">
                                         {feature.icon}
                                     </div>
-                                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                                    <CardTitle className="title-gradient text-lg">{feature.title}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <CardDescription className="text-base">{feature.description}</CardDescription>
@@ -555,10 +581,13 @@ export default function Welcome() {
 
             {/* Top Courses Section */}
             {topCourses && topCourses.length > 0 && (
-                <section className="bg-muted/30 py-16">
-                    <div className="container mx-auto px-4">
+                <section className="relative overflow-hidden py-16">
+                    {/* Subtle gradient background */}
+                    <div className="course-section-gradient absolute inset-0"></div>
+
+                    <div className="relative z-10 container mx-auto px-4">
                         <ScrollAnimation variants={fadeIn} className="mb-12 text-center">
-                            <h2 className="mb-4 text-3xl font-bold">Kursus Terpopuler</h2>
+                            <h2 className="title-gradient mb-4 text-3xl font-bold">Kursus Terpopuler</h2>
                             <p className="mx-auto max-w-2xl text-muted-foreground">
                                 Temukan kursus terbaik dengan rating tinggi dan ulasan positif dari ribuan siswa
                             </p>
@@ -573,7 +602,11 @@ export default function Welcome() {
                         </ScrollAnimation>
 
                         <ScrollAnimation variants={fadeIn} delay={0.3} className="mt-8 text-center">
-                            <Button size="lg" asChild>
+                            <Button
+                                size="lg"
+                                className="btn-secondary-gradient transform font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105"
+                                asChild
+                            >
                                 <Link href="/courses">Lihat Semua Kursus</Link>
                             </Button>
                         </ScrollAnimation>
@@ -586,7 +619,7 @@ export default function Welcome() {
                 <section className="py-16">
                     <div className="container mx-auto px-4">
                         <ScrollAnimation variants={fadeIn} className="mb-12 text-center">
-                            <h2 className="mb-4 text-3xl font-bold">Galeri Kami</h2>
+                            <h2 className="title-gradient mb-4 text-3xl font-bold">Galeri Kami</h2>
                             <p className="mx-auto max-w-2xl text-muted-foreground">
                                 Lihat momen berharga dan aktivitas pembelajaran di {institution?.name || 'Pare EduHub'}
                             </p>
@@ -663,7 +696,12 @@ export default function Welcome() {
                         </ScrollAnimation>
 
                         <ScrollAnimation variants={fadeIn} delay={0.3} className="mt-8 text-center">
-                            <Button variant="outline" size="lg" asChild>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="hover-gradient-gray transition-all duration-200 hover:!text-slate-900 dark:hover:!text-slate-100"
+                                asChild
+                            >
                                 <Link href="/galeri">Lihat Semua Galeri</Link>
                             </Button>
                         </ScrollAnimation>
@@ -676,7 +714,7 @@ export default function Welcome() {
                 <section className="bg-muted/30 py-16">
                     <div className="container mx-auto px-4">
                         <div className="mb-12 text-center">
-                            <h2 className="mb-4 text-3xl font-bold">Pertanyaan yang Sering Diajukan</h2>
+                            <h2 className="title-gradient mb-4 text-3xl font-bold">Pertanyaan yang Sering Diajukan</h2>
                             <p className="mx-auto max-w-2xl text-muted-foreground">
                                 Temukan jawaban untuk pertanyaan umum seputar pembelajaran di {institution?.name || 'Pare EduHub'}
                             </p>
@@ -722,7 +760,12 @@ export default function Welcome() {
                         </div>
 
                         <div className="mt-8 text-center">
-                            <Button variant="outline" size="lg" asChild>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="hover-gradient-gray transition-all duration-200 hover:!text-slate-900 dark:hover:!text-slate-100"
+                                asChild
+                            >
                                 <Link href="/faq">Lihat Semua FAQ</Link>
                             </Button>
                         </div>
@@ -787,9 +830,9 @@ export default function Welcome() {
                         </div>
 
                         <div className="relative">
-                            <Card className="border-0 bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg">
+                            <Card className="faq-card-gradient border-0 shadow-lg">
                                 <CardContent className="p-6">
-                                    <h3 className="mb-4 text-center text-xl font-bold">Kategori Kursus Populer</h3>
+                                    <h3 className="title-gradient mb-4 text-center text-xl font-bold">Kategori Kursus Populer</h3>
                                     <div className="space-y-4">
                                         {categories &&
                                             categories.slice(0, 3).map((category) => (
@@ -850,20 +893,27 @@ export default function Welcome() {
             </section>
 
             {/* CTA Section */}
-            <section className="bg-primary py-16 text-primary-foreground">
-                <div className="container mx-auto px-4 text-center">
-                    <h2 className="mb-4 text-3xl font-bold">Siap Memulai Perjalanan Belajar?</h2>
-                    <p className="mx-auto mb-8 max-w-2xl text-primary-foreground/80">
+            <section className="relative overflow-hidden py-16">
+                {/* Gradient Background */}
+                <div className="cta-gradient absolute inset-0"></div>
+
+                <div className="relative z-10 container mx-auto px-4 text-center">
+                    <h2 className="mb-4 text-3xl font-bold text-white drop-shadow-lg">Siap Memulai Perjalanan Belajar?</h2>
+                    <p className="mx-auto mb-8 max-w-2xl text-white drop-shadow-md">
                         Bergabunglah dengan ribuan siswa yang telah merasakan manfaat platform pembelajaran kami
                     </p>
                     <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                        <Button size="lg" variant="secondary" className="text-base" asChild>
+                        <Button
+                            size="lg"
+                            className="btn-primary-gradient transform border-0 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105"
+                            asChild
+                        >
                             <Link href="/register">Daftar Sekarang</Link>
                         </Button>
                         <Button
                             size="lg"
                             variant="outline"
-                            className="border-primary-foreground text-base text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                            className="transform border-white/80 bg-white/10 text-base text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white hover:text-slate-800"
                             asChild
                         >
                             <Link href="/login">Masuk</Link>

@@ -17,14 +17,11 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => public_path('storage'),
+            'root' => base_path('../public_html/storage'), // <-- UBAH BARIS INI
             'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
         ],
 
-        // Alternative public disk yang menggunakan storage/app/public
         'public_storage' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

@@ -6,6 +6,8 @@ interface LiveChatWidgetProps {
     tawkToKey?: string;
     autoCloseAfterFirstMessage?: boolean;
     customStyles?: boolean;
+    autoOpenOnLoad?: boolean;
+    autoOpenDelay?: number;
 }
 
 const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
@@ -13,22 +15,33 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
     tawkToKey = import.meta.env.VITE_TAWK_TO_KEY || '1j3onihr8',
     autoCloseAfterFirstMessage = true,
     customStyles = true,
+    // Default: don’t auto open. Keep just the chat icon until clicked
+    autoOpenOnLoad = false,
+    autoOpenDelay = 2000,
 }) => {
     const { user } = useAuth();
 
     useEffect(() => {
-        // Prevent duplicate script loading
-        const existingScript = document.querySelector(`script[src*="embed.tawk.to"]`);
-        if (existingScript) {
-            return;
-        }
+        // Helper to configure behavior, can be called onLoad or immediately when API is ready
+        const configureTawkBehavior = () => {
+            // Pastikan widget terlihat (ikon muncul) dan tetap minimized by default
+            try {
+                if (window.Tawk_API?.showWidget) window.Tawk_API.showWidget();
+                if (!autoOpenOnLoad && window.Tawk_API?.minimize) {
+                    // Force minimize to override any auto-open trigger from Tawk dashboard
+                    window.Tawk_API.minimize();
+                }
+            } catch {}
 
-        // Create Tawk.to configuration
-        window.Tawk_API = window.Tawk_API || {};
-        window.Tawk_LoadStart = new Date();
+            // Optional: only auto-open if explicitly diminta
+            if (autoOpenOnLoad && window.Tawk_API?.maximize) {
+                setTimeout(() => {
+                    if (window.Tawk_API?.maximize) {
+                        window.Tawk_API.maximize();
+                    }
+                }, autoOpenDelay);
+            }
 
-        // Konfigurasi untuk chat behavior
-        window.Tawk_API.onLoad = function () {
             // Set custom styles jika diminta
             if (customStyles) {
                 // Custom CSS untuk widget
@@ -41,55 +54,72 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
                         box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
                         transition: all 0.3s ease !important;
                     }
-                    
+
                     #tawkchat-minified-container:hover {
                         transform: scale(1.05) !important;
                         box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4) !important;
                     }
-                    
+
                     #tawkchat-minified-box {
                         border-radius: 50px !important;
                     }
-                    
+
                     #tawkchat-container {
                         border-radius: 12px !important;
                         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
-                        border: 1px solid rgba(59, 130, 246, 0.2) !important;
+                        border: 1px solid rgba(30, 58, 138, 0.2) !important;
+                        animation: tawk-slide-in 0.3s ease-out !important;
                     }
-                    
+
+                    /* Animation untuk opening chat */
+                    @keyframes tawk-slide-in {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px) scale(0.95);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
+                        }
+                    }
+
                     #tawkchat-container iframe {
                         border-radius: 12px !important;
                     }
-                    
+
                     /* Chat header customization */
                     .tawk-header {
-                        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+                        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
                         border-radius: 12px 12px 0 0 !important;
                     }
-                    
+
                     /* Additional styling for better appearance */
                     #tawkchat-minified-wrapper {
                         z-index: 9999 !important;
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
                     }
-                    
+
                     #tawkchat-container-wrapper {
                         z-index: 9998 !important;
                     }
-                    
+
                     /* Style the widget bubble */
                     .tawk-min-container {
-                        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+                        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
                         border: none !important;
-                        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+                        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.3) !important;
                     }
-                    
+
                     /* Animation for notification */
                     @keyframes tawk-pulse {
                         0% { transform: scale(1); }
                         50% { transform: scale(1.1); }
                         100% { transform: scale(1); }
                     }
-                    
+
                     .tawk-notification {
                         animation: tawk-pulse 2s infinite !important;
                     }
@@ -165,30 +195,33 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
             }
         };
 
-        // Load Tawk.to script
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = `https://embed.tawk.to/${tawkToId}/${tawkToKey}`;
-        script.charset = 'UTF-8';
-        script.setAttribute('crossorigin', '*');
+        // Prevent duplicate script loading, but still configure behavior if already present
+        const existingScript = document.querySelector(`script[src*="embed.tawk.to"]`);
+        window.Tawk_API = window.Tawk_API || {};
+        window.Tawk_LoadStart = window.Tawk_LoadStart || new Date();
 
-        document.head.appendChild(script);
+        if (existingScript) {
+            // If API is ready, configure now; otherwise attach to onLoad
+            if (window.Tawk_API?.showWidget) {
+                configureTawkBehavior();
+            } else {
+                window.Tawk_API.onLoad = configureTawkBehavior;
+            }
+        } else {
+            // Load Tawk.to script and configure on load
+            window.Tawk_API.onLoad = configureTawkBehavior;
+
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = `https://embed.tawk.to/${tawkToId}/${tawkToKey}`;
+            script.charset = 'UTF-8';
+            script.setAttribute('crossorigin', '*');
+            document.head.appendChild(script);
+        }
 
         return () => {
-            // Cleanup Tawk.to when component unmounts
-            if (window.Tawk_API?.hideWidget) {
-                window.Tawk_API.hideWidget();
-            }
-            const scriptToRemove = document.querySelector(`script[src*="embed.tawk.to"]`);
-            if (scriptToRemove && scriptToRemove.parentNode) {
-                scriptToRemove.parentNode.removeChild(scriptToRemove);
-            }
-            // Clean up Tawk.to iframe
-            const tawkFrame = document.querySelector('iframe[title*="chat"]');
-            if (tawkFrame && tawkFrame.parentNode) {
-                tawkFrame.parentNode.removeChild(tawkFrame);
-            }
-            // Remove custom styles
+            // Jangan hide atau remove script/iframe agar widget tetap ada antar navigasi
+            // Hanya bersihkan custom styles yang kita inject
             const customStyles = document.querySelectorAll('style');
             customStyles.forEach((style) => {
                 if (style.textContent?.includes('Custom Tawk.to Widget Styling')) {
@@ -196,7 +229,7 @@ const LiveChatWidget: React.FC<LiveChatWidgetProps> = ({
                 }
             });
         };
-    }, [tawkToId, tawkToKey, user, autoCloseAfterFirstMessage, customStyles]);
+    }, [tawkToId, tawkToKey, user, autoCloseAfterFirstMessage, customStyles, autoOpenOnLoad, autoOpenDelay]);
 
     return null;
 };

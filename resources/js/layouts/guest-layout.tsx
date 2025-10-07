@@ -189,7 +189,7 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
             name: 'Lainnya',
             children: [
                 { name: 'Akomodasi', href: '/accommodations', requiresAuth: false },
-                { name: 'Lembaga Lain', href: '/lembaga-lain', requiresAuth: false },
+                { name: 'Pusat Informasi', href: '/lembaga-lain', requiresAuth: false },
             ],
         },
     ];
@@ -354,10 +354,14 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                 </DropdownMenu>
                             ) : (
                                 <>
-                                    <Button variant="outline" size="sm">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                    >
                                         <Link href="/register">Daftar</Link>
                                     </Button>
-                                    <Button size="sm">
+                                    <Button size="sm" className="btn-primary-gradient text-white">
                                         <Link href="/login">Masuk</Link>
                                     </Button>
                                 </>
@@ -486,10 +490,14 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
                                         </div>
                                     ) : (
                                         <div className="flex gap-2">
-                                            <Button variant="outline" size="sm" className="flex-1">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1 border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                            >
                                                 <Link href="/register">Daftar</Link>
                                             </Button>
-                                            <Button size="sm" className="flex-1">
+                                            <Button size="sm" className="btn-primary-gradient flex-1 text-white">
                                                 <Link href="/login">Masuk</Link>
                                             </Button>
                                         </div>
@@ -673,8 +681,8 @@ const GuestLayoutContent: React.FC<GuestLayoutProps> = ({ children }) => {
             {/* Toast Notifications */}
             <Toaster />
 
-            {/* Live Chat Widget */}
-            <LiveChatWidget />
+            {/* Live Chat Widget - Minimized by default; opens on click */}
+            <LiveChatWidget autoOpenOnLoad={false} autoCloseAfterFirstMessage={false} />
 
             {/* Cart Sidebar */}
             <CartSidebar />

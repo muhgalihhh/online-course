@@ -345,7 +345,12 @@ export default function Tentang() {
                         {/* Social Media Links */}
                         <div className="mb-8 flex flex-wrap justify-center gap-4">
                             {institution?.facebook_url && (
-                                <Button variant="outline" size="lg" asChild className="group">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    asChild
+                                    className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                >
                                     <a href={institution.facebook_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <FacebookIcon className="h-5 w-5 transition-colors group-hover:text-blue-600" />
                                         Facebook
@@ -353,7 +358,12 @@ export default function Tentang() {
                                 </Button>
                             )}
                             {institution?.instagram_url && (
-                                <Button variant="outline" size="lg" asChild className="group">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    asChild
+                                    className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                >
                                     <a href={institution.instagram_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <InstagramIcon className="h-5 w-5 transition-colors group-hover:text-pink-600" />
                                         Instagram
@@ -361,7 +371,12 @@ export default function Tentang() {
                                 </Button>
                             )}
                             {institution?.twitter_url && (
-                                <Button variant="outline" size="lg" asChild className="group">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    asChild
+                                    className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                >
                                     <a href={institution.twitter_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <TwitterIcon className="h-5 w-5 transition-colors group-hover:text-blue-400" />
                                         Twitter
@@ -369,7 +384,12 @@ export default function Tentang() {
                                 </Button>
                             )}
                             {institution?.tiktok_url && (
-                                <Button variant="outline" size="lg" asChild className="group">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    asChild
+                                    className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                >
                                     <a href={institution.tiktok_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <TikTokIcon className="h-5 w-5 transition-colors group-hover:text-black" />
                                         TikTok
@@ -377,7 +397,12 @@ export default function Tentang() {
                                 </Button>
                             )}
                             {institution?.website && (
-                                <Button variant="outline" size="lg" asChild className="group">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    asChild
+                                    className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                >
                                     <a href={institution.website} target="_blank" rel="noopener noreferrer" className="gap-2">
                                         <Globe className="h-5 w-5 transition-colors group-hover:text-primary" />
                                         Website
@@ -392,7 +417,12 @@ export default function Tentang() {
                                 <h3 className="mb-4 text-lg font-semibold">Download Aplikasi Mobile</h3>
                                 <div className="flex flex-wrap justify-center gap-4">
                                     {institution?.ios_app_url && (
-                                        <Button variant="outline" size="lg" asChild className="group">
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            asChild
+                                            className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                        >
                                             <a href={institution.ios_app_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                                 <AppStoreIcon className="h-5 w-5" />
                                                 App Store
@@ -400,7 +430,12 @@ export default function Tentang() {
                                         </Button>
                                     )}
                                     {institution?.android_app_url && (
-                                        <Button variant="outline" size="lg" asChild className="group">
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            asChild
+                                            className="group hover-gradient-gray transition-all duration-200 hover:scale-105"
+                                        >
                                             <a href={institution.android_app_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                                                 <GooglePlayIcon className="h-5 w-5" />
                                                 Google Play
@@ -419,7 +454,7 @@ export default function Tentang() {
                                     Lihat Kelas Pro
                                 </a>
                             </Button>
-                            <Button size="lg" variant="outline" className="gap-2" asChild>
+                            <Button size="lg" variant="outline" className="btn-outline-gradient gap-2" asChild>
                                 <a href="/kelas-free">
                                     <GraduationCap className="h-5 w-5" />
                                     Mulai Kelas Gratis
@@ -487,7 +522,7 @@ export default function Tentang() {
                                         <p className="mb-2 font-medium">Alamat belum tersedia</p>
                                         <p className="mb-4">Alamat institusi belum ditambahkan di database sehingga peta tidak dapat ditampilkan.</p>
                                         {auth?.user?.role === 'admin' && (
-                                            <Button asChild size="sm" variant="outline">
+                                            <Button asChild size="sm" variant="outline" className="btn-outline-gradient">
                                                 <a href="/admin/institutions">Tambahkan Alamat Sekarang</a>
                                             </Button>
                                         )}

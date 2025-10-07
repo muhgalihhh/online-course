@@ -67,7 +67,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                     <BookOpen className="h-4 w-4" />
                                     <span>{enrollments.length} Kelas Terdaftar</span>
                                 </div>
-                                <Button asChild>
+                                <Button className="btn-primary-gradient text-white shadow-lg" asChild>
                                     <Link href="/courses">Jelajahi Kelas Lain</Link>
                                 </Button>
                             </div>
@@ -87,7 +87,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                 <p className="mt-2 text-center text-sm text-muted-foreground">
                                     Anda belum terdaftar di kelas manapun. Mulai perjalanan belajar Anda sekarang!
                                 </p>
-                                <Button asChild className="mt-6">
+                                <Button className="btn-secondary-gradient mt-6 text-white shadow-lg" asChild>
                                     <Link href="/courses">
                                         Jelajahi Kelas
                                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -184,7 +184,7 @@ export default function MyCourses({ enrollments }: MyCoursesProps) {
                                         </div>
 
                                         {/* Action Button */}
-                                        <Button asChild className="w-full">
+                                        <Button className="course-btn-enroll w-full text-white shadow-lg" asChild>
                                             <Link href={`/courses/${course.id}/learn`}>
                                                 <Play className="mr-2 h-4 w-4" />
                                                 {course.user_progress > 0 ? 'Lanjutkan Belajar' : 'Mulai Belajar'}
