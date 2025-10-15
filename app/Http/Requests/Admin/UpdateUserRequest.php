@@ -32,7 +32,7 @@ class UpdateUserRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:100'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'in:admin,user'],
-            'profile_photo_path' => ['nullable', 'string'],
+            'profile_photo_path' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
     }
 

@@ -1,12 +1,12 @@
 import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { Pagination } from '@/components/pagination';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
 import { PageProps, PaginatedData } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { DollarSign, Eye } from 'lucide-react';
 
 interface User {
@@ -46,8 +46,6 @@ interface TransactionIndexProps extends PageProps {
 }
 
 export default function TransactionIndex({ transactions, filters }: TransactionIndexProps) {
-    const { patch } = useForm();
-
     const handlePagination = (url: string) => {
         router.get(url, filters, {
             preserveState: true,
@@ -107,12 +105,6 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
             defaultSort: 'created_at',
             defaultOrder: 'desc',
         },
-    };
-
-    const handleStatusChange = (transactionId: number, newStatus: string) => {
-        patch(route('admin.transactions.update-status', transactionId), {
-            data: { status: newStatus },
-        });
     };
 
     const getStatusBadgeVariant = (status: string) => {
@@ -215,17 +207,7 @@ export default function TransactionIndex({ transactions, filters }: TransactionI
                                         </TableCell>
                                         <TableCell>{transaction.payment_method}</TableCell>
                                         <TableCell>
-                                            <Select value={transaction.status} onValueChange={(value) => handleStatusChange(transaction.id, value)}>
-                                                <SelectTrigger className="w-32">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="pending">Menunggu</SelectItem>
-                                                    <SelectItem value="completed">Selesai</SelectItem>
-                                                    <SelectItem value="failed">Gagal</SelectItem>
-                                                    <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Badge variant={getStatusBadgeVariant(transaction.status)}>{getStatusLabel(transaction.status)}</Badge>
                                         </TableCell>
                                         <TableCell>{new Date(transaction.created_at).toLocaleDateString()}</TableCell>
                                         <TableCell>

@@ -2,19 +2,11 @@
 
 import { AdminFilter, FilterConfig } from '@/components/admin/AdminFilter';
 import { DeleteConfirmation } from '@/components/delete-confirmation';
+import { Pagination } from '@/components/pagination';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useInitials } from '@/hooks/use-initials';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +14,6 @@ import AdminLayout from '@/layouts/admin-layout';
 import { User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
-import qs from 'qs';
 import { useState } from 'react';
 
 type IndexPageProps = {
@@ -194,46 +185,11 @@ export default function Index({ users, filters }: IndexPageProps) {
                     </Table>
                 </div>
 
-                <Pagination>
-                    <PaginationContent>
-                        {users.links.map((link, index) => {
-                            const { label, url, active } = link;
-                            const page = parseInt(qs.parse(url?.split('?')[1] || '').page as string, 10);
-
-                            if (label.includes('Previous')) {
-                                return (
-                                    <PaginationItem key={index}>
-                                        <PaginationPrevious onClick={url ? () => handlePagination(url) : undefined} disabled={!url} />
-                                    </PaginationItem>
-                                );
-                            }
-
-                            if (label.includes('Next')) {
-                                return (
-                                    <PaginationItem key={index}>
-                                        <PaginationNext onClick={url ? () => handlePagination(url) : undefined} disabled={!url} />
-                                    </PaginationItem>
-                                );
-                            }
-
-                            if (label.includes('...')) {
-                                return (
-                                    <PaginationItem key={index}>
-                                        <PaginationEllipsis />
-                                    </PaginationItem>
-                                );
-                            }
-
-                            return (
-                                <PaginationItem key={index}>
-                                    <PaginationLink onClick={url ? () => handlePagination(url) : undefined} isActive={active}>
-                                        {page}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            );
-                        })}
-                    </PaginationContent>
-                </Pagination>
+                {users.links && users.links.length > 0 && (
+                    <div className="mt-4">
+                        <Pagination links={users.links} onPageChange={handlePagination} />
+                    </div>
+                )}
             </div>
 
             <DeleteConfirmation

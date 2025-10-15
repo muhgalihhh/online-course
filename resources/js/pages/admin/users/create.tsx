@@ -2,6 +2,7 @@ import { ErrorMessage } from '@/components/error-message';
 import { FormActions } from '@/components/form-actions';
 import { PageHeader } from '@/components/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -163,16 +164,28 @@ export default function UserCreate() {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="gender">Jenis Kelamin (Opsional)</Label>
-                                    <Select value={data.gender} onValueChange={(value) => setData('gender', value)}>
-                                        <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
-                                            <SelectValue placeholder="Pilih jenis kelamin" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="">Tidak ditentukan</SelectItem>
-                                            <SelectItem value="male">Laki-laki</SelectItem>
-                                            <SelectItem value="female">Perempuan</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="flex gap-2">
+                                        <Select value={data.gender || undefined} onValueChange={(value) => setData('gender', value)}>
+                                            <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                                                <SelectValue placeholder="Pilih jenis kelamin" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="male">Laki-laki</SelectItem>
+                                                <SelectItem value="female">Perempuan</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {data.gender && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setData('gender', '')}
+                                                title="Hapus pilihan"
+                                            >
+                                                ×
+                                            </Button>
+                                        )}
+                                    </div>
                                     {errors.gender && <ErrorMessage message={errors.gender} />}
                                 </div>
                             </div>
