@@ -3,42 +3,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
-import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Home, ImageIcon, Save } from 'lucide-react';
 import { ChangeEvent, FormEvent, useState } from 'react';
-
-interface Institution {
-    id: number;
-    name: string;
-    phone: string;
-}
-
-interface AccommodationCreateProps extends PageProps {
-    institutions: Institution[];
-}
 
 interface FormData {
     name: string;
     description: string;
     price_per_night: string;
-    institution_id: string;
     image: File | null;
     is_active: boolean;
 }
 
-export default function AccommodationCreate({ institutions }: AccommodationCreateProps) {
+export default function AccommodationCreate() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<FormData>({
         name: '',
         description: '',
         price_per_night: '',
-        institution_id: '',
         image: null,
         is_active: true,
     });
@@ -118,38 +104,16 @@ export default function AccommodationCreate({ institutions }: AccommodationCreat
                                         />
                                     </FormField>
 
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                        <FormField label="Harga per Malam (Rp)" error={errors.price_per_night} required>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                step="1000"
-                                                value={data.price_per_night}
-                                                onChange={(e) => setData('price_per_night', e.target.value)}
-                                                placeholder="500000"
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Institusi" error={errors.institution_id} required>
-                                            <Select value={data.institution_id} onValueChange={(value) => setData('institution_id', value)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih institusi" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {institutions.map((institution) => (
-                                                        <SelectItem key={institution.id} value={institution.id.toString()}>
-                                                            <div>
-                                                                <div className="font-medium">{institution.name}</div>
-                                                                {institution.phone && (
-                                                                    <div className="text-sm text-muted-foreground">{institution.phone}</div>
-                                                                )}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormField>
-                                    </div>
+                                    <FormField label="Harga per Malam (Rp)" error={errors.price_per_night} required>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="1000"
+                                            value={data.price_per_night}
+                                            onChange={(e) => setData('price_per_night', e.target.value)}
+                                            placeholder="500000"
+                                        />
+                                    </FormField>
 
                                     <div className="flex items-center space-x-2">
                                         <Switch

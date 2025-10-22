@@ -34,7 +34,7 @@ interface Accommodation {
 
 interface AccommodationIndexProps extends PageProps {
     accommodations: PaginatedData<Accommodation>;
-    institutions: { id: number; name: string }[];
+    institutions?: { id: number; name: string }[];
     filters: {
         search: string;
         institution_id: string;
@@ -48,7 +48,7 @@ interface AccommodationIndexProps extends PageProps {
     };
 }
 
-export default function AccommodationIndex({ accommodations, institutions, filters }: AccommodationIndexProps) {
+export default function AccommodationIndex({ accommodations, institutions = [], filters }: AccommodationIndexProps) {
     const [deleteDialog, setDeleteDialog] = useState<{
         isOpen: boolean;
         accommodationId: number | null;
@@ -67,10 +67,13 @@ export default function AccommodationIndex({ accommodations, institutions, filte
             institution_id: {
                 label: 'Institusi',
                 placeholder: 'Semua Institusi',
-                options: institutions.map((inst) => ({
-                    value: inst.id.toString(),
-                    label: inst.name,
-                })),
+                options:
+                    institutions && institutions.length > 0
+                        ? institutions.map((inst) => ({
+                              value: inst.id.toString(),
+                              label: inst.name,
+                          }))
+                        : [],
             },
             is_active: {
                 label: 'Status',

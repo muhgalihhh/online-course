@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
@@ -23,35 +22,32 @@ interface AccommodationData {
     name: string;
     description: string;
     price_per_night: number;
-    institution_id: number;
+    institution_id?: number;
     image_path: string | null;
     image_url: string;
     is_active: boolean;
-    institution: Institution;
+    institution?: Institution;
 }
 
 interface AccommodationEditProps extends PageProps {
     accommodation: AccommodationData;
-    institutions: Institution[];
 }
 
 interface FormData {
     name: string;
     description: string;
     price_per_night: string;
-    institution_id: string;
     image: File | null;
     is_active: boolean;
 }
 
-export default function AccommodationEdit({ accommodation, institutions }: AccommodationEditProps) {
+export default function AccommodationEdit({ accommodation }: AccommodationEditProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors } = useForm<FormData>({
         name: accommodation.name,
         description: accommodation.description,
         price_per_night: accommodation.price_per_night.toString(),
-        institution_id: accommodation.institution_id.toString(),
         image: null,
         is_active: accommodation.is_active,
     });
@@ -130,38 +126,16 @@ export default function AccommodationEdit({ accommodation, institutions }: Accom
                                         />
                                     </FormField>
 
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                        <FormField label="Harga per Malam (Rp)" error={errors.price_per_night} required>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                step="1000"
-                                                value={data.price_per_night}
-                                                onChange={(e) => setData('price_per_night', e.target.value)}
-                                                placeholder="500000"
-                                            />
-                                        </FormField>
-
-                                        <FormField label="Institusi" error={errors.institution_id} required>
-                                            <Select value={data.institution_id} onValueChange={(value) => setData('institution_id', value)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih institusi" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {institutions.map((institution) => (
-                                                        <SelectItem key={institution.id} value={institution.id.toString()}>
-                                                            <div>
-                                                                <div className="font-medium">{institution.name}</div>
-                                                                {institution.phone && (
-                                                                    <div className="text-sm text-muted-foreground">{institution.phone}</div>
-                                                                )}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormField>
-                                    </div>
+                                    <FormField label="Harga per Malam (Rp)" error={errors.price_per_night} required>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="1000"
+                                            value={data.price_per_night}
+                                            onChange={(e) => setData('price_per_night', e.target.value)}
+                                            placeholder="500000"
+                                        />
+                                    </FormField>
 
                                     <div className="flex items-center space-x-2">
                                         <Switch
