@@ -42,37 +42,72 @@ class FlipService
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if ($existingTransaction && !empty($existingTransaction->payment_details['payment_url'])) {
-            Log::info('Reusing existing Flip transaction', [
+        if ($existingTransaction && !empty($existingTransaction->flip_bill_id)) {
+            Log::info('Found existing Flip transaction, checking validity', [
                 'flip_bill_id' => $existingTransaction->flip_bill_id,
                 'user_id' => $user->id,
                 'course_id' => $course->id,
             ]);
 
-            // Check if bill is still valid
+            // Check if bill is still valid with Flip API
             $billStatus = $this->getBillStatus($existingTransaction->flip_bill_id);
-            if ($billStatus && in_array($billStatus['status'], ['pending', 'PENDING', 'ACTIVE'])) {
+
+            if ($billStatus && in_array(strtoupper($billStatus['status'] ?? ''), ['PENDING', 'ACTIVE'])) {
+                // Get payment URL from bill status or existing transaction
+                $paymentUrl = $billStatus['link_url'] ?? $existingTransaction->payment_details['payment_url'] ?? null;
+
+                // Ensure URL has https:// prefix
+                if ($paymentUrl && !str_starts_with($paymentUrl, 'http')) {
+                    $paymentUrl = 'https://' . $paymentUrl;
+                }
+
+                // Update transaction with latest payment URL if changed
+                if ($paymentUrl && ($existingTransaction->payment_details['payment_url'] ?? null) !== $paymentUrl) {
+                    $details = $existingTransaction->payment_details ?? [];
+                    $details['payment_url'] = $paymentUrl;
+                    $details['bill_link'] = $paymentUrl;
+                    $existingTransaction->update(['payment_details' => $details]);
+                }
+
+                Log::info('Reusing existing valid Flip transaction', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                    'payment_url' => $paymentUrl,
+                ]);
+
                 return [
                     'bill_id' => $existingTransaction->flip_bill_id,
-                    'payment_url' => $existingTransaction->payment_details['payment_url'],
+                    'payment_url' => $paymentUrl,
                     'transaction' => $existingTransaction,
                     'is_existing' => true,
                 ];
             }
 
             // Bill expired or invalid, mark as expired
+            Log::info('Existing Flip transaction is no longer valid, marking as expired', [
+                'flip_bill_id' => $existingTransaction->flip_bill_id,
+                'bill_status' => $billStatus['status'] ?? 'unknown',
+            ]);
             $existingTransaction->update(['status' => 'expired']);
         }
 
         // Create new bill
         $billData = $this->createBill($user, $course);
 
+        // Extract and ensure payment URL has https:// prefix
+        $paymentUrl = $billData['link_url'] ?? $billData['url'] ?? null;
+        if ($paymentUrl && !str_starts_with($paymentUrl, 'http')) {
+            $paymentUrl = 'https://' . $paymentUrl;
+        }
+
+        // Convert link_id to string for storage
+        $billId = isset($billData['link_id']) ? (string) $billData['link_id'] : ($billData['bill_link_id'] ?? null);
+
         // Create transaction record
         $transaction = Transaction::create([
             'user_id' => $user->id,
             'transactionable_id' => $course->id,
             'transactionable_type' => Course::class,
-            'flip_bill_id' => $billData['link_id'] ?? $billData['bill_link_id'] ?? null,
+            'flip_bill_id' => $billId,
             'midtrans_order_id' => null, // Not using Midtrans
             'payment_gateway' => 'flip',
             'amount' => (int) $course->price,
@@ -80,8 +115,8 @@ class FlipService
             'status' => 'pending',
             'payment_details' => [
                 'flip_response' => $billData,
-                'payment_url' => $billData['link_url'] ?? $billData['url'] ?? null,
-                'bill_link' => $billData['link_url'] ?? $billData['url'] ?? null,
+                'payment_url' => $paymentUrl,
+                'bill_link' => $paymentUrl,
                 'title' => $billData['title'] ?? null,
                 'created_at' => now()->toISOString(),
             ],
@@ -92,11 +127,12 @@ class FlipService
             'flip_bill_id' => $transaction->flip_bill_id,
             'user_id' => $user->id,
             'course_id' => $course->id,
+            'payment_url' => $paymentUrl,
         ]);
 
         return [
             'bill_id' => $transaction->flip_bill_id,
-            'payment_url' => $billData['link_url'] ?? $billData['url'] ?? null,
+            'payment_url' => $paymentUrl,
             'transaction' => $transaction,
             'is_existing' => false,
         ];
@@ -104,24 +140,56 @@ class FlipService
 
     /**
      * Create a payment bill via Flip API
+     *
+     * Note on step parameter:
+     * - step=1: Shows bill info only
+     * - step=2: Shows bill info + payment method selection (recommended)
+     * - step=3: Direct to payment page (requires sender_bank parameter)
+     *
+     * We use step=2 by default to let users choose their payment method.
      */
     public function createBill(User $user, Course $course): array
     {
         $expiryHours = (int) config('flip.bill_expiry_hours', 24);
-        $step = (int) config('flip.payment_step', 3);
+
+        // Use step=2 to allow customers to choose payment method
+        // step=3 requires sender_bank which we don't collect upfront
+        $step = (int) config('flip.payment_step', 2);
+        if ($step === 3) {
+            // Fallback to step=2 if step=3 is configured but we don't have sender_bank
+            $step = 2;
+            Log::info('Flip: Changed step from 3 to 2 (sender_bank not provided)');
+        }
+
+        // Build redirect URL - Flip requires a valid public URL (not localhost)
+        $redirectUrl = route('payments.flip.callback', ['course_id' => $course->id]);
+        $appUrl = config('app.url', '');
+
+        // Check if app URL is localhost or non-public - Flip will reject these
+        $isLocalhost = str_contains($appUrl, 'localhost') ||
+                       str_contains($appUrl, '127.0.0.1') ||
+                       str_contains($appUrl, '0.0.0.0');
 
         $payload = [
             'title' => 'Course: ' . Str::limit($course->title, 40),
             'amount' => (int) $course->price,
             'type' => 'SINGLE',
             'expired_date' => now()->addHours($expiryHours)->format('Y-m-d H:i'),
-            'redirect_url' => route('payments.flip.callback', ['course_id' => $course->id]),
             'is_address_required' => config('flip.is_address_required', false) ? 1 : 0,
             'is_phone_number_required' => config('flip.is_phone_required', false) ? 1 : 0,
             'step' => $step,
             'sender_name' => $user->name,
             'sender_email' => $user->email,
         ];
+
+        // Only include redirect_url if it's a valid public URL
+        // Flip rejects localhost URLs - in local dev, users will need to
+        // check payment status manually on the payment page
+        if (!$isLocalhost) {
+            $payload['redirect_url'] = $redirectUrl;
+        } else {
+            Log::info('Flip: Skipping redirect_url for localhost development');
+        }
 
         Log::info('Creating Flip Bill', [
             'payload' => array_merge($payload, ['sender_email' => '***']),
@@ -136,6 +204,12 @@ class FlipService
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                // Ensure link_url has proper https:// prefix
+                if (isset($data['link_url']) && !str_starts_with($data['link_url'], 'http')) {
+                    $data['link_url'] = 'https://' . $data['link_url'];
+                }
+
                 Log::info('Flip Bill Created Successfully', [
                     'link_id' => $data['link_id'] ?? null,
                     'link_url' => $data['link_url'] ?? null,
@@ -149,13 +223,36 @@ class FlipService
                 'body' => $errorBody,
             ]);
 
-            throw new \Exception('Flip API Error: ' . ($errorBody['message'] ?? $errorBody['code'] ?? 'Unknown error'));
+            // Provide more specific error messages
+            $errorMessage = 'Unknown error';
+            if (isset($errorBody['errors']) && is_array($errorBody['errors'])) {
+                $messages = array_map(fn($e) => $e['message'] ?? '', $errorBody['errors']);
+                $errorMessage = implode(', ', array_filter($messages));
+            } elseif (isset($errorBody['message'])) {
+                $errorMessage = $errorBody['message'];
+            } elseif (isset($errorBody['code'])) {
+                $errorMessage = $errorBody['code'];
+            }
 
+            throw new \Exception('Flip API Error: ' . $errorMessage);
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Flip API Connection Failed', [
+                'error' => $e->getMessage(),
+            ]);
+            throw new \Exception('Gagal terhubung ke server Flip. Silakan coba lagi.');
         } catch (\Exception $e) {
             Log::error('Flip API Request Failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            // Don't wrap already formatted exceptions
+            if (str_starts_with($e->getMessage(), 'Flip API Error:') ||
+                str_starts_with($e->getMessage(), 'Gagal')) {
+                throw $e;
+            }
+
             throw new \Exception('Gagal membuat tagihan pembayaran via Flip: ' . $e->getMessage());
         }
     }
@@ -176,9 +273,16 @@ class FlipService
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                // Ensure link_url has proper https:// prefix
+                if (isset($data['link_url']) && !str_starts_with($data['link_url'], 'http')) {
+                    $data['link_url'] = 'https://' . $data['link_url'];
+                }
+
                 Log::info('Flip Bill Status Retrieved', [
                     'bill_id' => $billId,
                     'status' => $data['status'] ?? null,
+                    'link_url' => $data['link_url'] ?? null,
                 ]);
                 return $data;
             }
