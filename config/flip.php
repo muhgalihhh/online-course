@@ -28,8 +28,11 @@ return [
     // Bill expiry time in hours
     'bill_expiry_hours' => (int) env('FLIP_BILL_EXPIRY_HOURS', 24),
 
-    // Step pembayaran (1-3). Step 3 = langsung ke halaman pilih metode
-    'payment_step' => (int) env('FLIP_PAYMENT_STEP', 3),
+    // Step pembayaran (1-2). 
+    // Step 1 = Shows bill info only
+    // Step 2 = Shows bill info + payment method selection (recommended)
+    // Note: Step 3 requires sender_bank parameter and is not supported without it
+    'payment_step' => (int) env('FLIP_PAYMENT_STEP', 2),
 
     // Apakah membutuhkan alamat dari pembeli
     'is_address_required' => (bool) env('FLIP_ADDRESS_REQUIRED', false),
