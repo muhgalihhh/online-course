@@ -16,6 +16,8 @@ class Transaction extends Model
         'transactionable_id',
         'transactionable_type',
         'midtrans_order_id',
+        'flip_bill_id',
+        'payment_gateway',
         'amount',
         'payment_method',
         'status',

@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    // Tambahkan di dalam return [ ... ]
+
+    'payment' => [
+        'default' => env('PAYMENT_DEFAULT_GATEWAY', 'midtrans'),
+    ],
+
+    'flip' => [
+        'secret_key' => env('FLIP_SECRET_KEY'),
+        'validation_token' => env('FLIP_VALIDATION_TOKEN'),
+        'is_production' => env('FLIP_IS_PRODUCTION', false),
+        'base_url' => env('FLIP_IS_PRODUCTION', false)
+            ? 'https://bigflip.id/api/v2'
+            : 'https://bigflip.id/big_sandbox_api/v2',
+    ],
+
 ];
