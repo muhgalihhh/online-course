@@ -55,9 +55,16 @@ class CoursePaymentStatusService
       ->first();
 
     if ($pendingTransaction) {
-      // Check if transaction is actually expired via Midtrans
-      $midtransService = app(MidtransService::class);
-      $statusInfo = $midtransService->getTransactionStatus($pendingTransaction->midtrans_order_id);
+      // Check if transaction is actually expired based on payment gateway
+      $statusInfo = null;
+
+      if ($pendingTransaction->payment_gateway === 'flip' && $pendingTransaction->flip_bill_id) {
+        $flipService = app(FlipService::class);
+        $statusInfo = $flipService->getTransactionStatus($pendingTransaction->flip_bill_id);
+      } elseif ($pendingTransaction->midtrans_order_id) {
+        $midtransService = app(MidtransService::class);
+        $statusInfo = $midtransService->getTransactionStatus($pendingTransaction->midtrans_order_id);
+      }
 
       if ($statusInfo && in_array($statusInfo['status'], ['expired', 'cancelled', 'failed'])) {
         // Mark as expired and allow new purchase
