@@ -17,16 +17,22 @@ class TransactionController extends Controller
     {
         $query = Transaction::with(['user', 'transactionable']);
 
-        // Filter by search (user name, email, order id)
+        // Filter by search (user name, email, order id, flip bill id)
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('midtrans_order_id', 'like', "%{$search}%")
+                    ->orWhere('flip_bill_id', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
                     });
             });
+        }
+
+        // Filter by payment gateway
+        if ($request->filled('gateway')) {
+            $query->where('payment_gateway', $request->get('gateway'));
         }
 
         // Filter by status

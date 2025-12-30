@@ -43,7 +43,8 @@ class ProcessEnrollmentAfterPayment implements ShouldQueue
     if (!$user) {
       Log::warning('User not found for transaction job', [
         'transaction_id' => $this->transaction->id,
-        'order_id' => $this->transaction->midtrans_order_id
+        'order_id' => $this->transaction->midtrans_order_id ?? $this->transaction->flip_bill_id,
+        'gateway' => $this->transaction->payment_gateway
       ]);
       return;
     }
@@ -77,7 +78,8 @@ class ProcessEnrollmentAfterPayment implements ShouldQueue
         'user_id' => $user->id,
         'course_id' => $courseId,
         'transaction_id' => $this->transaction->id,
-        'order_id' => $this->transaction->midtrans_order_id
+        'order_id' => $this->transaction->midtrans_order_id ?? $this->transaction->flip_bill_id,
+        'gateway' => $this->transaction->payment_gateway
       ]);
     });
   }
@@ -86,7 +88,8 @@ class ProcessEnrollmentAfterPayment implements ShouldQueue
   {
     Log::error('Failed to process enrollment after payment (job)', [
       'transaction_id' => $this->transaction->id,
-      'order_id' => $this->transaction->midtrans_order_id,
+      'order_id' => $this->transaction->midtrans_order_id ?? $this->transaction->flip_bill_id,
+      'gateway' => $this->transaction->payment_gateway,
       'error' => $exception->getMessage(),
       'trace' => $exception->getTraceAsString()
     ]);

@@ -200,10 +200,19 @@ Route::middleware(['auth'])->group(function () {
     })->name('my-courses');
 });
 
-// Midtrans webhook (no auth, but with signature verification)
+// Payment webhooks (no auth, but with signature verification)
 Route::post('/payments/midtrans/webhook', [\App\Http\Controllers\PaymentController::class, 'handleMidtransWebhook'])
     ->middleware('midtrans.webhook')
     ->name('payments.midtrans.webhook');
+
+Route::post('/payments/flip/webhook', [\App\Http\Controllers\PaymentController::class, 'handleFlipWebhook'])
+    ->middleware('flip.webhook')
+    ->name('payments.flip.webhook');
+
+// Flip callback (redirect after payment - needs auth)
+Route::get('/payments/flip/callback', [\App\Http\Controllers\PaymentController::class, 'handleFlipCallback'])
+    ->middleware('auth')
+    ->name('payments.flip.callback');
 
 // Static pages
 Route::get('/tentang', function () {

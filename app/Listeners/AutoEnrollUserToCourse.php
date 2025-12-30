@@ -14,7 +14,8 @@ class AutoEnrollUserToCourse
   {
     Log::info('TransactionCompleted event received', [
       'transaction_id' => $event->transaction->id,
-      'order_id' => $event->transaction->midtrans_order_id,
+      'order_id' => $event->transaction->midtrans_order_id ?? $event->transaction->flip_bill_id,
+      'gateway' => $event->transaction->payment_gateway,
       'status' => $event->transaction->status
     ]);
 
@@ -24,12 +25,14 @@ class AutoEnrollUserToCourse
 
       Log::info('Immediate enrollment completed successfully', [
         'transaction_id' => $event->transaction->id,
-        'order_id' => $event->transaction->midtrans_order_id
+        'order_id' => $event->transaction->midtrans_order_id ?? $event->transaction->flip_bill_id,
+        'gateway' => $event->transaction->payment_gateway
       ]);
     } catch (\Exception $e) {
       Log::error('Immediate enrollment failed, dispatching backup job', [
         'transaction_id' => $event->transaction->id,
-        'order_id' => $event->transaction->midtrans_order_id,
+        'order_id' => $event->transaction->midtrans_order_id ?? $event->transaction->flip_bill_id,
+        'gateway' => $event->transaction->payment_gateway,
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString()
       ]);
@@ -56,7 +59,8 @@ class AutoEnrollUserToCourse
       $error = 'User not found for immediate enrollment';
       Log::error($error, [
         'transaction_id' => $transaction->id,
-        'order_id' => $transaction->midtrans_order_id
+        'order_id' => $transaction->midtrans_order_id ?? $transaction->flip_bill_id,
+        'gateway' => $transaction->payment_gateway
       ]);
       throw new \Exception($error);
     }

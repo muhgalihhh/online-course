@@ -4,6 +4,7 @@ import { ensureSnapReady } from '../../lib/midtransSnap';
 
 // Types (align with backend fields)
 type TransactionStatus = 'idle' | 'creating' | 'pending' | 'processing' | 'completed' | 'expired' | 'failed' | 'cancelled' | 'error';
+type PaymentGateway = 'midtrans' | 'flip';
 
 interface Course {
     id: number;
@@ -17,7 +18,9 @@ interface Course {
 
 interface TransactionDto {
     id: number;
-    midtrans_order_id: string;
+    midtrans_order_id?: string | null;
+    flip_bill_id?: string | null;
+    payment_gateway?: string;
     status: string;
     payment_method?: string | null;
     payment_details?: Record<string, unknown> | null;
@@ -25,30 +28,36 @@ interface TransactionDto {
 
 interface ServerPageProps {
     course: Course;
-    transaction?: TransactionDto | null; // Raw transaction object from backend if provided
+    transaction?: TransactionDto | null;
     snapToken?: string | null;
-    clientKey: string;
+    paymentUrl?: string | null;
+    billId?: string | null;
+    clientKey?: string | null;
     isProduction: boolean;
     isAlreadyEnrolled?: boolean;
     isAlreadyPaid?: boolean;
     transactionExpired?: boolean;
     expiredMessage?: string;
     error?: string;
+    defaultGateway: PaymentGateway;
 }
 
 interface CreateTransactionResponse {
-    order_id: string;
-    snap_token: string;
+    gateway: PaymentGateway;
+    order_id?: string;
+    bill_id?: string;
+    snap_token?: string;
+    payment_url?: string;
     redirect_url?: string | null;
-    client_key: string;
-    is_production: boolean;
+    client_key?: string;
+    is_production?: boolean;
     existing_transaction: boolean;
 }
 
 interface CheckStatusResponse {
     order_id: string;
     status: TransactionStatus | 'completed';
-    midtrans_status: string;
+    gateway: PaymentGateway;
     is_expired: boolean;
 }
 
@@ -57,20 +66,27 @@ const buildStorageKey = (userId: number, courseId: number) => `pay:course:${cour
 
 interface PersistedPayment {
     orderId: string;
-    snapToken: string;
-    createdAt: number; // epoch ms
+    snapToken?: string;
+    paymentUrl?: string;
+    gateway: PaymentGateway;
+    createdAt: number;
     courseId: number;
     userId: number;
     status: TransactionStatus;
-    // Optional expiry timestamp if we can infer (Midtrans varies; use 24h fallback for VA, 30m for QR/ewallet heuristics?)
     heuristicExpiryAt?: number;
 }
 
-// Heuristic expiry assignment based on possible payment method (if known later could update)
-function guessExpiry(createdAt: number, paymentMethod?: string | null): number | undefined {
+// Heuristic expiry assignment
+function guessExpiry(createdAt: number, paymentMethod?: string | null, gateway?: PaymentGateway): number | undefined {
     const HOURS = 60 * 60 * 1000;
     const MIN = 60 * 1000;
-    if (!paymentMethod) return createdAt + 24 * HOURS; // fallback 24h
+
+    // Flip default expiry is 24h
+    if (gateway === 'flip') {
+        return createdAt + 24 * HOURS;
+    }
+
+    if (!paymentMethod) return createdAt + 24 * HOURS;
     switch (paymentMethod) {
         case 'gopay':
         case 'shopeepay':
@@ -90,7 +106,6 @@ let snapScriptLoading: Promise<void> | null = null;
 function ensureSnapScript(clientKey: string, isProduction: boolean): Promise<void> {
     if (typeof window === 'undefined') return Promise.resolve();
 
-    // Check if already loaded
     const w = window as unknown as { snap?: { embed: (...args: unknown[]) => void } };
     if (w.snap) {
         console.log('[ensureSnapScript] Snap already available');
@@ -109,8 +124,8 @@ function ensureSnapScript(clientKey: string, isProduction: boolean): Promise<voi
             const snap = await ensureSnapReady({
                 clientKey,
                 isProduction,
-                timeoutMs: 15000, // Increased timeout
-                maxRetries: 4, // More retries
+                timeoutMs: 15000,
+                maxRetries: 4,
                 delayBetweenRetriesMs: 2000,
                 pollIntervalMs: 500,
                 maxWaitMs: 10000,
@@ -120,7 +135,6 @@ function ensureSnapScript(clientKey: string, isProduction: boolean): Promise<voi
                 throw new Error('Failed to load Midtrans Snap script - snap object not available');
             }
 
-            // Additional verification
             if (typeof snap.embed !== 'function') {
                 throw new Error('Snap object loaded but embed method not available');
             }
@@ -128,7 +142,7 @@ function ensureSnapScript(clientKey: string, isProduction: boolean): Promise<voi
             console.info('[ensureSnapScript] Snap script loaded successfully with embed method');
         } catch (error) {
             console.error('[ensureSnapScript] Failed to load Snap script:', error);
-            snapScriptLoading = null; // Reset to allow retry
+            snapScriptLoading = null;
             throw error;
         }
     })();
@@ -140,38 +154,52 @@ interface UsePaymentArgs {
     userId: number;
     course: Course;
     initialSnapToken?: string | null;
+    initialPaymentUrl?: string | null;
     initialTransaction?: TransactionDto | null;
-    clientKey: string;
+    clientKey?: string | null;
     isProduction: boolean;
+    defaultGateway: PaymentGateway;
 }
 
 interface UsePaymentReturn {
     status: TransactionStatus;
     orderId?: string;
     snapToken?: string;
+    paymentUrl?: string;
+    gateway: PaymentGateway;
     error?: string;
     isLoading: boolean;
     isFinal: boolean;
     startOrReuse: () => Promise<void>;
     cancel: () => Promise<void>;
     refreshStatus: () => Promise<void>;
+    openFlipPayment: () => void;
     timeRemainingMs?: number;
 }
 
-const POLL_INTERVAL_MS = 15_000; // 15 seconds
-const FAST_POLL_INTERVAL_MS = 5_000; // When user stays on page first minute
+const POLL_INTERVAL_MS = 15_000;
+const FAST_POLL_INTERVAL_MS = 5_000;
 
 function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
-    const { userId, course, initialSnapToken, initialTransaction, clientKey, isProduction } = args;
+    const { userId, course, initialSnapToken, initialPaymentUrl, initialTransaction, clientKey, isProduction, defaultGateway } = args;
     const storageKey = useMemo(() => buildStorageKey(userId, course.id), [userId, course.id]);
+
+    const [gateway, setGateway] = useState<PaymentGateway>(() => {
+        return (initialTransaction?.payment_gateway as PaymentGateway) || defaultGateway;
+    });
 
     const [status, setStatus] = useState<TransactionStatus>(() => {
         if (initialTransaction?.status === 'completed') return 'completed';
         if (initialTransaction?.status && ['pending', 'processing'].includes(initialTransaction.status)) return 'pending';
         return 'idle';
     });
-    const [orderId, setOrderId] = useState<string | undefined>(() => initialTransaction?.midtrans_order_id);
+
+    const [orderId, setOrderId] = useState<string | undefined>(() => {
+        return initialTransaction?.midtrans_order_id || initialTransaction?.flip_bill_id || undefined;
+    });
+
     const [snapToken, setSnapToken] = useState<string | undefined>(() => initialSnapToken || undefined);
+    const [paymentUrl, setPaymentUrl] = useState<string | undefined>(() => initialPaymentUrl || undefined);
     const [error, setError] = useState<string | undefined>(undefined);
     const [timeRemainingMs, setTimeRemainingMs] = useState<number | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
@@ -179,20 +207,21 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
 
     // Restore persisted payment if still relevant
     useEffect(() => {
-        if (status !== 'idle') return; // only on first mount when idle
+        if (status !== 'idle') return;
         try {
             const raw = localStorage.getItem(storageKey);
             if (!raw) return;
             const data: PersistedPayment = JSON.parse(raw);
             if (data.courseId !== course.id || data.userId !== userId) return;
-            // Heuristic validity: if older than 48h treat invalid
             if (Date.now() - data.createdAt > 48 * 3600 * 1000) {
                 localStorage.removeItem(storageKey);
                 return;
             }
-            if (['pending', 'processing'].includes(data.status) && data.snapToken) {
+            if (['pending', 'processing'].includes(data.status)) {
                 setOrderId(data.orderId);
-                setSnapToken(data.snapToken);
+                setGateway(data.gateway);
+                if (data.snapToken) setSnapToken(data.snapToken);
+                if (data.paymentUrl) setPaymentUrl(data.paymentUrl);
                 setStatus('pending');
                 computeRemaining(data.heuristicExpiryAt);
             }
@@ -202,10 +231,11 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Persist whenever critical fields change (only for active states)
+    // Persist whenever critical fields change
     useEffect(() => {
-        if (!orderId || !snapToken) return;
+        if (!orderId) return;
         if (!['pending', 'processing', 'creating'].includes(status)) return;
+
         const raw = localStorage.getItem(storageKey);
         let prev: PersistedPayment | undefined;
         if (raw) {
@@ -216,10 +246,12 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             }
         }
         const createdAt = prev?.createdAt ?? Date.now();
-        const heuristicExpiryAt = prev?.heuristicExpiryAt ?? guessExpiry(createdAt, initialTransaction?.payment_method);
+        const heuristicExpiryAt = prev?.heuristicExpiryAt ?? guessExpiry(createdAt, initialTransaction?.payment_method, gateway);
         const data: PersistedPayment = {
             orderId,
             snapToken,
+            paymentUrl,
+            gateway,
             createdAt,
             heuristicExpiryAt,
             courseId: course.id,
@@ -227,7 +259,7 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             status,
         };
         localStorage.setItem(storageKey, JSON.stringify(data));
-    }, [orderId, snapToken, status, storageKey, course.id, userId, initialTransaction?.payment_method]);
+    }, [orderId, snapToken, paymentUrl, gateway, status, storageKey, course.id, userId, initialTransaction?.payment_method]);
 
     // Clear persistence when final
     useEffect(() => {
@@ -257,16 +289,17 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
     }, [timeRemainingMs]);
 
     const loadSnap = useCallback(async () => {
-        await ensureSnapScript(clientKey, isProduction);
+        if (clientKey) {
+            await ensureSnapScript(clientKey, isProduction);
+        }
     }, [clientKey, isProduction]);
 
     const startOrReuse = useCallback(async () => {
-        if (status === 'pending' && orderId && snapToken) return; // reuse existing
+        if (status === 'pending' && orderId && (snapToken || paymentUrl)) return;
         setIsLoading(true);
         setError(undefined);
         setStatus('creating');
         try {
-            // Call backend create
             const res = await fetch(`/payments/courses/${course.id}`, {
                 method: 'POST',
                 headers: {
@@ -276,24 +309,34 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
                 },
                 credentials: 'include',
-                body: JSON.stringify({}),
+                body: JSON.stringify({ gateway: defaultGateway }),
             });
             if (!res.ok) {
                 const j = await res.json().catch(() => ({}));
                 throw new Error(j.message || 'Gagal membuat transaksi');
             }
             const data: CreateTransactionResponse = await res.json();
-            setOrderId(data.order_id);
-            setSnapToken(data.snap_token);
+
+            setGateway(data.gateway);
+            setOrderId(data.order_id || data.bill_id);
+
+            if (data.gateway === 'flip' && data.payment_url) {
+                setPaymentUrl(data.payment_url);
+                setSnapToken(undefined);
+            } else if (data.snap_token) {
+                setSnapToken(data.snap_token);
+                setPaymentUrl(undefined);
+                await loadSnap();
+            }
+
             setStatus('pending');
-            await loadSnap();
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Terjadi kesalahan');
             setStatus('error');
         } finally {
             setIsLoading(false);
         }
-    }, [course.id, status, orderId, snapToken, loadSnap]);
+    }, [course.id, status, orderId, snapToken, paymentUrl, loadSnap, defaultGateway]);
 
     const cancel = useCallback(async () => {
         if (!orderId) return;
@@ -311,6 +354,7 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             setStatus('cancelled');
             setOrderId(undefined);
             setSnapToken(undefined);
+            setPaymentUrl(undefined);
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Gagal membatalkan');
         } finally {
@@ -349,7 +393,6 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
                         console.log('[Payment] Verification response:', verifyData);
 
                         if (verifyData.enrolled && verifyData.redirect_url) {
-                            // Successfully enrolled, redirect to course
                             setTimeout(() => {
                                 window.location.href = verifyData.redirect_url;
                             }, 1000);
@@ -376,6 +419,12 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
         }
     }, [orderId, course.id]);
 
+    const openFlipPayment = useCallback(() => {
+        if (paymentUrl) {
+            window.open(paymentUrl, '_blank');
+        }
+    }, [paymentUrl]);
+
     // Polling logic
     useEffect(() => {
         if (!orderId || !['pending', 'processing'].includes(status)) return;
@@ -390,26 +439,40 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
                 pollTimerRef.current = window.setTimeout(tick, interval);
             }
         };
-        pollTimerRef.current = window.setTimeout(tick, 3000); // first poll after 3s
+        pollTimerRef.current = window.setTimeout(tick, 3000);
         return () => {
             cancelled = true;
             if (pollTimerRef.current) window.clearTimeout(pollTimerRef.current);
         };
     }, [orderId, status, refreshStatus]);
 
-    // Load snap automatically if server already gave token
+    // Load snap automatically if server already gave token (Midtrans only)
     useEffect(() => {
-        if (snapToken) {
+        if (snapToken && clientKey) {
             loadSnap();
         }
-    }, [snapToken, loadSnap]);
+    }, [snapToken, clientKey, loadSnap]);
 
     const isFinal = ['completed', 'expired', 'failed', 'cancelled', 'error'].includes(status);
 
-    return { status, orderId, snapToken, error, isLoading, isFinal, startOrReuse, cancel, refreshStatus, timeRemainingMs };
+    return {
+        status,
+        orderId,
+        snapToken,
+        paymentUrl,
+        gateway,
+        error,
+        isLoading,
+        isFinal,
+        startOrReuse,
+        cancel,
+        refreshStatus,
+        openFlipPayment,
+        timeRemainingMs,
+    };
 }
 
-// Component to embed snap (use snap embed option)
+// Midtrans Snap Embed Component
 const SnapEmbed: React.FC<{
     token: string;
     onSuccess: () => void;
@@ -422,7 +485,6 @@ const SnapEmbed: React.FC<{
     const invokedRef = useRef(false);
     const [isSnapReady, setIsSnapReady] = useState(false);
 
-    // First ensure snap script is loaded
     useEffect(() => {
         const loadSnap = async () => {
             try {
@@ -439,7 +501,6 @@ const SnapEmbed: React.FC<{
         loadSnap();
     }, [clientKey, isProduction, onError]);
 
-    // Then embed when ready
     useEffect(() => {
         if (!token || !isSnapReady) {
             console.log('[SnapEmbed] Not ready yet:', { token: !!token, isSnapReady });
@@ -480,15 +541,13 @@ const SnapEmbed: React.FC<{
 
         if (invokedRef.current) {
             console.log('[SnapEmbed] Already invoked, skipping');
-            return; // idempotent
+            return;
         }
 
         invokedRef.current = true;
 
         try {
             console.info('[SnapEmbed] Embedding Snap with token:', token.substring(0, 15) + '...');
-
-            // Clear container first
             containerRef.current.innerHTML = '';
 
             w.snap.embed(token, {
@@ -534,6 +593,71 @@ const SnapEmbed: React.FC<{
     );
 };
 
+// Flip Payment Component
+const FlipPaymentPanel: React.FC<{
+    paymentUrl: string;
+    onOpenPayment: () => void;
+    onRefresh: () => void;
+    isLoading: boolean;
+}> = ({ paymentUrl, onOpenPayment, onRefresh, isLoading }) => {
+    return (
+        <div className="space-y-4">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <h3 className="mb-2 font-medium text-blue-800">Pembayaran via Flip</h3>
+                <p className="mb-4 text-sm text-blue-700">
+                    Klik tombol di bawah untuk membuka halaman pembayaran Flip. Setelah melakukan pembayaran, kembali ke halaman ini dan klik
+                    "Cek Status Pembayaran".
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                        onClick={onOpenPayment}
+                        className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                    >
+                        <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                        </svg>
+                        Buka Halaman Pembayaran
+                    </button>
+                    <button
+                        onClick={onRefresh}
+                        disabled={isLoading}
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        {isLoading ? (
+                            <svg className="mr-2 h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                        ) : (
+                            <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                        )}
+                        Cek Status Pembayaran
+                    </button>
+                </div>
+            </div>
+            <p className="text-center text-xs text-gray-500">
+                Halaman pembayaran akan terbuka di tab baru. Pastikan popup tidak diblokir oleh browser Anda.
+            </p>
+        </div>
+    );
+};
+
 // Time formatting helper
 function formatRemaining(ms?: number) {
     if (ms == null) return '';
@@ -541,7 +665,7 @@ function formatRemaining(ms?: number) {
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
     const s = sec % 60;
-    if (h > 0) return `${h}j ${m}m ${s}d`; // Indonesian shorthand
+    if (h > 0) return `${h}j ${m}m ${s}d`;
     if (m > 0) return `${m}m ${s}d`;
     return `${s}d`;
 }
@@ -552,6 +676,7 @@ const PaymentPage: React.FC = () => {
     const {
         course,
         snapToken: initialSnapToken,
+        paymentUrl: initialPaymentUrl,
         transaction: initialTransaction,
         clientKey,
         isProduction,
@@ -560,6 +685,7 @@ const PaymentPage: React.FC = () => {
         transactionExpired,
         expiredMessage,
         error: initError,
+        defaultGateway,
     } = props;
     const userId = props.auth.user.id;
 
@@ -567,26 +693,22 @@ const PaymentPage: React.FC = () => {
         userId,
         course,
         initialSnapToken: initialSnapToken || undefined,
+        initialPaymentUrl: initialPaymentUrl || undefined,
         initialTransaction: initialTransaction || undefined,
-        clientKey,
+        clientKey: clientKey || undefined,
         isProduction,
+        defaultGateway,
     });
 
-    const { status, orderId, snapToken, error, isLoading, startOrReuse, cancel, timeRemainingMs } = payment;
+    const { status, orderId, snapToken, paymentUrl, gateway, error, isLoading, startOrReuse, cancel, refreshStatus, openFlipPayment, timeRemainingMs } =
+        payment;
 
     // Derived UI flags
-    const showSnap = snapToken && ['pending', 'processing'].includes(status);
-
-    // Auto start if server already provided token (existing transaction). If none, wait for user action.
-    useEffect(() => {
-        if (initialSnapToken && status === 'pending') {
-            // already ready
-            return;
-        }
-    }, [initialSnapToken, status]);
+    const showMidtransSnap = gateway === 'midtrans' && snapToken && ['pending', 'processing'].includes(status);
+    const showFlipPayment = gateway === 'flip' && paymentUrl && ['pending', 'processing'].includes(status);
 
     const handlePayClick = () => {
-        if (['pending', 'processing'].includes(status)) return; // already have token
+        if (['pending', 'processing'].includes(status)) return;
         startOrReuse();
     };
 
@@ -602,22 +724,33 @@ const PaymentPage: React.FC = () => {
         error: 'Terjadi kesalahan',
     };
 
+    const gatewayLabel: Record<PaymentGateway, string> = {
+        midtrans: 'Midtrans',
+        flip: 'Flip',
+    };
+
     return (
         <div className="mx-auto max-w-4xl space-y-6 p-6">
             <h1 className="text-2xl font-semibold">Pembayaran Kursus</h1>
+
             {initError && <div className="rounded bg-red-100 p-3 text-red-700">{initError}</div>}
             {isAlreadyEnrolled && <div className="rounded bg-green-100 p-3 text-green-700">Anda sudah terdaftar.</div>}
             {isAlreadyPaid && <div className="rounded bg-green-100 p-3 text-green-700">Pembayaran sudah selesai.</div>}
             {transactionExpired && (
                 <div className="rounded bg-yellow-100 p-3 text-yellow-800">{expiredMessage || 'Transaksi sebelumnya telah kedaluwarsa.'}</div>
             )}
-            <div className="flex gap-4 rounded border p-4">
+
+            {/* Course Info Card */}
+            <div className="flex gap-4 rounded-lg border p-4 shadow-sm">
                 {course.thumbnail && <img src={course.thumbnail} alt={course.title} className="h-20 w-32 rounded object-cover" />}
                 <div className="flex-1">
                     <h2 className="text-lg font-medium">{course.title}</h2>
                     <p className="text-sm text-gray-600">Harga: Rp {course.price.toLocaleString('id-ID')}</p>
                     {orderId && <p className="mt-1 text-xs text-gray-500">Order ID: {orderId}</p>}
-                    <p className="mt-2 text-sm font-medium">Status: {statusLabel[status]}</p>
+                    <div className="mt-2 flex items-center gap-3">
+                        <span className="text-sm font-medium">Status: {statusLabel[status]}</span>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">via {gatewayLabel[gateway]}</span>
+                    </div>
                     {['pending', 'processing'].includes(status) && timeRemainingMs != null && (
                         <p className="text-xs text-gray-500">Sisa waktu estimasi: {formatRemaining(timeRemainingMs)}</p>
                     )}
@@ -625,7 +758,7 @@ const PaymentPage: React.FC = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
                 {status === 'idle' && (
                     <button disabled={isLoading} onClick={handlePayClick} className="rounded bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">
                         Mulai Pembayaran
@@ -656,9 +789,9 @@ const PaymentPage: React.FC = () => {
 
             {error && <div className="rounded bg-red-100 p-3 text-sm text-red-700">{error}</div>}
 
-            {/* Snap Embed */}
-            {showSnap && (
-                <div className="rounded border p-4">
+            {/* Midtrans Snap Embed */}
+            {showMidtransSnap && clientKey && (
+                <div className="rounded-lg border p-4">
                     <h3 className="mb-2 font-medium">Selesaikan Pembayaran</h3>
                     <SnapEmbed
                         key={snapToken}
@@ -679,9 +812,35 @@ const PaymentPage: React.FC = () => {
                 </div>
             )}
 
-            {status === 'completed' && <div className="rounded bg-green-100 p-4 text-green-700">Pembayaran berhasil! Mengarahkan ke kursus...</div>}
+            {/* Flip Payment Panel */}
+            {showFlipPayment && (
+                <div className="rounded-lg border p-4">
+                    <FlipPaymentPanel paymentUrl={paymentUrl!} onOpenPayment={openFlipPayment} onRefresh={refreshStatus} isLoading={isLoading} />
+                </div>
+            )}
+
+            {/* Success State */}
+            {status === 'completed' && (
+                <div className="rounded-lg bg-green-100 p-4 text-green-700">
+                    <div className="flex items-center gap-2">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Pembayaran berhasil! Mengarahkan ke kursus...</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Expired State */}
             {status === 'expired' && (
-                <div className="rounded bg-yellow-100 p-4 text-yellow-800">Transaksi kedaluwarsa. Silakan buat transaksi baru.</div>
+                <div className="rounded-lg bg-yellow-100 p-4 text-yellow-800">
+                    <div className="flex items-center gap-2">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Transaksi kedaluwarsa. Silakan buat transaksi baru.</span>
+                    </div>
+                </div>
             )}
         </div>
     );

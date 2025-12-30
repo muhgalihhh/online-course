@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Course;
 use App\Models\User;
 use App\Services\MidtransService;
+use App\Services\FlipService;
+use App\Services\PaymentGatewayManager;
 use Illuminate\Http\Request;
 
 Route::get('/test-payment', function (Request $request) {
@@ -29,12 +31,32 @@ Route::get('/test-payment', function (Request $request) {
   // Login the user
   Auth::login($user);
 
+  $gateway = $request->query('gateway', config('services.payment.default', 'midtrans'));
+
   try {
+    if ($gateway === 'flip') {
+      $flip = new FlipService();
+      $result = $flip->createCourseTransaction($user, $course);
+
+      return response()->json([
+        'success' => true,
+        'gateway' => 'flip',
+        'course' => $course->only(['id', 'title', 'price']),
+        'user' => $user->only(['id', 'name', 'email']),
+        'transaction' => [
+          'bill_id' => $result['bill_id'],
+          'payment_url' => $result['payment_url'],
+        ],
+        'payment_page_url' => route('payments.show', $course->id)
+      ]);
+    }
+
     $midtrans = new MidtransService();
     $result = $midtrans->createCourseTransaction($user, $course);
 
     return response()->json([
       'success' => true,
+      'gateway' => 'midtrans',
       'course' => $course->only(['id', 'title', 'price']),
       'user' => $user->only(['id', 'name', 'email']),
       'transaction' => [
@@ -42,7 +64,7 @@ Route::get('/test-payment', function (Request $request) {
         'snap_token' => $result['snap_token'] ? substr($result['snap_token'], 0, 20) . '...' : null,
         'has_token' => !empty($result['snap_token'])
       ],
-      'payment_url' => route('payment.course', $course->id)
+      'payment_page_url' => route('payments.show', $course->id)
     ]);
 
   } catch (\Exception $e) {
