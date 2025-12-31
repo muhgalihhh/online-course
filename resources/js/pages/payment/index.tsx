@@ -689,6 +689,43 @@ const PaymentPage: React.FC = () => {
     } = props;
     const userId = props.auth.user.id;
 
+    // Auto-redirect when already paid - verify enrollment and redirect
+    useEffect(() => {
+        if (isAlreadyPaid && initialTransaction) {
+            const orderId = initialTransaction.flip_bill_id || initialTransaction.midtrans_order_id;
+            if (!orderId) return;
+
+            console.log('[PaymentPage] Already paid, verifying enrollment...');
+
+            // Call verify and enroll endpoint
+            fetch(`/payments/${orderId}/verify-and-enroll`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
+                },
+                credentials: 'include',
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    console.log('[PaymentPage] Verify enrollment response:', data);
+                    if (data.enrolled && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.success) {
+                        // Payment completed, try redirecting to learn page
+                        setTimeout(() => {
+                            router.visit(`/courses/${course.id}/learn`);
+                        }, 1500);
+                    }
+                })
+                .catch((err) => {
+                    console.error('[PaymentPage] Error verifying enrollment:', err);
+                });
+        }
+    }, [isAlreadyPaid, initialTransaction, course.id]);
+
     const payment = usePaymentTransaction({
         userId,
         course,
@@ -735,7 +772,24 @@ const PaymentPage: React.FC = () => {
 
             {initError && <div className="rounded bg-red-100 p-3 text-red-700">{initError}</div>}
             {isAlreadyEnrolled && <div className="rounded bg-green-100 p-3 text-green-700">Anda sudah terdaftar.</div>}
-            {isAlreadyPaid && <div className="rounded bg-green-100 p-3 text-green-700">Pembayaran sudah selesai.</div>}
+            {isAlreadyPaid && (
+                <div className="rounded-lg bg-green-100 p-4 text-green-700">
+                    <div className="flex items-center gap-3">
+                        <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                        </svg>
+                        <div>
+                            <span className="font-medium">Pembayaran sudah selesai!</span>
+                            <p className="text-sm">Memproses pendaftaran kursus, mohon tunggu...</p>
+                        </div>
+                    </div>
+                </div>
+            )}
             {transactionExpired && (
                 <div className="rounded bg-yellow-100 p-3 text-yellow-800">{expiredMessage || 'Transaksi sebelumnya telah kedaluwarsa.'}</div>
             )}
