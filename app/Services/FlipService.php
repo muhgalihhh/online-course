@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -248,88 +249,175 @@ class FlipService
         // Convert link_id to string for storage
         $billId = isset($billData['link_id']) ? (string) $billData['link_id'] : ($billData['bill_link_id'] ?? null);
 
-        // Check if there's an existing transaction with this flip_bill_id
-        // This can happen if Flip returns the same bill for subsequent requests
-        // or if a previous transaction was marked as expired/cancelled but the bill is still valid
-        $existingByBillId = Transaction::where('flip_bill_id', $billId)->first();
+        // Wrap database operations in a transaction with retry logic to handle
+        // auto-increment issues and race conditions
+        $maxRetries = 3;
+        $attempt = 0;
+        $lastException = null;
 
-        if ($existingByBillId) {
-            Log::info('Found existing transaction with same flip_bill_id, updating instead of creating', [
-                'flip_bill_id' => $billId,
-                'existing_status' => $existingByBillId->status,
-                'user_id' => $user->id,
-                'course_id' => $course->id,
-            ]);
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            
+            try {
+                return DB::transaction(function () use ($user, $course, $billId, $billData, $paymentUrl) {
+                    // Check if there's an existing transaction with this flip_bill_id
+                    // Use lockForUpdate to prevent race conditions
+                    $existingByBillId = Transaction::where('flip_bill_id', $billId)
+                        ->lockForUpdate()
+                        ->first();
 
-            // Update the existing transaction with new data
-            $existingByBillId->update([
-                'user_id' => $user->id,
-                'transactionable_id' => $course->id,
-                'transactionable_type' => Course::class,
-                'payment_gateway' => 'flip',
-                'amount' => (int) $course->price,
-                'status' => 'pending',
-                'payment_details' => [
-                    'flip_response' => $billData,
-                    'payment_url' => $paymentUrl,
-                    'bill_link' => $paymentUrl,
-                    'title' => $billData['title'] ?? null,
-                    'created_at' => now()->toISOString(),
-                    'reactivated_from' => $existingByBillId->status,
-                    'reactivated_at' => now()->toISOString(),
-                ],
-            ]);
+                    if ($existingByBillId) {
+                        Log::info('Found existing transaction with same flip_bill_id, updating instead of creating', [
+                            'flip_bill_id' => $billId,
+                            'existing_status' => $existingByBillId->status,
+                            'user_id' => $user->id,
+                            'course_id' => $course->id,
+                        ]);
 
-            Log::info('Updated existing Flip transaction', [
-                'transaction_id' => $existingByBillId->id,
-                'flip_bill_id' => $billId,
-                'user_id' => $user->id,
-                'course_id' => $course->id,
-                'payment_url' => $paymentUrl,
-            ]);
+                        // Update the existing transaction with new data
+                        $existingByBillId->update([
+                            'user_id' => $user->id,
+                            'transactionable_id' => $course->id,
+                            'transactionable_type' => Course::class,
+                            'payment_gateway' => 'flip',
+                            'amount' => (int) $course->price,
+                            'status' => 'pending',
+                            'payment_details' => [
+                                'flip_response' => $billData,
+                                'payment_url' => $paymentUrl,
+                                'bill_link' => $paymentUrl,
+                                'title' => $billData['title'] ?? null,
+                                'created_at' => now()->toISOString(),
+                                'reactivated_from' => $existingByBillId->status,
+                                'reactivated_at' => now()->toISOString(),
+                            ],
+                        ]);
 
-            return [
-                'bill_id' => $billId,
-                'payment_url' => $paymentUrl,
-                'transaction' => $existingByBillId->fresh(),
-                'is_existing' => true,
-            ];
+                        Log::info('Updated existing Flip transaction', [
+                            'transaction_id' => $existingByBillId->id,
+                            'flip_bill_id' => $billId,
+                            'user_id' => $user->id,
+                            'course_id' => $course->id,
+                            'payment_url' => $paymentUrl,
+                        ]);
+
+                        return [
+                            'bill_id' => $billId,
+                            'payment_url' => $paymentUrl,
+                            'transaction' => $existingByBillId->fresh(),
+                            'is_existing' => true,
+                        ];
+                    }
+
+                    // Create new transaction record
+                    $transaction = Transaction::create([
+                        'user_id' => $user->id,
+                        'transactionable_id' => $course->id,
+                        'transactionable_type' => Course::class,
+                        'flip_bill_id' => $billId,
+                        'midtrans_order_id' => null, // Not using Midtrans
+                        'payment_gateway' => 'flip',
+                        'amount' => (int) $course->price,
+                        'payment_method' => null, // Will be filled after user selects
+                        'status' => 'pending',
+                        'payment_details' => [
+                            'flip_response' => $billData,
+                            'payment_url' => $paymentUrl,
+                            'bill_link' => $paymentUrl,
+                            'title' => $billData['title'] ?? null,
+                            'created_at' => now()->toISOString(),
+                        ],
+                    ]);
+
+                    Log::info('Created new Flip transaction', [
+                        'transaction_id' => $transaction->id,
+                        'flip_bill_id' => $transaction->flip_bill_id,
+                        'user_id' => $user->id,
+                        'course_id' => $course->id,
+                        'payment_url' => $paymentUrl,
+                    ]);
+
+                    return [
+                        'bill_id' => $transaction->flip_bill_id,
+                        'payment_url' => $paymentUrl,
+                        'transaction' => $transaction,
+                        'is_existing' => false,
+                    ];
+                });
+            } catch (\Illuminate\Database\QueryException $e) {
+                $lastException = $e;
+                
+                // Check if it's an auto-increment error (1467) or duplicate entry error (1062)
+                $errorCode = $e->errorInfo[1] ?? 0;
+                
+                Log::warning('Database error during Flip transaction creation, attempt ' . $attempt, [
+                    'error_code' => $errorCode,
+                    'error_message' => $e->getMessage(),
+                    'user_id' => $user->id,
+                    'course_id' => $course->id,
+                    'flip_bill_id' => $billId,
+                    'attempt' => $attempt,
+                ]);
+
+                // For auto-increment error (1467), try to repair and retry
+                if ($errorCode === 1467 && $attempt < $maxRetries) {
+                    $this->repairAutoIncrement();
+                    usleep(100000); // Wait 100ms before retry
+                    continue;
+                }
+
+                // For duplicate entry (1062), try to find and return existing
+                if ($errorCode === 1062) {
+                    $existingTransaction = Transaction::where('flip_bill_id', $billId)->first();
+                    if ($existingTransaction) {
+                        Log::info('Found existing transaction after duplicate key error', [
+                            'transaction_id' => $existingTransaction->id,
+                            'flip_bill_id' => $billId,
+                        ]);
+                        
+                        return [
+                            'bill_id' => $billId,
+                            'payment_url' => $existingTransaction->payment_details['payment_url'] ?? $paymentUrl,
+                            'transaction' => $existingTransaction,
+                            'is_existing' => true,
+                        ];
+                    }
+                }
+
+                // For other errors or max retries reached, throw
+                if ($attempt >= $maxRetries) {
+                    throw $e;
+                }
+                
+                usleep(100000); // Wait 100ms before retry
+            }
         }
 
-        // Create new transaction record
-        $transaction = Transaction::create([
-            'user_id' => $user->id,
-            'transactionable_id' => $course->id,
-            'transactionable_type' => Course::class,
-            'flip_bill_id' => $billId,
-            'midtrans_order_id' => null, // Not using Midtrans
-            'payment_gateway' => 'flip',
-            'amount' => (int) $course->price,
-            'payment_method' => null, // Will be filled after user selects
-            'status' => 'pending',
-            'payment_details' => [
-                'flip_response' => $billData,
-                'payment_url' => $paymentUrl,
-                'bill_link' => $paymentUrl,
-                'title' => $billData['title'] ?? null,
-                'created_at' => now()->toISOString(),
-            ],
-        ]);
+        // If we get here, all retries failed
+        throw $lastException ?? new \Exception('Failed to create transaction after ' . $maxRetries . ' attempts');
+    }
 
-        Log::info('Created new Flip transaction', [
-            'transaction_id' => $transaction->id,
-            'flip_bill_id' => $transaction->flip_bill_id,
-            'user_id' => $user->id,
-            'course_id' => $course->id,
-            'payment_url' => $paymentUrl,
-        ]);
-
-        return [
-            'bill_id' => $transaction->flip_bill_id,
-            'payment_url' => $paymentUrl,
-            'transaction' => $transaction,
-            'is_existing' => false,
-        ];
+    /**
+     * Attempt to repair auto-increment value for transactions table
+     */
+    private function repairAutoIncrement(): void
+    {
+        try {
+            $maxId = DB::selectOne("SELECT MAX(id) as max_id FROM transactions");
+            $newAutoIncrement = max(1, (int) ($maxId->max_id ?? 0) + 1);
+            
+            // MySQL doesn't support placeholders for ALTER TABLE, so we use
+            // intval to ensure it's a safe integer value
+            DB::statement("ALTER TABLE transactions AUTO_INCREMENT = " . $newAutoIncrement);
+            
+            Log::info('Auto-increment repaired for transactions table', [
+                'new_auto_increment' => $newAutoIncrement,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to repair auto-increment', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
