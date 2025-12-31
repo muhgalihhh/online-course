@@ -167,8 +167,8 @@ class FlipService
 
         // Check if app URL is localhost or non-public - Flip will reject these
         $isLocalhost = str_contains($appUrl, 'localhost') ||
-                       str_contains($appUrl, '127.0.0.1') ||
-                       str_contains($appUrl, '0.0.0.0');
+            str_contains($appUrl, '127.0.0.1') ||
+            str_contains($appUrl, '0.0.0.0');
 
         $payload = [
             'title' => 'Course: ' . Str::limit($course->title, 40),
@@ -248,8 +248,10 @@ class FlipService
             ]);
 
             // Don't wrap already formatted exceptions
-            if (str_starts_with($e->getMessage(), 'Flip API Error:') ||
-                str_starts_with($e->getMessage(), 'Gagal')) {
+            if (
+                str_starts_with($e->getMessage(), 'Flip API Error:') ||
+                str_starts_with($e->getMessage(), 'Gagal')
+            ) {
                 throw $e;
             }
 
