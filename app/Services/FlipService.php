@@ -213,6 +213,12 @@ class FlipService
      */
     public function createBill(User $user, Course $course): array
     {
+        // Validate secret key is configured
+        if (empty($this->secretKey)) {
+            Log::error('Flip: Secret key is not configured');
+            throw new \Exception('Konfigurasi Flip tidak lengkap. Hubungi administrator.');
+        }
+
         $expiryHours = (int) config('flip.bill_expiry_hours', 24);
 
         // Use step=2 to allow customers to choose payment method
@@ -233,17 +239,36 @@ class FlipService
             str_contains($appUrl, '127.0.0.1') ||
             str_contains($appUrl, '0.0.0.0');
 
+        // Validate course price
+        $amount = (int) $course->price;
+        if ($amount < 10000) {
+            Log::error('Flip: Course price is below minimum', ['price' => $amount]);
+            throw new \Exception('Harga kursus minimal Rp 10.000 untuk pembayaran via Flip.');
+        }
+
+        // Clean and limit the title (Flip has max 55 chars for title)
+        $title = 'Kursus: ' . Str::limit($course->title, 45, '');
+
+        // Build payload according to Flip API documentation
+        // Reference: https://docs.flip.id/accept-payment/create-bill
         $payload = [
-            'title' => 'Course: ' . Str::limit($course->title, 40),
-            'amount' => (int) $course->price,
+            'title' => $title,
+            'amount' => $amount,
             'type' => 'SINGLE',
             'expired_date' => now()->addHours($expiryHours)->format('Y-m-d H:i'),
-            'is_address_required' => config('flip.is_address_required', false) ? 1 : 0,
-            'is_phone_number_required' => config('flip.is_phone_required', false) ? 1 : 0,
             'step' => $step,
-            'sender_name' => $user->name,
+            'sender_name' => Str::limit($user->name, 50, ''),
             'sender_email' => $user->email,
         ];
+
+        // Only add optional fields if they are configured
+        if (config('flip.is_address_required', false)) {
+            $payload['is_address_required'] = 1;
+        }
+
+        if (config('flip.is_phone_required', false)) {
+            $payload['is_phone_number_required'] = 1;
+        }
 
         // Only include redirect_url if it's a valid public URL
         // Flip rejects localhost URLs - in local dev, users will need to
@@ -254,19 +279,38 @@ class FlipService
             Log::info('Flip: Skipping redirect_url for localhost development');
         }
 
+        // Build the full API URL
+        $apiUrl = rtrim($this->baseUrl, '/') . '/pwf/bill';
+
         Log::info('Creating Flip Bill', [
+            'api_url' => $apiUrl,
             'payload' => array_merge($payload, ['sender_email' => '***']),
-            'base_url' => $this->baseUrl,
+            'is_production' => $this->isProduction,
         ]);
 
         try {
+            // Make the API request with proper authentication
+            // Flip uses Basic Auth with secret_key as username and empty password
             $response = Http::withBasicAuth($this->secretKey, '')
                 ->timeout(30)
+                ->connectTimeout(10)
                 ->asForm()
-                ->post($this->baseUrl . '/pwf/bill', $payload);
+                ->post($apiUrl, $payload);
+
+            Log::info('Flip API Response', [
+                'status_code' => $response->status(),
+                'successful' => $response->successful(),
+                'body_preview' => Str::limit($response->body(), 500),
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
+
+                // Validate response has required fields
+                if (empty($data['link_id']) && empty($data['bill_link_id'])) {
+                    Log::error('Flip: Response missing link_id', ['response' => $data]);
+                    throw new \Exception('Respons Flip tidak valid: link_id tidak ditemukan.');
+                }
 
                 // Ensure link_url has proper https:// prefix
                 if (isset($data['link_url']) && !str_starts_with($data['link_url'], 'http')) {
@@ -274,36 +318,43 @@ class FlipService
                 }
 
                 Log::info('Flip Bill Created Successfully', [
-                    'link_id' => $data['link_id'] ?? null,
+                    'link_id' => $data['link_id'] ?? $data['bill_link_id'] ?? null,
                     'link_url' => $data['link_url'] ?? null,
+                    'amount' => $data['amount'] ?? null,
                 ]);
+
                 return $data;
             }
 
-            $errorBody = $response->json();
+            // Handle error responses
+            $statusCode = $response->status();
+            $errorBody = $response->json() ?? [];
+            $rawBody = $response->body();
+
             Log::error('Flip API Error Response', [
-                'status' => $response->status(),
+                'status_code' => $statusCode,
                 'body' => $errorBody,
+                'raw_body' => Str::limit($rawBody, 1000),
+                'api_url' => $apiUrl,
             ]);
 
-            // Provide more specific error messages
-            $errorMessage = 'Unknown error';
-            if (isset($errorBody['errors']) && is_array($errorBody['errors'])) {
-                $messages = array_map(fn($e) => $e['message'] ?? '', $errorBody['errors']);
-                $errorMessage = implode(', ', array_filter($messages));
-            } elseif (isset($errorBody['message'])) {
-                $errorMessage = $errorBody['message'];
-            } elseif (isset($errorBody['code'])) {
-                $errorMessage = $errorBody['code'];
-            }
+            // Parse error message from response
+            $errorMessage = $this->parseFlipErrorMessage($errorBody, $statusCode);
 
             throw new \Exception('Flip API Error: ' . $errorMessage);
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Flip API Connection Failed', [
                 'error' => $e->getMessage(),
+                'api_url' => $apiUrl,
             ]);
             throw new \Exception('Gagal terhubung ke server Flip. Silakan coba lagi.');
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            Log::error('Flip API Request Exception', [
+                'error' => $e->getMessage(),
+                'response' => $e->response?->body(),
+            ]);
+            throw new \Exception('Gagal menghubungi server Flip: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Flip API Request Failed', [
                 'error' => $e->getMessage(),
@@ -313,13 +364,73 @@ class FlipService
             // Don't wrap already formatted exceptions
             if (
                 str_starts_with($e->getMessage(), 'Flip API Error:') ||
-                str_starts_with($e->getMessage(), 'Gagal')
+                str_starts_with($e->getMessage(), 'Gagal') ||
+                str_starts_with($e->getMessage(), 'Konfigurasi') ||
+                str_starts_with($e->getMessage(), 'Harga') ||
+                str_starts_with($e->getMessage(), 'Respons')
             ) {
                 throw $e;
             }
 
             throw new \Exception('Gagal membuat tagihan pembayaran via Flip: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Parse error message from Flip API response
+     */
+    private function parseFlipErrorMessage(array $errorBody, int $statusCode): string
+    {
+        // Handle specific HTTP status codes
+        if ($statusCode === 401) {
+            return 'Autentikasi gagal. Periksa konfigurasi FLIP_SECRET_KEY.';
+        }
+
+        if ($statusCode === 403) {
+            return 'Akses ditolak oleh Flip. Periksa izin akun Flip Anda.';
+        }
+
+        if ($statusCode === 404) {
+            return 'Endpoint Flip tidak ditemukan. Hubungi administrator.';
+        }
+
+        if ($statusCode === 429) {
+            return 'Terlalu banyak permintaan. Silakan coba lagi dalam beberapa menit.';
+        }
+
+        if ($statusCode >= 500) {
+            return 'Server Flip sedang mengalami gangguan. Silakan coba lagi nanti.';
+        }
+
+        // Parse error message from response body
+        if (isset($errorBody['errors']) && is_array($errorBody['errors'])) {
+            $messages = [];
+            foreach ($errorBody['errors'] as $error) {
+                if (is_array($error)) {
+                    $messages[] = $error['message'] ?? $error['attribute'] ?? json_encode($error);
+                } else {
+                    $messages[] = (string) $error;
+                }
+            }
+            $errorMessage = implode(', ', array_filter($messages));
+            if (!empty($errorMessage)) {
+                return $errorMessage;
+            }
+        }
+
+        if (isset($errorBody['message'])) {
+            return $errorBody['message'];
+        }
+
+        if (isset($errorBody['error'])) {
+            return is_string($errorBody['error']) ? $errorBody['error'] : json_encode($errorBody['error']);
+        }
+
+        if (isset($errorBody['code'])) {
+            return 'Error code: ' . $errorBody['code'];
+        }
+
+        return 'Terjadi kesalahan tidak diketahui (HTTP ' . $statusCode . ')';
     }
 
     /**

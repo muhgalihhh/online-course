@@ -120,9 +120,27 @@ class PaymentController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // Extract user-friendly error message
+            $errorMessage = $e->getMessage();
+
+            // Check for specific error types and provide user-friendly messages
+            if (str_contains($errorMessage, 'Flip API Error:')) {
+                $errorMessage = str_replace('Flip API Error: ', '', $errorMessage);
+            } elseif (str_contains($errorMessage, 'Autentikasi gagal')) {
+                $errorMessage = 'Konfigurasi pembayaran tidak valid. Hubungi administrator.';
+            } elseif (!config('app.debug')) {
+                // In production, don't expose internal error details
+                if (!str_starts_with($errorMessage, 'Gagal') &&
+                    !str_starts_with($errorMessage, 'Harga') &&
+                    !str_starts_with($errorMessage, 'Konfigurasi')) {
+                    $errorMessage = 'Gagal membuat transaksi. Silakan coba lagi.';
+                }
+            }
+
             return response()->json([
-                'message' => 'Gagal membuat transaksi. Silakan coba lagi.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'message' => $errorMessage,
+                'error' => config('app.debug') ? $e->getMessage() : null,
+                'gateway' => $gateway,
             ], 500);
         }
     }
@@ -181,8 +199,38 @@ class PaymentController extends Controller
     {
         $result = $this->flip->createCourseTransaction($user, $course);
 
+        // Check if transaction is already completed
+        if ($result['is_completed'] ?? false) {
+            Log::info('Flip transaction already completed', [
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'bill_id' => $result['bill_id'],
+            ]);
+
+            // Trigger enrollment
+            if (isset($result['transaction'])) {
+                $this->autoEnrollUserToCourse($result['transaction']);
+            }
+
+            return response()->json([
+                'gateway' => 'flip',
+                'bill_id' => $result['bill_id'],
+                'payment_url' => null,
+                'transaction' => $result['transaction'],
+                'existing_transaction' => true,
+                'is_completed' => true,
+                'message' => 'Pembayaran sudah selesai.',
+            ]);
+        }
+
+        // Validate payment URL for non-completed transactions
         if (empty($result['payment_url'])) {
-            throw new \Exception('Invalid response from Flip: missing payment_url');
+            Log::error('Flip response missing payment_url', [
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'result' => $result,
+            ]);
+            throw new \Exception('Gagal mendapatkan URL pembayaran dari Flip. Silakan coba lagi.');
         }
 
         Log::info('Flip transaction created/retrieved successfully', [
@@ -190,6 +238,7 @@ class PaymentController extends Controller
             'course_id' => $course->id,
             'bill_id' => $result['bill_id'],
             'is_existing' => $result['is_existing'] ?? false,
+            'payment_url' => $result['payment_url'],
         ]);
 
         return response()->json([
