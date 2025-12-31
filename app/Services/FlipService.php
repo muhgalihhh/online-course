@@ -153,6 +153,89 @@ class FlipService
             }
         }
 
+        // Also check for expired/failed/cancelled transactions - their bills might still be valid
+        // This prevents creating duplicate bills when Flip returns the same bill ID
+        $expiredTransaction = Transaction::where('user_id', $user->id)
+            ->where('transactionable_id', $course->id)
+            ->where('transactionable_type', Course::class)
+            ->where('payment_gateway', 'flip')
+            ->whereIn('status', ['expired', 'failed', 'cancelled'])
+            ->whereNotNull('flip_bill_id')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($expiredTransaction) {
+            Log::info('Found expired/cancelled Flip transaction, checking if bill is still valid', [
+                'flip_bill_id' => $expiredTransaction->flip_bill_id,
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'current_status' => $expiredTransaction->status,
+            ]);
+
+            $billStatus = $this->getBillStatus($expiredTransaction->flip_bill_id);
+            $flipStatus = strtoupper($billStatus['status'] ?? '');
+
+            // If bill is still valid on Flip's side, reactivate the transaction
+            if ($billStatus && in_array($flipStatus, ['PENDING', 'ACTIVE', 'NOT_CONFIRMED'])) {
+                $paymentUrl = $billStatus['link_url'] ?? $expiredTransaction->payment_details['payment_url'] ?? null;
+
+                if ($paymentUrl && !str_starts_with($paymentUrl, 'http')) {
+                    $paymentUrl = 'https://' . $paymentUrl;
+                }
+
+                Log::info('Reactivating expired Flip transaction - bill is still valid', [
+                    'flip_bill_id' => $expiredTransaction->flip_bill_id,
+                    'old_status' => $expiredTransaction->status,
+                    'payment_url' => $paymentUrl,
+                ]);
+
+                $details = $expiredTransaction->payment_details ?? [];
+                $details['reactivated_from'] = $expiredTransaction->status;
+                $details['reactivated_at'] = now()->toISOString();
+                $details['payment_url'] = $paymentUrl;
+                $details['bill_link'] = $paymentUrl;
+
+                $expiredTransaction->update([
+                    'status' => 'pending',
+                    'payment_details' => $details,
+                ]);
+
+                return [
+                    'bill_id' => $expiredTransaction->flip_bill_id,
+                    'payment_url' => $paymentUrl,
+                    'transaction' => $expiredTransaction->fresh(),
+                    'is_existing' => true,
+                ];
+            }
+
+            // If bill was paid but we marked transaction as failed/cancelled, fix it
+            if ($billStatus && in_array($flipStatus, ['SUCCESSFUL', 'DONE', 'PAID'])) {
+                Log::info('Expired/cancelled transaction has paid bill, updating to completed', [
+                    'flip_bill_id' => $expiredTransaction->flip_bill_id,
+                    'old_status' => $expiredTransaction->status,
+                ]);
+
+                $details = $expiredTransaction->payment_details ?? [];
+                $details['completed_from_recheck'] = true;
+                $details['completed_at'] = now()->toISOString();
+                $details['flip_final_status'] = $billStatus;
+
+                $expiredTransaction->update([
+                    'status' => 'completed',
+                    'payment_details' => $details,
+                    'payment_method' => $billStatus['sender_bank'] ?? $billStatus['payment_method'] ?? $expiredTransaction->payment_method,
+                ]);
+
+                return [
+                    'bill_id' => $expiredTransaction->flip_bill_id,
+                    'payment_url' => null,
+                    'transaction' => $expiredTransaction->fresh(),
+                    'is_existing' => true,
+                    'is_completed' => true,
+                ];
+            }
+        }
+
         // Create new bill
         $billData = $this->createBill($user, $course);
 
@@ -165,7 +248,55 @@ class FlipService
         // Convert link_id to string for storage
         $billId = isset($billData['link_id']) ? (string) $billData['link_id'] : ($billData['bill_link_id'] ?? null);
 
-        // Create transaction record
+        // Check if there's an existing transaction with this flip_bill_id
+        // This can happen if Flip returns the same bill for subsequent requests
+        // or if a previous transaction was marked as expired/cancelled but the bill is still valid
+        $existingByBillId = Transaction::where('flip_bill_id', $billId)->first();
+
+        if ($existingByBillId) {
+            Log::info('Found existing transaction with same flip_bill_id, updating instead of creating', [
+                'flip_bill_id' => $billId,
+                'existing_status' => $existingByBillId->status,
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+            ]);
+
+            // Update the existing transaction with new data
+            $existingByBillId->update([
+                'user_id' => $user->id,
+                'transactionable_id' => $course->id,
+                'transactionable_type' => Course::class,
+                'payment_gateway' => 'flip',
+                'amount' => (int) $course->price,
+                'status' => 'pending',
+                'payment_details' => [
+                    'flip_response' => $billData,
+                    'payment_url' => $paymentUrl,
+                    'bill_link' => $paymentUrl,
+                    'title' => $billData['title'] ?? null,
+                    'created_at' => now()->toISOString(),
+                    'reactivated_from' => $existingByBillId->status,
+                    'reactivated_at' => now()->toISOString(),
+                ],
+            ]);
+
+            Log::info('Updated existing Flip transaction', [
+                'transaction_id' => $existingByBillId->id,
+                'flip_bill_id' => $billId,
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'payment_url' => $paymentUrl,
+            ]);
+
+            return [
+                'bill_id' => $billId,
+                'payment_url' => $paymentUrl,
+                'transaction' => $existingByBillId->fresh(),
+                'is_existing' => true,
+            ];
+        }
+
+        // Create new transaction record
         $transaction = Transaction::create([
             'user_id' => $user->id,
             'transactionable_id' => $course->id,
