@@ -33,12 +33,12 @@ class FlipService
      */
     public function createCourseTransaction(User $user, Course $course): array
     {
-        // Check for existing pending transaction
+        // Check for existing transaction (pending, processing, or completed)
         $existingTransaction = Transaction::where('user_id', $user->id)
             ->where('transactionable_id', $course->id)
             ->where('transactionable_type', Course::class)
             ->where('payment_gateway', 'flip')
-            ->whereIn('status', ['pending', 'processing'])
+            ->whereIn('status', ['pending', 'processing', 'completed'])
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -47,12 +47,57 @@ class FlipService
                 'flip_bill_id' => $existingTransaction->flip_bill_id,
                 'user_id' => $user->id,
                 'course_id' => $course->id,
+                'current_status' => $existingTransaction->status,
             ]);
+
+            // If transaction is already completed, return it immediately
+            if ($existingTransaction->status === 'completed') {
+                Log::info('Existing Flip transaction already completed', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                ]);
+
+                return [
+                    'bill_id' => $existingTransaction->flip_bill_id,
+                    'payment_url' => null,
+                    'transaction' => $existingTransaction,
+                    'is_existing' => true,
+                    'is_completed' => true,
+                ];
+            }
 
             // Check if bill is still valid with Flip API
             $billStatus = $this->getBillStatus($existingTransaction->flip_bill_id);
+            $flipStatus = strtoupper($billStatus['status'] ?? '');
 
-            if ($billStatus && in_array(strtoupper($billStatus['status'] ?? ''), ['PENDING', 'ACTIVE'])) {
+            // Handle SUCCESSFUL/PAID/DONE status - payment was completed!
+            if ($billStatus && in_array($flipStatus, ['SUCCESSFUL', 'DONE', 'PAID'])) {
+                Log::info('Flip bill is already paid, updating transaction to completed', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                    'flip_status' => $flipStatus,
+                ]);
+
+                $details = $existingTransaction->payment_details ?? [];
+                $details['completed_from_api_check'] = true;
+                $details['completed_at'] = now()->toISOString();
+                $details['flip_final_status'] = $billStatus;
+
+                $existingTransaction->update([
+                    'status' => 'completed',
+                    'payment_details' => $details,
+                    'payment_method' => $billStatus['sender_bank'] ?? $billStatus['payment_method'] ?? $existingTransaction->payment_method,
+                ]);
+
+                return [
+                    'bill_id' => $existingTransaction->flip_bill_id,
+                    'payment_url' => null,
+                    'transaction' => $existingTransaction->fresh(),
+                    'is_existing' => true,
+                    'is_completed' => true,
+                ];
+            }
+
+            // Handle PENDING/ACTIVE status - bill is still valid for payment
+            if ($billStatus && in_array($flipStatus, ['PENDING', 'ACTIVE', 'NOT_CONFIRMED'])) {
                 // Get payment URL from bill status or existing transaction
                 $paymentUrl = $billStatus['link_url'] ?? $existingTransaction->payment_details['payment_url'] ?? null;
 
@@ -82,12 +127,30 @@ class FlipService
                 ];
             }
 
-            // Bill expired or invalid, mark as expired
-            Log::info('Existing Flip transaction is no longer valid, marking as expired', [
-                'flip_bill_id' => $existingTransaction->flip_bill_id,
-                'bill_status' => $billStatus['status'] ?? 'unknown',
-            ]);
-            $existingTransaction->update(['status' => 'expired']);
+            // Bill is truly expired/cancelled/failed - mark as expired
+            if ($billStatus && in_array($flipStatus, ['EXPIRED', 'INACTIVE', 'CANCELLED', 'CANCELED', 'FAILED'])) {
+                Log::info('Existing Flip transaction is expired/cancelled, marking as expired', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                    'bill_status' => $flipStatus,
+                ]);
+                $existingTransaction->update(['status' => 'expired']);
+            } elseif (!$billStatus) {
+                // Could not get bill status - might be network issue, keep transaction as is
+                Log::warning('Could not get Flip bill status, keeping existing transaction', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                ]);
+
+                // Try to use existing payment URL
+                $paymentUrl = $existingTransaction->payment_details['payment_url'] ?? null;
+                if ($paymentUrl) {
+                    return [
+                        'bill_id' => $existingTransaction->flip_bill_id,
+                        'payment_url' => $paymentUrl,
+                        'transaction' => $existingTransaction,
+                        'is_existing' => true,
+                    ];
+                }
+            }
         }
 
         // Create new bill

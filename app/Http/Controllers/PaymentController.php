@@ -282,42 +282,94 @@ class PaymentController extends Controller
     {
         $billId = $request->query('bill_link_id') ?? $request->query('id');
         $courseId = $request->query('course_id');
+        $user = $request->user();
 
         Log::info('Flip callback received', [
             'bill_id' => $billId,
             'course_id' => $courseId,
+            'user_id' => $user?->id,
             'all_query' => $request->query(),
         ]);
 
+        $transaction = null;
+        $paymentCompleted = false;
+
         if ($billId) {
-            // Check bill status from Flip
+            // Check bill status from Flip API
             $statusInfo = $this->flip->getTransactionStatus($billId);
 
-            if ($statusInfo && $statusInfo['status'] === 'completed') {
-                $transaction = Transaction::where('flip_bill_id', $billId)->first();
-                if ($transaction) {
+            Log::info('Flip callback - bill status check', [
+                'bill_id' => $billId,
+                'status_info' => $statusInfo,
+            ]);
+
+            // Find the transaction
+            $transaction = Transaction::where('flip_bill_id', $billId)->first();
+
+            if ($transaction) {
+                // If status is completed (either from API check or already in DB)
+                if ($statusInfo && $statusInfo['status'] === 'completed') {
+                    $paymentCompleted = true;
                     $this->handlePaymentCompleted($transaction, $billId);
+                } elseif ($transaction->status === 'completed') {
+                    $paymentCompleted = true;
+                    // Trigger enrollment if not already done
+                    $this->autoEnrollUserToCourse($transaction);
                 }
             }
         }
 
-        // Redirect to payment page or course learn page
-        if ($courseId) {
-            // Check if user is enrolled
-            $user = $request->user();
-            if ($user) {
+        // Determine redirect based on payment status
+        if ($user) {
+            // Get course ID from transaction if not in query
+            if (!$courseId && $transaction && $transaction->transactionable_type === Course::class) {
+                $courseId = $transaction->transactionable_id;
+            }
+
+            if ($courseId) {
+                // Check if user is enrolled
                 $isEnrolled = Enrollment::where('user_id', $user->id)
                     ->where('course_id', $courseId)
                     ->exists();
 
                 if ($isEnrolled) {
+                    Log::info('Flip callback - user enrolled, redirecting to learn page', [
+                        'user_id' => $user->id,
+                        'course_id' => $courseId,
+                    ]);
+
                     return redirect()->route('courses.learn', $courseId)
                         ->with('success', 'Pembayaran berhasil! Anda sudah terdaftar di kursus.');
                 }
-            }
 
-            return redirect()->route('payments.show', $courseId)
-                ->with('info', 'Memproses pembayaran...');
+                // Payment completed but not enrolled yet - try to enroll again
+                if ($paymentCompleted && $transaction) {
+                    Log::info('Flip callback - payment completed but not enrolled, retrying enrollment', [
+                        'user_id' => $user->id,
+                        'course_id' => $courseId,
+                        'transaction_id' => $transaction->id,
+                    ]);
+
+                    $this->autoEnrollUserToCourse($transaction);
+
+                    // Check enrollment again
+                    $isEnrolled = Enrollment::where('user_id', $user->id)
+                        ->where('course_id', $courseId)
+                        ->exists();
+
+                    if ($isEnrolled) {
+                        return redirect()->route('courses.learn', $courseId)
+                            ->with('success', 'Pembayaran berhasil! Anda sudah terdaftar di kursus.');
+                    }
+                }
+
+                // Redirect to payment page to show status
+                return redirect()->route('payments.show', $courseId)
+                    ->with($paymentCompleted ? 'success' : 'info',
+                        $paymentCompleted
+                            ? 'Pembayaran berhasil! Memproses pendaftaran kursus...'
+                            : 'Memproses pembayaran...');
+            }
         }
 
         return redirect()->route('home');
@@ -502,7 +554,7 @@ class PaymentController extends Controller
     /**
      * Show Flip payment page
      */
-    private function showFlipPaymentPage(Request $request, Course $course, $user, ?Transaction $pendingTransaction): Response
+    private function showFlipPaymentPage(Request $request, Course $course, $user, ?Transaction $pendingTransaction): Response|RedirectResponse
     {
         try {
             $result = $this->flip->createCourseTransaction($user, $course);
@@ -512,7 +564,39 @@ class PaymentController extends Controller
                 'course_id' => $course->id,
                 'bill_id' => $result['bill_id'],
                 'is_existing' => $result['is_existing'] ?? false,
+                'is_completed' => $result['is_completed'] ?? false,
             ]);
+
+            // Handle case when transaction is already completed
+            if ($result['is_completed'] ?? false) {
+                // Trigger auto-enrollment
+                $this->autoEnrollUserToCourse($result['transaction']);
+
+                // Check if user is now enrolled
+                $isEnrolled = Enrollment::where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->exists();
+
+                if ($isEnrolled) {
+                    return redirect()->route('courses.learn', $course->id)
+                        ->with('success', 'Pembayaran sudah selesai! Anda sudah terdaftar di kursus.');
+                }
+
+                // Payment completed but enrollment might still be processing
+                return Inertia::render('payment/index', [
+                    'course' => $course,
+                    'transaction' => $result['transaction'],
+                    'snapToken' => null,
+                    'paymentUrl' => null,
+                    'billId' => $result['bill_id'],
+                    'clientKey' => null,
+                    'isProduction' => (bool) config('flip.is_production'),
+                    'isAlreadyEnrolled' => false,
+                    'isAlreadyPaid' => true,
+                    'transactionExpired' => false,
+                    'defaultGateway' => 'flip',
+                ]);
+            }
 
             return Inertia::render('payment/index', [
                 'course' => $course,
