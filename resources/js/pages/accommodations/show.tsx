@@ -90,7 +90,7 @@ export default function AccommodationShow() {
                         {/* Left Column - Image and Description */}
                         <div className="space-y-4 sm:space-y-6 lg:col-span-2">
                             {/* Image */}
-                            <div className="group relative aspect-video overflow-hidden rounded-lg bg-muted shadow-md sm:rounded-xl sm:shadow-lg">
+                            <div className="group relative aspect-[16/10] overflow-hidden rounded-lg bg-muted shadow-md sm:aspect-[16/9] sm:rounded-xl sm:shadow-lg md:aspect-video">
                                 <img
                                     src={accommodation.image_url}
                                     alt={accommodation.name}

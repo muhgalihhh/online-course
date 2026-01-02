@@ -193,11 +193,11 @@ export default function AccommodationsIndex() {
                             {accommodations.data.map((accommodation) => (
                                 <Card
                                     key={accommodation.id}
-                                    className={`group overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl ${viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''}`}
+                                    className={`group overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl ${viewMode === 'list' ? 'flex flex-col md:flex-row' : 'flex flex-col'}`}
                                 >
-                                    <div className={viewMode === 'list' ? 'sm:w-80 sm:flex-shrink-0' : ''}>
+                                    <div className={viewMode === 'list' ? 'md:w-72 md:flex-shrink-0 lg:w-80' : 'w-full'}>
                                         <div
-                                            className={`relative overflow-hidden ${viewMode === 'list' ? 'aspect-video sm:h-full' : 'aspect-[4/3]'}`}
+                                            className={`relative overflow-hidden ${viewMode === 'list' ? 'aspect-video md:h-full md:min-h-[200px]' : 'aspect-[16/10] sm:aspect-video'}`}
                                         >
                                             <img
                                                 src={accommodation.image_url}
@@ -208,7 +208,7 @@ export default function AccommodationsIndex() {
                                         </div>
                                     </div>
 
-                                    <div className={`flex flex-col ${viewMode === 'list' ? 'flex-1' : ''}`}>
+                                    <div className="flex flex-1 flex-col">
                                         <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-3">
                                             <h3 className="line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary sm:text-xl">
                                                 {accommodation.name}
@@ -224,14 +224,14 @@ export default function AccommodationsIndex() {
                                                 {accommodation.description}
                                             </p>
 
-                                            <div className="space-y-2 sm:space-y-3">
+                                            <div className="mt-auto space-y-2 sm:space-y-3">
                                                 <div className="rounded-lg bg-primary/5 px-3 py-2 sm:px-4 sm:py-3">
                                                     <div className="text-xl font-bold break-words text-primary sm:text-2xl md:text-3xl">
                                                         {accommodation.formatted_price}
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <div className={`grid gap-2 ${viewMode === 'list' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'}`}>
                                                     <Button
                                                         variant="outline"
                                                         size="default"
