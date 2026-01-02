@@ -148,12 +148,12 @@ export default function AccommodationsIndex() {
                                     {sortOrder === 'asc' ? '↑' : '↓'}
                                 </Button>
 
-                                <div className="hidden rounded-md border sm:flex">
+                                <div className="flex rounded-md border">
                                     <Button
                                         variant={viewMode === 'grid' ? 'default' : 'ghost'}
                                         size="sm"
                                         onClick={() => setViewMode('grid')}
-                                        className="h-10 rounded-r-none sm:h-11"
+                                        className="h-9 rounded-r-none sm:h-10"
                                     >
                                         <Grid className="h-4 w-4" />
                                     </Button>
@@ -161,7 +161,7 @@ export default function AccommodationsIndex() {
                                         variant={viewMode === 'list' ? 'default' : 'ghost'}
                                         size="sm"
                                         onClick={() => setViewMode('list')}
-                                        className="h-10 rounded-l-none sm:h-11"
+                                        className="h-9 rounded-l-none sm:h-10"
                                     >
                                         <List className="h-4 w-4" />
                                     </Button>
@@ -193,11 +193,11 @@ export default function AccommodationsIndex() {
                             {accommodations.data.map((accommodation) => (
                                 <Card
                                     key={accommodation.id}
-                                    className={`group overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl ${viewMode === 'list' ? 'flex flex-col md:flex-row' : 'flex flex-col'}`}
+                                    className={`group overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl ${viewMode === 'list' ? 'flex flex-col sm:flex-row' : 'flex flex-col'}`}
                                 >
-                                    <div className={viewMode === 'list' ? 'md:w-72 md:flex-shrink-0 lg:w-80' : 'w-full'}>
+                                    <div className={viewMode === 'list' ? 'w-full sm:w-56 sm:flex-shrink-0 md:w-64 lg:w-80' : 'w-full'}>
                                         <div
-                                            className={`relative overflow-hidden ${viewMode === 'list' ? 'aspect-video md:h-full md:min-h-[200px]' : 'aspect-[16/10] sm:aspect-video'}`}
+                                            className={`relative overflow-hidden ${viewMode === 'list' ? 'aspect-video sm:h-full sm:min-h-[180px] md:min-h-[200px]' : 'aspect-[16/10] sm:aspect-video'}`}
                                         >
                                             <img
                                                 src={accommodation.image_url}
@@ -209,47 +209,43 @@ export default function AccommodationsIndex() {
                                     </div>
 
                                     <div className="flex flex-1 flex-col">
-                                        <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-3">
-                                            <h3 className="line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary sm:text-xl">
+                                        <CardHeader className="p-3 pb-2 sm:p-4 md:p-5 md:pb-3">
+                                            <h3 className="line-clamp-2 text-base font-bold transition-colors group-hover:text-primary sm:text-lg md:text-xl">
                                                 {accommodation.name}
                                             </h3>
-                                            <div className="mt-1.5 flex items-start gap-2 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
-                                                <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
+                                            <div className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground sm:mt-1.5 sm:gap-2 sm:text-sm">
+                                                <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                                                 <span className="line-clamp-1">{institution?.address || 'Lokasi tidak tersedia'}</span>
                                             </div>
                                         </CardHeader>
 
-                                        <CardContent className="flex flex-1 flex-col justify-between p-4 pt-0 sm:p-6 sm:pt-0">
-                                            <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                                        <CardContent className="flex flex-1 flex-col justify-between p-3 pt-0 sm:p-4 md:p-5 md:pt-0">
+                                            <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-3 sm:line-clamp-3 sm:text-sm">
                                                 {accommodation.description}
                                             </p>
 
-                                            <div className="mt-auto space-y-2 sm:space-y-3">
-                                                <div className="rounded-lg bg-primary/5 px-3 py-2 sm:px-4 sm:py-3">
-                                                    <div className="text-xl font-bold break-words text-primary sm:text-2xl md:text-3xl">
+                                            <div className="mt-auto space-y-2 sm:space-y-2.5">
+                                                <div className="rounded-lg bg-primary/5 px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5">
+                                                    <div className="text-lg font-bold break-words text-primary sm:text-xl md:text-2xl lg:text-3xl">
                                                         {accommodation.formatted_price}
                                                     </div>
                                                 </div>
 
-                                                <div className={`grid gap-2 ${viewMode === 'list' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'}`}>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="default"
-                                                        asChild
-                                                        className="h-9 w-full text-xs sm:h-10 sm:text-sm"
-                                                    >
+                                                <div className={`grid gap-2 ${viewMode === 'list' ? 'grid-cols-2 sm:grid-cols-2' : 'grid-cols-2'}`}>
+                                                    <Button variant="outline" size="default" asChild className="h-8 w-full text-xs sm:h-9 sm:text-sm">
                                                         <Link href={route('accommodations.show', accommodation.id)}>
-                                                            <Bed className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
-                                                            Detail
+                                                            <Bed className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
+                                                            <span className="xs:inline hidden">Detail</span>
+                                                            <span className="xs:hidden">Info</span>
                                                         </Link>
                                                     </Button>
 
                                                     <Button
                                                         size="default"
                                                         onClick={() => handleWhatsAppBooking(accommodation)}
-                                                        className="h-9 w-full bg-green-600 text-xs hover:bg-green-700 sm:h-10 sm:text-sm"
+                                                        className="h-8 w-full bg-green-600 text-xs hover:bg-green-700 sm:h-9 sm:text-sm"
                                                     >
-                                                        <MessageCircle className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                                                        <MessageCircle className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
                                                         Pesan
                                                     </Button>
                                                 </div>
