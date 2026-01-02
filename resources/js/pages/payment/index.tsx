@@ -371,6 +371,9 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             });
             if (!res.ok) return;
             const data: CheckStatusResponse = await res.json();
+
+            console.log('[Payment] Status check response:', data);
+
             if (data.status === 'completed') {
                 setStatus('completed');
 
@@ -408,13 +411,47 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
                     router.visit(`/courses/${course.id}/learn`);
                 }, 1500);
             } else if (data.is_expired || data.status === 'expired') {
+                // Don't immediately mark as expired - maybe payment was just made
+                // Let's double check by calling verify endpoint
+                console.log('[Payment] Status appears expired, double-checking...');
+                try {
+                    const verifyRes = await fetch(`/payments/${orderId}/verify-and-enroll`, {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN':
+                                (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.getAttribute('content') || '',
+                        },
+                        credentials: 'include',
+                    });
+
+                    if (verifyRes.ok) {
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.enrolled && verifyData.redirect_url) {
+                            setStatus('completed');
+                            setTimeout(() => {
+                                window.location.href = verifyData.redirect_url;
+                            }, 500);
+                            return;
+                        } else if (verifyData.payment_completed) {
+                            // Payment is completed but enrollment pending
+                            setStatus('completed');
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Payment] Verify check failed:', err);
+                }
                 setStatus('expired');
             } else if (['pending', 'processing'].includes(data.status)) {
                 setStatus('pending');
             } else if (data.status === 'failed') {
                 setStatus('failed');
             }
-        } catch {
+        } catch (err) {
+            console.error('[Payment] Status check error:', err);
             /* ignore polling errors */
         }
     }, [orderId, course.id]);
@@ -425,7 +462,20 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
         }
     }, [paymentUrl]);
 
-    // Polling logic
+    // Initial status check when component mounts with existing orderId
+    useEffect(() => {
+        // Only run once on mount if we have an orderId and status is not final
+        const isFinal = ['completed', 'expired', 'failed', 'cancelled', 'error'].includes(status);
+        if (orderId && !isFinal) {
+            // Small delay to let the page settle, then check status
+            const timeoutId = setTimeout(() => {
+                refreshStatus();
+            }, 1000);
+            return () => clearTimeout(timeoutId);
+        }
+    }, []); // Empty deps array means this runs only once on mount
+
+    // Polling logic - more aggressive for Flip (localhost development)
     useEffect(() => {
         if (!orderId || !['pending', 'processing'].includes(status)) return;
         let cancelled = false;
@@ -435,7 +485,15 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             await refreshStatus();
             if (['pending', 'processing'].includes(status)) {
                 const elapsed = Date.now() - start;
-                const interval = elapsed < 60_000 ? FAST_POLL_INTERVAL_MS : POLL_INTERVAL_MS;
+                // For Flip gateway, poll more frequently since callback might not work on localhost
+                const isFlip = gateway === 'flip';
+                const interval = isFlip
+                    ? elapsed < 60_000
+                        ? 3000
+                        : 8000 // 3s for first minute, then 8s for Flip
+                    : elapsed < 60_000
+                      ? FAST_POLL_INTERVAL_MS
+                      : POLL_INTERVAL_MS;
                 pollTimerRef.current = window.setTimeout(tick, interval);
             }
         };
@@ -444,7 +502,7 @@ function usePaymentTransaction(args: UsePaymentArgs): UsePaymentReturn {
             cancelled = true;
             if (pollTimerRef.current) window.clearTimeout(pollTimerRef.current);
         };
-    }, [orderId, status, refreshStatus]);
+    }, [orderId, status, refreshStatus, gateway]);
 
     // Load snap automatically if server already gave token (Midtrans only)
     useEffect(() => {
@@ -600,14 +658,36 @@ const FlipPaymentPanel: React.FC<{
     onRefresh: () => void;
     isLoading: boolean;
 }> = ({ paymentUrl, onOpenPayment, onRefresh, isLoading }) => {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
     return (
         <div className="space-y-4">
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <h3 className="mb-2 font-medium text-blue-800">Pembayaran via Flip</h3>
                 <p className="mb-4 text-sm text-blue-700">
-                    Klik tombol di bawah untuk membuka halaman pembayaran Flip. Setelah melakukan pembayaran, kembali ke halaman ini dan klik
-                    "Cek Status Pembayaran".
+                    Klik tombol di bawah untuk membuka halaman pembayaran Flip. Setelah melakukan pembayaran, kembali ke halaman ini dan klik "Cek
+                    Status Pembayaran".
                 </p>
+                {isLocalhost && (
+                    <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                        <div className="flex items-start">
+                            <svg className="mt-0.5 mr-2 h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                            <div>
+                                <p className="mb-1 font-semibold">Mode Development (Localhost)</p>
+                                <p>
+                                    Setelah melakukan pembayaran di Flip, <strong>WAJIB klik tombol "Cek Status Pembayaran"</strong> untuk memperbarui
+                                    status transaksi, karena Flip tidak dapat mengirim notifikasi otomatis ke localhost.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="flex flex-col gap-3 sm:flex-row">
                     <button
                         onClick={onOpenPayment}
@@ -737,8 +817,20 @@ const PaymentPage: React.FC = () => {
         defaultGateway,
     });
 
-    const { status, orderId, snapToken, paymentUrl, gateway, error, isLoading, startOrReuse, cancel, refreshStatus, openFlipPayment, timeRemainingMs } =
-        payment;
+    const {
+        status,
+        orderId,
+        snapToken,
+        paymentUrl,
+        gateway,
+        error,
+        isLoading,
+        startOrReuse,
+        cancel,
+        refreshStatus,
+        openFlipPayment,
+        timeRemainingMs,
+    } = payment;
 
     // Derived UI flags
     const showMidtransSnap = gateway === 'midtrans' && snapToken && ['pending', 'processing'].includes(status);

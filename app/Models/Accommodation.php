@@ -65,7 +65,7 @@ class Accommodation extends Model
             $phone = '62' . substr($phone, 1);
         }
 
-        $message = urlencode("Halo, saya ingin memesan akomodasi '{$this->name}' dengan harga {$this->formatted_price} per malam. Mohon informasi ketersediaan dan cara pemesanannya.");
+        $message = urlencode("Halo, saya ingin memesan akomodasi '{$this->name}' dengan harga {$this->formatted_price}. Mohon informasi ketersediaan dan cara pemesanannya.");
 
         return "https://wa.me/{$phone}?text={$message}";
     }

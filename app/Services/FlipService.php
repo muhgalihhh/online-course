@@ -51,10 +51,14 @@ class FlipService
                 'current_status' => $existingTransaction->status,
             ]);
 
+            // IMPORTANT: Refresh from database first in case webhook just updated it
+            $existingTransaction->refresh();
+
             // If transaction is already completed, return it immediately
             if ($existingTransaction->status === 'completed') {
-                Log::info('Existing Flip transaction already completed', [
+                Log::info('Existing Flip transaction already completed (via webhook or previous check)', [
                     'flip_bill_id' => $existingTransaction->flip_bill_id,
+                    'transaction_id' => $existingTransaction->id,
                 ]);
 
                 return [
@@ -82,10 +86,24 @@ class FlipService
                 $details['completed_at'] = now()->toISOString();
                 $details['flip_final_status'] = $billStatus;
 
+                // Try to get payment method from bill payments
+                $paymentMethod = $existingTransaction->payment_method;
+                $payments = $this->getBillPayments($existingTransaction->flip_bill_id);
+                if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                    $lastPayment = end($payments['data']);
+                    if (isset($lastPayment['sender_bank'])) {
+                        $paymentMethod = $lastPayment['sender_bank'];
+                        $details['payment_info'] = $lastPayment;
+                        Log::info('Got payment method from Flip payments endpoint', [
+                            'payment_method' => $paymentMethod,
+                        ]);
+                    }
+                }
+
                 $existingTransaction->update([
                     'status' => 'completed',
                     'payment_details' => $details,
-                    'payment_method' => $billStatus['sender_bank'] ?? $billStatus['payment_method'] ?? $existingTransaction->payment_method,
+                    'payment_method' => $paymentMethod,
                 ]);
 
                 return [
@@ -128,8 +146,56 @@ class FlipService
                 ];
             }
 
+            // For INACTIVE status, check if there are payments before marking as expired
+            // INACTIVE can mean: expired, disabled, OR paid and closed
+            if ($billStatus && $flipStatus === 'INACTIVE') {
+                $payments = $this->getBillPayments($existingTransaction->flip_bill_id);
+
+                Log::info('Checking payments for INACTIVE bill in createCourseTransaction', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                    'payments_count' => isset($payments['data']) ? count($payments['data']) : 0,
+                ]);
+
+                if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                    foreach ($payments['data'] as $payment) {
+                        $paymentStatus = strtoupper($payment['status'] ?? '');
+                        if (in_array($paymentStatus, ['SUCCESSFUL', 'DONE', 'PAID', 'SETTLEMENT'])) {
+                            Log::info('INACTIVE bill has successful payment - marking as completed', [
+                                'flip_bill_id' => $existingTransaction->flip_bill_id,
+                                'payment_status' => $paymentStatus,
+                            ]);
+
+                            $details = $existingTransaction->payment_details ?? [];
+                            $details['completed_from_inactive_check'] = true;
+                            $details['completed_at'] = now()->toISOString();
+                            $details['payment_info'] = $payment;
+
+                            $existingTransaction->update([
+                                'status' => 'completed',
+                                'payment_details' => $details,
+                                'payment_method' => $payment['sender_bank'] ?? null,
+                            ]);
+
+                            return [
+                                'bill_id' => $existingTransaction->flip_bill_id,
+                                'payment_url' => null,
+                                'transaction' => $existingTransaction->fresh(),
+                                'is_existing' => true,
+                                'is_completed' => true,
+                            ];
+                        }
+                    }
+                }
+
+                // No successful payments found, mark as expired
+                Log::info('INACTIVE bill with no successful payments - marking as expired', [
+                    'flip_bill_id' => $existingTransaction->flip_bill_id,
+                ]);
+                $existingTransaction->update(['status' => 'expired']);
+            }
+
             // Bill is truly expired/cancelled/failed - mark as expired
-            if ($billStatus && in_array($flipStatus, ['EXPIRED', 'INACTIVE', 'CANCELLED', 'CANCELED', 'FAILED'])) {
+            if ($billStatus && in_array($flipStatus, ['EXPIRED', 'CANCELLED', 'CANCELED', 'FAILED'])) {
                 Log::info('Existing Flip transaction is expired/cancelled, marking as expired', [
                     'flip_bill_id' => $existingTransaction->flip_bill_id,
                     'bill_status' => $flipStatus,
@@ -221,10 +287,21 @@ class FlipService
                 $details['completed_at'] = now()->toISOString();
                 $details['flip_final_status'] = $billStatus;
 
+                // Try to get payment method from bill payments
+                $paymentMethod = $expiredTransaction->payment_method;
+                $payments = $this->getBillPayments($expiredTransaction->flip_bill_id);
+                if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                    $lastPayment = end($payments['data']);
+                    if (isset($lastPayment['sender_bank'])) {
+                        $paymentMethod = $lastPayment['sender_bank'];
+                        $details['payment_info'] = $lastPayment;
+                    }
+                }
+
                 $expiredTransaction->update([
                     'status' => 'completed',
                     'payment_details' => $details,
-                    'payment_method' => $billStatus['sender_bank'] ?? $billStatus['payment_method'] ?? $expiredTransaction->payment_method,
+                    'payment_method' => $paymentMethod,
                 ]);
 
                 return [
@@ -234,6 +311,47 @@ class FlipService
                     'is_existing' => true,
                     'is_completed' => true,
                 ];
+            }
+
+            // For INACTIVE status, check payments to determine if it was paid
+            if ($billStatus && $flipStatus === 'INACTIVE') {
+                $payments = $this->getBillPayments($expiredTransaction->flip_bill_id);
+
+                Log::info('Checking payments for INACTIVE expired transaction', [
+                    'flip_bill_id' => $expiredTransaction->flip_bill_id,
+                    'payments_count' => isset($payments['data']) ? count($payments['data']) : 0,
+                ]);
+
+                if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                    foreach ($payments['data'] as $payment) {
+                        $paymentStatus = strtoupper($payment['status'] ?? '');
+                        if (in_array($paymentStatus, ['SUCCESSFUL', 'DONE', 'PAID', 'SETTLEMENT'])) {
+                            Log::info('INACTIVE expired transaction has successful payment - marking as completed', [
+                                'flip_bill_id' => $expiredTransaction->flip_bill_id,
+                                'payment_status' => $paymentStatus,
+                            ]);
+
+                            $details = $expiredTransaction->payment_details ?? [];
+                            $details['completed_from_inactive_recheck'] = true;
+                            $details['completed_at'] = now()->toISOString();
+                            $details['payment_info'] = $payment;
+
+                            $expiredTransaction->update([
+                                'status' => 'completed',
+                                'payment_details' => $details,
+                                'payment_method' => $payment['sender_bank'] ?? null,
+                            ]);
+
+                            return [
+                                'bill_id' => $expiredTransaction->flip_bill_id,
+                                'payment_url' => null,
+                                'transaction' => $expiredTransaction->fresh(),
+                                'is_existing' => true,
+                                'is_completed' => true,
+                            ];
+                        }
+                    }
+                }
             }
         }
 
@@ -257,7 +375,7 @@ class FlipService
 
         while ($attempt < $maxRetries) {
             $attempt++;
-            
+
             try {
                 return DB::transaction(function () use ($user, $course, $billId, $billData, $paymentUrl) {
                     // Check if there's an existing transaction with this flip_bill_id
@@ -346,10 +464,10 @@ class FlipService
                 });
             } catch (\Illuminate\Database\QueryException $e) {
                 $lastException = $e;
-                
+
                 // Check if it's an auto-increment error (1467) or duplicate entry error (1062)
                 $errorCode = $e->errorInfo[1] ?? 0;
-                
+
                 Log::warning('Database error during Flip transaction creation, attempt ' . $attempt, [
                     'error_code' => $errorCode,
                     'error_message' => $e->getMessage(),
@@ -374,7 +492,7 @@ class FlipService
                             'transaction_id' => $existingTransaction->id,
                             'flip_bill_id' => $billId,
                         ]);
-                        
+
                         return [
                             'bill_id' => $billId,
                             'payment_url' => $existingTransaction->payment_details['payment_url'] ?? $paymentUrl,
@@ -388,7 +506,7 @@ class FlipService
                 if ($attempt >= $maxRetries) {
                     throw $e;
                 }
-                
+
                 usleep(100000); // Wait 100ms before retry
             }
         }
@@ -405,11 +523,11 @@ class FlipService
         try {
             $maxId = DB::selectOne("SELECT MAX(id) as max_id FROM transactions");
             $newAutoIncrement = max(1, (int) ($maxId->max_id ?? 0) + 1);
-            
+
             // MySQL doesn't support placeholders for ALTER TABLE, so we use
             // intval to ensure it's a safe integer value
             DB::statement("ALTER TABLE transactions AUTO_INCREMENT = " . $newAutoIncrement);
-            
+
             Log::info('Auto-increment repaired for transactions table', [
                 'new_auto_increment' => $newAutoIncrement,
             ]);
@@ -806,52 +924,134 @@ class FlipService
         }
 
         $transaction = Transaction::where('flip_bill_id', $billId)->first();
+        $flipStatus = strtoupper($billStatus['status'] ?? '');
+        $localStatus = $this->mapStatus($flipStatus);
+
+        // IMPORTANT: For INACTIVE status, we need to check if there are any successful payments
+        // INACTIVE can mean: expired, manually disabled, OR paid and closed
+        // So we always check payments endpoint to determine the real status
+        if ($flipStatus === 'INACTIVE') {
+            $payments = $this->getBillPayments($billId);
+
+            Log::info('Flip: Checking payments for INACTIVE bill', [
+                'bill_id' => $billId,
+                'payments_response' => $payments,
+            ]);
+
+            // Check if there are any successful payments
+            if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                foreach ($payments['data'] as $payment) {
+                    $paymentStatus = strtoupper($payment['status'] ?? '');
+                    // SUCCESSFUL, DONE, PAID means the bill was paid
+                    if (in_array($paymentStatus, ['SUCCESSFUL', 'DONE', 'PAID', 'SETTLEMENT'])) {
+                        Log::info('Flip: INACTIVE bill has successful payment - marking as completed', [
+                            'bill_id' => $billId,
+                            'payment_status' => $paymentStatus,
+                        ]);
+                        $localStatus = 'completed';
+                        break;
+                    }
+                }
+            }
+
+            // If still not completed after checking payments, mark as expired
+            // (INACTIVE without payments usually means expired)
+            if ($localStatus === 'pending' && $flipStatus === 'INACTIVE') {
+                $localStatus = 'expired';
+            }
+        }
 
         if ($transaction) {
-            $localStatus = $this->mapStatus($billStatus['status'] ?? '');
-
-            // Update if status changed
-            if ($transaction->status !== $localStatus) {
+            // Update if status changed or if we have completed status
+            if ($transaction->status !== $localStatus || $localStatus === 'completed') {
                 $details = $transaction->payment_details ?? [];
                 $details['last_status_check'] = $billStatus;
                 $details['last_check_at'] = now()->toISOString();
 
-                $transaction->update([
+                $updateData = [
                     'status' => $localStatus,
                     'payment_details' => $details,
-                ]);
+                ];
+
+                // Update payment method if available from bill status
+                if ($localStatus === 'completed') {
+                    // Try to get payment method from bill payments
+                    $payments = $payments ?? $this->getBillPayments($billId);
+                    if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                        $lastPayment = end($payments['data']);
+                        if (isset($lastPayment['sender_bank'])) {
+                            $updateData['payment_method'] = $lastPayment['sender_bank'];
+                            $details['payment_info'] = $lastPayment;
+                            $updateData['payment_details'] = $details;
+                        }
+                    }
+                }
+
+                $transaction->update($updateData);
 
                 Log::info('Flip transaction status updated from API', [
                     'transaction_id' => $transaction->id,
                     'bill_id' => $billId,
+                    'old_status' => $transaction->getOriginal('status'),
                     'new_status' => $localStatus,
+                    'flip_status' => $flipStatus,
+                    'payment_method' => $updateData['payment_method'] ?? null,
                 ]);
+            }
+        }
+
+        // Get payment method for response
+        $paymentMethod = null;
+        if ($localStatus === 'completed') {
+            if ($transaction && $transaction->payment_method) {
+                $paymentMethod = $transaction->payment_method;
+            } else {
+                // Try to fetch from payments endpoint
+                $payments = $payments ?? $this->getBillPayments($billId);
+                if ($payments && isset($payments['data']) && is_array($payments['data']) && count($payments['data']) > 0) {
+                    $lastPayment = end($payments['data']);
+                    $paymentMethod = $lastPayment['sender_bank'] ?? null;
+                }
             }
         }
 
         return [
             'bill_id' => $billId,
-            'status' => $this->mapStatus($billStatus['status'] ?? ''),
+            'status' => $localStatus,
             'flip_status' => $billStatus['status'] ?? null,
             'amount' => $billStatus['amount'] ?? null,
             'title' => $billStatus['title'] ?? null,
-            'is_expired' => in_array($this->mapStatus($billStatus['status'] ?? ''), ['expired', 'cancelled', 'failed']),
+            'payment_method' => $paymentMethod,
+            'is_expired' => in_array($localStatus, ['expired', 'cancelled', 'failed']),
         ];
     }
 
     /**
      * Map Flip status to local application status
+     *
+     * Flip Bill Status Reference:
+     * - ACTIVE: Bill is active and waiting for payment
+     * - INACTIVE: Bill has been deactivated (could be because expired, paid, or manually disabled)
+     * - SUCCESSFUL/DONE/PAID: Payment completed
+     * - CANCELLED/CANCELED: Bill was cancelled
+     * - FAILED: Payment failed
+     * - PENDING: Waiting for payment
+     * - NOT_CONFIRMED: Payment received but not yet confirmed
+     *
+     * IMPORTANT: INACTIVE status needs special handling - it could mean the bill
+     * was paid and then deactivated. Always check payments endpoint to confirm.
      */
     public function mapStatus(string $flipStatus): string
     {
-        // Flip status: SUCCESSFUL, PENDING, CANCELLED, FAILED, EXPIRED
         return match (strtoupper($flipStatus)) {
             'SUCCESSFUL', 'DONE', 'PAID' => 'completed',
-            'PROCESSED', 'PROCESSING' => 'processing',
+            'PROCESSED', 'PROCESSING', 'NOT_CONFIRMED' => 'processing',
             'FAILED' => 'failed',
             'CANCELLED', 'CANCELED' => 'cancelled',
-            'EXPIRED', 'INACTIVE' => 'expired',
-            'PENDING', 'ACTIVE', 'NOT_CONFIRMED' => 'pending',
+            'EXPIRED' => 'expired',
+            // INACTIVE could mean expired OR paid-and-closed, keep as pending until we check payments
+            'INACTIVE' => 'pending',
+            'PENDING', 'ACTIVE' => 'pending',
             default => 'pending',
         };
     }

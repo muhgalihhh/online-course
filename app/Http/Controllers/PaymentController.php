@@ -130,9 +130,11 @@ class PaymentController extends Controller
                 $errorMessage = 'Konfigurasi pembayaran tidak valid. Hubungi administrator.';
             } elseif (!config('app.debug')) {
                 // In production, don't expose internal error details
-                if (!str_starts_with($errorMessage, 'Gagal') &&
+                if (
+                    !str_starts_with($errorMessage, 'Gagal') &&
                     !str_starts_with($errorMessage, 'Harga') &&
-                    !str_starts_with($errorMessage, 'Konfigurasi')) {
+                    !str_starts_with($errorMessage, 'Konfigurasi')
+                ) {
                     $errorMessage = 'Gagal membuat transaksi. Silakan coba lagi.';
                 }
             }
@@ -313,7 +315,21 @@ class PaymentController extends Controller
         $transaction = $this->flip->processWebhook($payload);
 
         if (!$transaction) {
-            return response()->json(['message' => 'Transaction not found'], 404);
+            // If this is a test webhook from dashboard, return success
+            $billId = $payload['bill_link_id'] ?? $payload['id'] ?? 'unknown';
+
+            Log::info('Webhook received but no transaction found - possibly test webhook', [
+                'bill_id' => $billId,
+                'payload_keys' => array_keys($payload),
+            ]);
+
+            // Return 200 OK for test webhooks so Flip dashboard shows success
+            return response()->json([
+                'message' => 'Webhook received',
+                'status' => 'accepted',
+                'note' => 'No transaction found - this may be a test webhook',
+                'bill_id' => $billId,
+            ]);
         }
 
         // Fire event and trigger immediate auto-enrollment when payment is completed
@@ -321,7 +337,16 @@ class PaymentController extends Controller
             $this->handlePaymentCompleted($transaction, $transaction->flip_bill_id);
         }
 
-        return response()->json(['message' => 'OK']);
+        Log::info('Webhook processed successfully', [
+            'transaction_id' => $transaction->id,
+            'status' => $transaction->status,
+        ]);
+
+        return response()->json([
+            'message' => 'OK',
+            'status' => 'processed',
+            'transaction_id' => $transaction->id,
+        ]);
     }
 
     /**
@@ -344,26 +369,48 @@ class PaymentController extends Controller
         $paymentCompleted = false;
 
         if ($billId) {
-            // Check bill status from Flip API
-            $statusInfo = $this->flip->getTransactionStatus($billId);
-
-            Log::info('Flip callback - bill status check', [
-                'bill_id' => $billId,
-                'status_info' => $statusInfo,
-            ]);
-
-            // Find the transaction
+            // Find the transaction first
             $transaction = Transaction::where('flip_bill_id', $billId)->first();
 
-            if ($transaction) {
-                // If status is completed (either from API check or already in DB)
-                if ($statusInfo && $statusInfo['status'] === 'completed') {
+            if (!$transaction) {
+                Log::warning('Flip callback - transaction not found', ['bill_id' => $billId]);
+            } else {
+                // Force check bill status from Flip API to get the latest status
+                // This will also check payments endpoint for INACTIVE bills
+                $statusInfo = $this->flip->getTransactionStatus($billId);
+
+                Log::info('Flip callback - bill status check', [
+                    'bill_id' => $billId,
+                    'status_info' => $statusInfo,
+                    'current_db_status' => $transaction->status,
+                ]);
+
+                // Refresh transaction after getTransactionStatus (it may have been updated)
+                $transaction->refresh();
+
+                // If status is completed from API or already in DB
+                if (($statusInfo && $statusInfo['status'] === 'completed') || $transaction->status === 'completed') {
                     $paymentCompleted = true;
+
+                    // Update transaction details with payment method from bill status if not already completed
+                    if ($transaction->status !== 'completed') {
+                        $details = $transaction->payment_details ?? [];
+                        $details['callback_received_at'] = now()->toISOString();
+                        $details['flip_final_status'] = $statusInfo;
+
+                        $transaction->update([
+                            'status' => 'completed',
+                            'payment_details' => $details,
+                            'payment_method' => $statusInfo['payment_method'] ?? $transaction->payment_method,
+                        ]);
+
+                        Log::info('Flip callback - updated transaction to completed', [
+                            'transaction_id' => $transaction->id,
+                            'bill_id' => $billId,
+                        ]);
+                    }
+
                     $this->handlePaymentCompleted($transaction, $billId);
-                } elseif ($transaction->status === 'completed') {
-                    $paymentCompleted = true;
-                    // Trigger enrollment if not already done
-                    $this->autoEnrollUserToCourse($transaction);
                 }
             }
         }
@@ -414,10 +461,12 @@ class PaymentController extends Controller
 
                 // Redirect to payment page to show status
                 return redirect()->route('payments.show', $courseId)
-                    ->with($paymentCompleted ? 'success' : 'info',
+                    ->with(
+                        $paymentCompleted ? 'success' : 'info',
                         $paymentCompleted
-                            ? 'Pembayaran berhasil! Memproses pendaftaran kursus...'
-                            : 'Memproses pembayaran...');
+                        ? 'Pembayaran berhasil! Memproses pendaftaran kursus...'
+                        : 'Memproses pembayaran...'
+                    );
             }
         }
 
@@ -776,9 +825,9 @@ class PaymentController extends Controller
 
         // Try to find by midtrans_order_id first, then by flip_bill_id
         $transaction = Transaction::where(function ($query) use ($orderId) {
-                $query->where('midtrans_order_id', $orderId)
-                    ->orWhere('flip_bill_id', $orderId);
-            })
+            $query->where('midtrans_order_id', $orderId)
+                ->orWhere('flip_bill_id', $orderId);
+        })
             ->where('user_id', $user->id)
             ->firstOrFail();
 
@@ -823,13 +872,24 @@ class PaymentController extends Controller
 
         // Try to find by midtrans_order_id first, then by flip_bill_id
         $transaction = Transaction::where(function ($query) use ($orderId) {
-                $query->where('midtrans_order_id', $orderId)
-                    ->orWhere('flip_bill_id', $orderId);
-            })
+            $query->where('midtrans_order_id', $orderId)
+                ->orWhere('flip_bill_id', $orderId);
+        })
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Get status based on gateway
+        // If transaction is already completed or cancelled, return database status (don't check API)
+        if (in_array($transaction->status, ['completed', 'cancelled', 'refunded'])) {
+            return response()->json([
+                'order_id' => $orderId,
+                'status' => $transaction->status,
+                'gateway' => $transaction->payment_gateway,
+                'is_expired' => false,
+                'from_database' => true,
+            ]);
+        }
+
+        // Get status from payment gateway for pending/processing/expired transactions
         $statusInfo = null;
         if ($transaction->payment_gateway === 'flip' && $transaction->flip_bill_id) {
             $statusInfo = $this->flip->getTransactionStatus($transaction->flip_bill_id);
@@ -838,10 +898,14 @@ class PaymentController extends Controller
         }
 
         if (!$statusInfo) {
+            // If API fails, return current database status
             return response()->json([
-                'message' => 'Tidak dapat mengecek status transaksi',
+                'order_id' => $orderId,
                 'status' => $transaction->status,
-            ], 500);
+                'gateway' => $transaction->payment_gateway,
+                'is_expired' => $transaction->status === 'expired',
+                'from_database' => true,
+            ]);
         }
 
         return response()->json([
@@ -849,6 +913,7 @@ class PaymentController extends Controller
             'status' => $statusInfo['status'],
             'gateway' => $transaction->payment_gateway,
             'is_expired' => $statusInfo['is_expired'] ?? false,
+            'from_api' => true,
         ]);
     }
 
@@ -949,9 +1014,9 @@ class PaymentController extends Controller
 
         // Find transaction by either midtrans_order_id or flip_bill_id
         $transaction = Transaction::where(function ($query) use ($orderId) {
-                $query->where('midtrans_order_id', $orderId)
-                    ->orWhere('flip_bill_id', $orderId);
-            })
+            $query->where('midtrans_order_id', $orderId)
+                ->orWhere('flip_bill_id', $orderId);
+        })
             ->where('user_id', $user->id)
             ->first();
 

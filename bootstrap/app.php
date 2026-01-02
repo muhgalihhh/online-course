@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Trust all proxies for ngrok/development (change in production!)
+        $middleware->trustProxies(at: '*');
+
         // Add CORS headers for ngrok
         $middleware->append(CorsMiddleware::class);
 

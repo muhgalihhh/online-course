@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import GuestLayout from '@/layouts/guest-layout';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Bed, Clock, Globe, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { ArrowLeft, Bed, Globe, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 
 interface Accommodation {
     id: number;
@@ -29,6 +29,7 @@ interface Institution {
 interface PageProps {
     accommodation: Accommodation;
     institution?: Institution;
+    [key: string]: unknown;
 }
 
 export default function AccommodationShow() {
@@ -52,55 +53,68 @@ export default function AccommodationShow() {
 
     return (
         <GuestLayout>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 {/* Header */}
-                <div className="border-b bg-white">
-                    <div className="container mx-auto px-4 py-6">
-                        <Button variant="ghost" size="sm" asChild className="mb-4">
+                <div className="border-b bg-card shadow-sm">
+                    <div className="container mx-auto px-4 py-4 sm:py-6">
+                        <Button variant="ghost" size="sm" asChild className="mb-3 h-9 text-sm hover:bg-accent sm:mb-4">
                             <Link href={route('accommodations.index')}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Kembali ke Daftar Akomodasi
+                                <ArrowLeft className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                                <span className="xs:inline hidden">Kembali ke Daftar Akomodasi</span>
+                                <span className="xs:hidden">Kembali</span>
                             </Link>
                         </Button>
 
-                        <div className="mb-2 flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-gray-900">{accommodation.name}</h1>
-                            <Badge variant="secondary">
+                        <div className="mb-2 flex flex-col gap-2 sm:mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            <h1 className="text-xl leading-tight font-bold text-foreground sm:text-2xl md:text-3xl lg:text-4xl">
+                                {accommodation.name}
+                            </h1>
+                            <Badge variant="secondary" className="w-fit text-xs sm:text-sm">
                                 <Bed className="mr-1 h-3 w-3" />
                                 Akomodasi
                             </Badge>
                         </div>
 
                         {institution?.address && (
-                            <div className="flex items-center text-gray-600">
-                                <MapPin className="mr-2 h-4 w-4" />
-                                <span>{institution.address}</span>
+                            <div className="flex items-start text-muted-foreground sm:items-center">
+                                <MapPin className="mt-0.5 mr-1.5 h-3.5 w-3.5 flex-shrink-0 sm:mt-0 sm:mr-2 sm:h-4 sm:w-4" />
+                                <span className="text-xs leading-relaxed sm:text-sm">{institution.address}</span>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Main Content */}
-                <div className="container mx-auto px-4 py-8">
-                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="container mx-auto px-4 py-4 sm:py-8">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3 lg:gap-8">
                         {/* Left Column - Image and Description */}
-                        <div className="space-y-6 lg:col-span-2">
+                        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
                             {/* Image */}
-                            <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-100">
-                                <img src={accommodation.image_url} alt={accommodation.name} className="h-full w-full object-cover" />
+                            <div className="group relative aspect-video overflow-hidden rounded-lg bg-muted shadow-md sm:rounded-xl sm:shadow-lg">
+                                <img
+                                    src={accommodation.image_url}
+                                    alt={accommodation.name}
+                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
                             </div>
 
                             {/* Description */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Deskripsi Akomodasi</CardTitle>
+                            <Card className="shadow-sm sm:shadow-md">
+                                <CardHeader className="p-4 sm:p-6">
+                                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                                        <Bed className="h-4 w-4 flex-shrink-0 text-primary sm:h-5 sm:w-5" />
+                                        Deskripsi Akomodasi
+                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
                                     <div className="prose prose-gray max-w-none">
                                         {accommodation.description.split('\n').map(
                                             (paragraph, index) =>
                                                 paragraph.trim() && (
-                                                    <p key={index} className="mb-4 leading-relaxed text-gray-700">
+                                                    <p
+                                                        key={index}
+                                                        className="mb-2 text-sm leading-relaxed text-muted-foreground last:mb-0 sm:mb-3 sm:text-base"
+                                                    >
                                                         {paragraph}
                                                     </p>
                                                 ),
@@ -111,52 +125,63 @@ export default function AccommodationShow() {
 
                             {/* Institution Information */}
                             {institution && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Informasi Pengelola</CardTitle>
+                                <Card className="shadow-sm sm:shadow-md">
+                                    <CardHeader className="p-4 sm:p-6">
+                                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                                            <MapPin className="h-4 w-4 flex-shrink-0 text-primary sm:h-5 sm:w-5" />
+                                            Informasi Pengelola
+                                        </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                                                <Bed className="h-6 w-6 text-blue-600" />
+                                    <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+                                        <div className="flex items-center gap-3 sm:gap-4">
+                                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-14 sm:w-14">
+                                                <Bed className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
                                             </div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold">{institution.name}</h3>
-                                                <p className="text-sm text-gray-600">Pengelola Akomodasi</p>
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">{institution.name}</h3>
+                                                <p className="text-xs text-muted-foreground sm:text-sm">Pengelola Akomodasi</p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
+                                        <Separator />
+
+                                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                                             {institution.phone && (
-                                                <div className="flex items-center gap-3">
-                                                    <Phone className="h-4 w-4 text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium">Telepon</p>
-                                                        <p className="text-sm text-gray-600">{institution.phone}</p>
+                                                <div className="flex items-start gap-2 sm:gap-3">
+                                                    <div className="flex-shrink-0 rounded-lg bg-muted p-1.5 sm:p-2">
+                                                        <Phone className="h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-medium sm:text-sm">Telepon</p>
+                                                        <p className="text-xs break-all text-muted-foreground sm:text-sm">{institution.phone}</p>
                                                     </div>
                                                 </div>
                                             )}
 
                                             {institution.email && (
-                                                <div className="flex items-center gap-3">
-                                                    <Mail className="h-4 w-4 text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium">Email</p>
-                                                        <p className="text-sm text-gray-600">{institution.email}</p>
+                                                <div className="flex items-start gap-2 sm:gap-3">
+                                                    <div className="flex-shrink-0 rounded-lg bg-muted p-1.5 sm:p-2">
+                                                        <Mail className="h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-medium sm:text-sm">Email</p>
+                                                        <p className="text-xs break-all text-muted-foreground sm:text-sm">{institution.email}</p>
                                                     </div>
                                                 </div>
                                             )}
 
                                             {institution.website && (
-                                                <div className="flex items-center gap-3">
-                                                    <Globe className="h-4 w-4 text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium">Website</p>
+                                                <div className="flex items-start gap-2 sm:gap-3">
+                                                    <div className="flex-shrink-0 rounded-lg bg-muted p-1.5 sm:p-2">
+                                                        <Globe className="h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-medium sm:text-sm">Website</p>
                                                         <a
                                                             href={institution.website}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-sm text-blue-600 hover:underline"
+                                                            className="text-xs break-all text-primary hover:underline sm:text-sm"
                                                         >
                                                             {institution.website}
                                                         </a>
@@ -165,11 +190,13 @@ export default function AccommodationShow() {
                                             )}
 
                                             {institution.address && (
-                                                <div className="flex items-start gap-3 md:col-span-2">
-                                                    <MapPin className="mt-0.5 h-4 w-4 text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium">Alamat</p>
-                                                        <p className="text-sm text-gray-600">{institution.address}</p>
+                                                <div className="flex items-start gap-2 sm:gap-3 md:col-span-2">
+                                                    <div className="flex-shrink-0 rounded-lg bg-muted p-1.5 sm:p-2">
+                                                        <MapPin className="h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-medium sm:text-sm">Alamat</p>
+                                                        <p className="text-xs text-muted-foreground sm:text-sm">{institution.address}</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -181,72 +208,64 @@ export default function AccommodationShow() {
 
                         {/* Right Column - Booking Card */}
                         <div className="lg:col-span-1">
-                            <div className="sticky top-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-center">Detail Pemesanan</CardTitle>
+                            <div className="lg:sticky lg:top-6">
+                                <Card className="shadow-md sm:shadow-lg">
+                                    <CardHeader className="bg-primary/5 p-4 sm:p-6">
+                                        <CardTitle className="text-center text-lg sm:text-xl">Detail Pemesanan</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-6">
+                                    <CardContent className="space-y-4 p-4 sm:space-y-6 sm:p-6">
                                         {/* Price */}
-                                        <div className="text-center">
-                                            <div className="mb-1 text-3xl font-bold text-blue-600">{accommodation.formatted_price}</div>
-                                            <p className="text-sm text-gray-600">per malam</p>
-                                        </div>
-
-                                        <Separator />
-
-                                        {/* Amenities or Features */}
-                                        <div>
-                                            <h4 className="mb-3 font-semibold">Informasi Umum</h4>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="h-4 w-4 text-gray-400" />
-                                                    <span>Check-in: 14:00</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="h-4 w-4 text-gray-400" />
-                                                    <span>Check-out: 12:00</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Bed className="h-4 w-4 text-gray-400" />
-                                                    <span>Fasilitas sesuai deskripsi</span>
-                                                </div>
+                                        <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-4 text-center sm:rounded-xl sm:p-6">
+                                            <p className="mb-1 text-xs font-medium text-muted-foreground sm:mb-2 sm:text-sm">Harga Akomodasi</p>
+                                            <div className="text-2xl font-bold break-words text-primary sm:text-3xl md:text-4xl">
+                                                {accommodation.formatted_price}
                                             </div>
                                         </div>
 
                                         <Separator />
 
                                         {/* Booking Actions */}
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 sm:space-y-3">
                                             <Button
                                                 onClick={handleWhatsAppBooking}
-                                                className="w-full bg-green-600 text-white hover:bg-green-700"
+                                                className="h-11 w-full bg-green-600 text-sm text-white shadow-md hover:bg-green-700 hover:shadow-lg sm:h-12 sm:text-base"
                                                 size="lg"
                                             >
-                                                <MessageCircle className="mr-2 h-4 w-4" />
-                                                Pesan via WhatsApp
+                                                <MessageCircle className="mr-2 h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" />
+                                                <span className="truncate">Pesan via WhatsApp</span>
                                             </Button>
 
                                             {institution?.phone && (
-                                                <Button onClick={handlePhoneCall} variant="outline" className="w-full" size="lg">
-                                                    <Phone className="mr-2 h-4 w-4" />
-                                                    Hubungi Langsung
+                                                <Button
+                                                    onClick={handlePhoneCall}
+                                                    variant="outline"
+                                                    className="h-11 w-full text-sm shadow-sm sm:h-12 sm:text-base"
+                                                    size="lg"
+                                                >
+                                                    <Phone className="mr-2 h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" />
+                                                    <span className="truncate">Hubungi Langsung</span>
                                                 </Button>
                                             )}
 
                                             {institution?.email && (
-                                                <Button onClick={handleEmail} variant="outline" className="w-full" size="lg">
-                                                    <Mail className="mr-2 h-4 w-4" />
-                                                    Kirim Email
+                                                <Button
+                                                    onClick={handleEmail}
+                                                    variant="outline"
+                                                    className="h-11 w-full text-sm shadow-sm sm:h-12 sm:text-base"
+                                                    size="lg"
+                                                >
+                                                    <Mail className="mr-2 h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" />
+                                                    <span className="truncate">Kirim Email</span>
                                                 </Button>
                                             )}
                                         </div>
 
                                         {/* Notice */}
-                                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                            <p className="text-sm text-blue-800">
-                                                <strong>Catatan:</strong> Untuk melakukan pemesanan, silakan hubungi kami melalui WhatsApp atau kontak
-                                                yang tersedia. Kami akan membantu Anda dengan informasi ketersediaan dan proses pemesanan.
+                                        <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-3 sm:p-4">
+                                            <p className="text-xs leading-relaxed text-foreground sm:text-sm">
+                                                <strong className="text-primary">Catatan:</strong> Untuk melakukan pemesanan, silakan hubungi kami
+                                                melalui WhatsApp atau kontak yang tersedia. Kami akan membantu Anda dengan informasi ketersediaan dan
+                                                proses pemesanan.
                                             </p>
                                         </div>
                                     </CardContent>

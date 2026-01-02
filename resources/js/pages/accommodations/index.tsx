@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,6 +43,7 @@ interface PageProps {
         sort?: string;
         order?: string;
     };
+    [key: string]: unknown;
 }
 
 export default function AccommodationsIndex() {
@@ -95,37 +95,42 @@ export default function AccommodationsIndex() {
             <div className="min-h-screen bg-background">
                 {/* Header Section */}
                 <div className="border-b bg-card">
-                    <div className="container mx-auto px-4 py-8">
-                        <div className="mb-8 text-center">
-                            <h1 className="mb-4 text-4xl font-bold text-foreground">Akomodasi</h1>
-                            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+                    <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
+                        <div className="mb-4 text-center sm:mb-6 md:mb-8">
+                            <h1 className="mb-2 text-2xl font-bold text-foreground sm:mb-3 sm:text-3xl md:mb-4 md:text-4xl">Akomodasi</h1>
+                            <p className="mx-auto max-w-2xl px-4 text-sm text-muted-foreground sm:text-base md:text-lg">
                                 Temukan akomodasi nyaman untuk mendukung pengalaman belajar Anda
                             </p>
                         </div>
 
                         {/* Search and Filter Bar */}
-                        <div className="flex flex-col items-center justify-between gap-4 lg:flex-row">
+                        <div className="flex flex-col items-stretch gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                             {/* Search Form */}
-                            <form onSubmit={handleSearch} className="max-w-md flex-1">
+                            <form onSubmit={handleSearch} className="w-full lg:max-w-md lg:flex-1">
                                 <div className="relative">
                                     <Input
                                         type="text"
                                         placeholder="Cari akomodasi..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        className="pr-4 pl-10"
+                                        className="h-10 pr-4 pl-9 text-sm sm:h-11 sm:pl-10 sm:text-base"
                                     />
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                                    <Button type="submit" variant="ghost" size="sm" className="absolute top-1/2 right-1 -translate-y-1/2 transform">
+                                    <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 transform text-muted-foreground sm:left-3" />
+                                    <Button
+                                        type="submit"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute top-1/2 right-1 h-8 -translate-y-1/2 transform"
+                                    >
                                         <Search className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </form>
 
                             {/* Sort and View Controls */}
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
                                 <Select value={sortBy} onValueChange={(value) => handleSort(value, sortOrder)}>
-                                    <SelectTrigger className="w-40">
+                                    <SelectTrigger className="h-10 w-28 text-sm sm:h-11 sm:w-32 sm:text-base md:w-40">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -134,16 +139,21 @@ export default function AccommodationsIndex() {
                                     </SelectContent>
                                 </Select>
 
-                                <Button variant="outline" size="sm" onClick={() => handleSort(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSort(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}
+                                    className="h-10 w-10 p-0 sm:h-11 sm:w-11"
+                                >
                                     {sortOrder === 'asc' ? '↑' : '↓'}
                                 </Button>
 
-                                <div className="flex rounded-md border">
+                                <div className="hidden rounded-md border sm:flex">
                                     <Button
                                         variant={viewMode === 'grid' ? 'default' : 'ghost'}
                                         size="sm"
                                         onClick={() => setViewMode('grid')}
-                                        className="rounded-r-none"
+                                        className="h-10 rounded-r-none sm:h-11"
                                     >
                                         <Grid className="h-4 w-4" />
                                     </Button>
@@ -151,7 +161,7 @@ export default function AccommodationsIndex() {
                                         variant={viewMode === 'list' ? 'default' : 'ghost'}
                                         size="sm"
                                         onClick={() => setViewMode('list')}
-                                        className="rounded-l-none"
+                                        className="h-10 rounded-l-none sm:h-11"
                                     >
                                         <List className="h-4 w-4" />
                                     </Button>
@@ -162,8 +172,8 @@ export default function AccommodationsIndex() {
                 </div>
 
                 {/* Results Info */}
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="container mx-auto px-4 py-3 sm:py-4">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground sm:text-sm">
                         <span>
                             Menampilkan {accommodations.from || 0} - {accommodations.to || 0} dari {accommodations.total} akomodasi
                         </span>
@@ -171,69 +181,75 @@ export default function AccommodationsIndex() {
                 </div>
 
                 {/* Accommodations Grid/List */}
-                <div className="container mx-auto px-4 pb-8">
+                <div className="container mx-auto px-4 pb-6 sm:pb-8">
                     {accommodations.data.length === 0 ? (
-                        <div className="py-16 text-center">
-                            <Bed className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                            <h3 className="mb-2 text-xl font-semibold text-foreground">Tidak ada akomodasi ditemukan</h3>
-                            <p className="text-muted-foreground">Coba ubah kata kunci pencarian atau filter Anda.</p>
+                        <div className="py-12 text-center sm:py-16">
+                            <Bed className="mx-auto mb-3 h-12 w-12 text-muted-foreground sm:mb-4 sm:h-16 sm:w-16" />
+                            <h3 className="mb-1 text-lg font-semibold text-foreground sm:mb-2 sm:text-xl">Tidak ada akomodasi ditemukan</h3>
+                            <p className="text-sm text-muted-foreground sm:text-base">Coba ubah kata kunci pencarian atau filter Anda.</p>
                         </div>
                     ) : (
-                        <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-6'}>
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
                             {accommodations.data.map((accommodation) => (
                                 <Card
                                     key={accommodation.id}
-                                    className={`group transition-all duration-200 hover:shadow-lg ${viewMode === 'list' ? 'flex flex-row' : ''}`}
+                                    className={`group overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl ${viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''}`}
                                 >
-                                    <div className={viewMode === 'list' ? 'w-72 flex-shrink-0' : ''}>
-                                        <div className="relative aspect-video overflow-hidden rounded-t-lg">
+                                    <div className={viewMode === 'list' ? 'sm:w-80 sm:flex-shrink-0' : ''}>
+                                        <div
+                                            className={`relative overflow-hidden ${viewMode === 'list' ? 'aspect-video sm:h-full' : 'aspect-[4/3]'}`}
+                                        >
                                             <img
                                                 src={accommodation.image_url}
                                                 alt={accommodation.name}
-                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
-                                            <div className="absolute top-3 right-3">
-                                                <Badge variant="secondary" className="bg-background/90 text-foreground">
-                                                    <Bed className="mr-1 h-3 w-3" />
-                                                    Akomodasi
-                                                </Badge>
-                                            </div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                                         </div>
                                     </div>
 
-                                    <div className={viewMode === 'list' ? 'flex-1' : ''}>
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start justify-between">
-                                                <h3 className="line-clamp-2 text-lg font-semibold transition-colors group-hover:text-primary">
-                                                    {accommodation.name}
-                                                </h3>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <MapPin className="h-4 w-4" />
-                                                <span>{institution?.address || 'Lokasi tidak tersedia'}</span>
+                                    <div className={`flex flex-col ${viewMode === 'list' ? 'flex-1' : ''}`}>
+                                        <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-3">
+                                            <h3 className="line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary sm:text-xl">
+                                                {accommodation.name}
+                                            </h3>
+                                            <div className="mt-1.5 flex items-start gap-2 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+                                                <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
+                                                <span className="line-clamp-1">{institution?.address || 'Lokasi tidak tersedia'}</span>
                                             </div>
                                         </CardHeader>
 
-                                        <CardContent className="pt-0">
-                                            <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{accommodation.description}</p>
+                                        <CardContent className="flex flex-1 flex-col justify-between p-4 pt-0 sm:p-6 sm:pt-0">
+                                            <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                                                {accommodation.description}
+                                            </p>
 
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-bold text-primary">{accommodation.formatted_price}</div>
-                                                    <div className="text-sm text-muted-foreground">per malam</div>
+                                            <div className="space-y-2 sm:space-y-3">
+                                                <div className="rounded-lg bg-primary/5 px-3 py-2 sm:px-4 sm:py-3">
+                                                    <div className="text-xl font-bold break-words text-primary sm:text-2xl md:text-3xl">
+                                                        {accommodation.formatted_price}
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex gap-2">
-                                                    <Button variant="outline" size="sm" asChild>
-                                                        <Link href={route('accommodations.show', accommodation.id)}>Detail</Link>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="default"
+                                                        asChild
+                                                        className="h-9 w-full text-xs sm:h-10 sm:text-sm"
+                                                    >
+                                                        <Link href={route('accommodations.show', accommodation.id)}>
+                                                            <Bed className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                                                            Detail
+                                                        </Link>
                                                     </Button>
 
                                                     <Button
-                                                        size="sm"
+                                                        size="default"
                                                         onClick={() => handleWhatsAppBooking(accommodation)}
-                                                        className="bg-green-600 hover:bg-green-700"
+                                                        className="h-9 w-full bg-green-600 text-xs hover:bg-green-700 sm:h-10 sm:text-sm"
                                                     >
-                                                        <MessageCircle className="mr-1 h-4 w-4" />
+                                                        <MessageCircle className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                                                         Pesan
                                                     </Button>
                                                 </div>
@@ -247,29 +263,48 @@ export default function AccommodationsIndex() {
 
                     {/* Pagination */}
                     {accommodations.last_page > 1 && (
-                        <div className="mt-8 flex justify-center">
-                            <div className="flex items-center gap-2">
+                        <div className="mt-6 flex justify-center px-2 sm:mt-8">
+                            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
                                 {accommodations.links.map((link, index) => {
                                     if (!link.url) {
                                         return (
-                                            <Button key={index} variant="ghost" size="sm" disabled dangerouslySetInnerHTML={{ __html: link.label }} />
+                                            <Button
+                                                key={index}
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                className="h-8 min-w-[2rem] text-xs sm:h-9 sm:min-w-[2.25rem] sm:text-sm"
+                                            />
                                         );
                                     }
 
                                     if (link.label.includes('Previous')) {
                                         return (
-                                            <Button key={index} variant="outline" size="sm" onClick={() => router.get(link.url!)}>
-                                                <ChevronLeft className="h-4 w-4" />
-                                                Previous
+                                            <Button
+                                                key={index}
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => router.get(link.url!)}
+                                                className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                                            >
+                                                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                <span className="xs:inline ml-1 hidden">Previous</span>
                                             </Button>
                                         );
                                     }
 
                                     if (link.label.includes('Next')) {
                                         return (
-                                            <Button key={index} variant="outline" size="sm" onClick={() => router.get(link.url!)}>
-                                                Next
-                                                <ChevronRight className="h-4 w-4" />
+                                            <Button
+                                                key={index}
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => router.get(link.url!)}
+                                                className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                                            >
+                                                <span className="xs:inline mr-1 hidden">Next</span>
+                                                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                         );
                                     }
@@ -280,6 +315,7 @@ export default function AccommodationsIndex() {
                                             variant={link.active ? 'default' : 'outline'}
                                             size="sm"
                                             onClick={() => router.get(link.url!)}
+                                            className="h-8 min-w-[2rem] px-2 text-xs sm:h-9 sm:min-w-[2.25rem] sm:px-3 sm:text-sm"
                                         >
                                             {link.label}
                                         </Button>
