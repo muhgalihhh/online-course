@@ -8,15 +8,6 @@ use Inertia\Inertia;
 use App\Http\Controllers\SecureVideoController;
 use App\Models\User;
 
-// Include test route for debugging
-require __DIR__ . '/test-youtube.php';
-require __DIR__ . '/test-youtube-web.php';
-require __DIR__ . '/debug-admin.php';
-require __DIR__ . '/debug-materials.php';
-require __DIR__ . '/test-video.php';
-require __DIR__ . '/quick-admin.php';
-require __DIR__ . '/test-payment.php';
-
 Route::get('/', function () {
     // Fetch institution data for contact info
     $institution = \App\Models\Institution::first();
@@ -286,9 +277,6 @@ if (app()->environment('local')) {
     Route::get('/test-419', function () {
         abort(419);
     });
-
-    // Include test redirect routes
-    require __DIR__ . '/test-redirect.php';
 }
 
 require __DIR__ . '/auth.php';
